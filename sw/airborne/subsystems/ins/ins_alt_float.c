@@ -146,7 +146,8 @@ void ins_reset_local_origin(void)
 
 void ins_reset_altitude_ref(void)
 {
-  struct UtmCoor_f utm = state.utm_origin_f;
+  struct UtmCoor_f utm;
+  UTM_FLOAT_OF_BFP(utm,state.utm_origin_i);
   // ground_alt
   utm.alt = gps.hmsl / 1000.0f;
   // reset state UTM ref

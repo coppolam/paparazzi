@@ -55,8 +55,8 @@ extern struct point waypoints[];
 
 extern float ground_alt; /* m */
 
-extern int32_t nav_utm_east0;  /* m */
-extern int32_t nav_utm_north0; /* m */
+extern float nav_utm_east0;  /* m */
+extern float nav_utm_north0; /* m */
 extern uint8_t nav_utm_zone0;
 
 

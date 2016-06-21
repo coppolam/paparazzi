@@ -48,7 +48,7 @@ int8_t register_periodic_telemetry(struct periodic_telemetry *_pt, uint8_t _id, 
   uint8_t i, j;
   // return if NULL is passed as periodic_telemetry
   if (_pt == NULL) { return -1; }
-  // check if message with id _msgn has a periodic entery in telemetry file
+  // check if message with id _msgn has a periodic entry in telemetry file
   for (i = 0; i < _pt->nb; i++) {
     if (_pt->cbs[i].id == _id) {
       // msg found, register another callback if not all TELEMETRY_NB_CBS slots taken

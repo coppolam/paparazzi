@@ -61,8 +61,6 @@
 #define GUIDANCE_H_MODE_FLIP        9
 #define GUIDANCE_H_MODE_GUIDED      10
 
-extern bool ra_active;
-extern struct FloatVect2 raavoid_speed_f;
 
 struct HorizontalGuidanceSetpoint {
   /** horizontal position setpoint in NED.

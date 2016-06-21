@@ -35,6 +35,7 @@
 
 # kdev4 IDE project files
 *.kdev4
+.vscode/*
 .kdev4/*
 
 paparazzi.sublime-workspace

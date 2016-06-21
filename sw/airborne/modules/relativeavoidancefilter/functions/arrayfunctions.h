@@ -26,5 +26,6 @@ extern void array_make_zeros(int length, float *x);
 extern void array_make_zeros_int(int length, int *x);
 extern void array_make_ones(int length, float *x);
 extern void array_mult_scal(int length, float *y, float k, float *x);
-
+extern float array_sum(int length, float *x);
+extern float array_sum_weighted(int length, float *x);
 #endif  /*ARRAYFUNCTIONS_H*/

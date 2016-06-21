@@ -30,7 +30,9 @@
 #include "autopilot.h"
 #include "generated/flight_plan.h"
 #include "state.h"
-#include "subsystems/navigation/traffic_info.h"
+#ifdef TRAFFIC_INFO
+#include "modules/multi/traffic_info.h"
+#endif
 #ifdef POINT_CAM
 #include "point.h"
 #endif // POINT_CAM

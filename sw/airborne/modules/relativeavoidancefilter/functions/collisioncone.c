@@ -22,18 +22,16 @@ void collisioncone_update( float *cc,
 	float range, bearing;
 	cart2polar(relx, rely, &range, &bearing);
 
-	keepbounded(&range,1.0,5.0);
-
 	// The other two edges are symmetrical about a diagonal extending along the localization bearing.
 	cc[0] = 0.0;
 	cc[1] = 0.0;
 
 	// This is the edge extending upwards to the right (+y)
-	cc[2] = 5.0; // x_body
-	cc[3] = 5.0*tan(atan(radius/range)); // y_body
+	cc[2] = 5.0; 							   // x_body
+	cc[3] = 5.0*tan(atan(radius/(1.0*range))); // y_body
 
 	// This is the edge exteding upwards to the left (-y)
-	cc[4] = cc[2]; // x_body
+	cc[4] = cc[2]; 	 // x_body
 	cc[5] = -cc[3];  // y_body
 
 	shape_rotateatorigin(cc, 6, bearing);
@@ -51,15 +49,13 @@ void collisioncone_fuse( float *cc0, float *cc1)
 
 	// 2*PI is added everywhere to avoid the issue where a boundary is in between -ang and +ang
 	if ((atan2(cc1[3], cc1[2]) + 2*M_PI > atan2(cc0[3], cc0[2]) + 2*M_PI) 
-		&& (atan2(cc1[3], cc1[2]) + 2*M_PI < atan2(cc0[5], cc0[4]) + 2*M_PI))
-	{
+		&& (atan2(cc1[3], cc1[2]) + 2*M_PI < atan2(cc0[5], cc0[4]) + 2*M_PI)) {
 		cc1[2] = cc0[2];
 		cc1[3] = cc0[3];
 	}
 
 	if ((atan2(cc1[5], cc1[4]) + 2*M_PI > atan2(cc0[3], cc0[2]) + 2*M_PI)
-		&& (atan2(cc1[5], cc1[4]) + 2*M_PI < atan2(cc0[5], cc0[4]) + 2*M_PI))
-	{
+		&& (atan2(cc1[5], cc1[4]) + 2*M_PI < atan2(cc0[5], cc0[4]) + 2*M_PI)) {
 		cc1[4] = cc0[4];
 		cc1[5] = cc0[5];
 	}
@@ -84,7 +80,7 @@ void collisioncone_findnewcmd( float cc[2][6],
 {
 	int i;
 	int count = 1;
-	int ng = 1;
+	// int ng = 1;
 	bool flag = true;
 	float psi_add;
 	deg2rad(psisearch, &psi_add);
@@ -104,10 +100,10 @@ void collisioncone_findnewcmd( float cc[2][6],
 		if(!flag) // No issues found
 			return;
 
-		*psi_des = psi0 + (ng* count * psi_add);
+		*psi_des = psi0 + (count * psi_add);
 		wrapTo2Pi(psi_des);
 
-		ng = ng * -1;
+		// ng = ng * -1;
 		count++;
 			
 		if (count >= (2*M_PI)/psi_add) {
@@ -115,5 +111,21 @@ void collisioncone_findnewcmd( float cc[2][6],
 			count = 1;
 		}
 	}
-
+	
+	// Failed to find a solution, so just stop this time
+	*v_des = 0.0;
 };
+
+// float collisioncone_expansionangle( float range, float R, float e )
+// {
+// 	return atan((range+(2*R)+e)/range);
+// }
+
+float movingaveragefilter(float *vec, int size, float newelement)
+{
+	array_shiftleft(vec, size, 1);
+	vec[size-1] = newelement;
+	float out = array_sum(size, vec)/(float)size;
+	vec[size-1] = out;
+	return out;
+}

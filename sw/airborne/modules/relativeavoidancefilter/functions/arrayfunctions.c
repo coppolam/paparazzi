@@ -1,7 +1,7 @@
 #include "arrayfunctions.h"
 
 /*
-Shifts an array to the left by a defined number of steps at a time
+Shifts an array to the left by a defined number of steps at a time AND copies the left most element back to the right side!
 */
 void array_shiftleft(float *array, int size, int shift)
 {
@@ -188,3 +188,25 @@ void array_mult_scal(int length, float *y, float k, float *x)
 		y[i] = k * x[i];
 	}
 };
+
+float array_sum(int length, float *x)
+{
+	int i;
+	float out = 0.0;
+	for (i = 0; i < length; i++)
+	{
+		out = out + x[i];
+	}
+	return out;
+}
+
+float array_sum_weighted(int length, float *x)
+{
+	int i;
+	float out = 0.0;
+	for (i = 0; i < length; i++)
+	{
+		out+=(x[i]*(1/((float)length-(float)i+1.0)));
+	}
+	return out;
+}

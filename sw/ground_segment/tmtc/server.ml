@@ -61,7 +61,7 @@ let modes_of_type = fun vt ->
 let aircrafts = Hashtbl.create 3
 
 (** Broadcast of the received aircrafts *)
-let aircraft_msg_period = 500 (* ms *)
+let aircraft_msg_period = 200 (* ms *)
 let wind_msg_period = 5000 (* ms *)
 let aircraft_alerts_period = 1000 (* ms *)
 let send_aircrafts_msg = fun _asker _values ->
@@ -368,8 +368,9 @@ let send_aircraft_msg = fun ac ->
         let ac_info = ["ac_id", PprzLink.String ac;
                        "utm_east", cm_of_m_32 pos.utm_x;
                        "utm_north", cm_of_m_32 pos.utm_y;
-                       "course", PprzLink.Int (truncate (10. *. (Geometry_2d.rad2deg a.course)));
                        "alt", cm_of_m_32 a.alt;
+                       "utm_zone", PprzLink.Int pos.utm_zone;
+                       "course", PprzLink.Int (truncate (10. *. (Geometry_2d.rad2deg a.course)));
                        "speed", cm_of_m a.gspeed;
                        "climb", cm_of_m a.climb;
                        "itow", PprzLink.Int64 a.itow] in

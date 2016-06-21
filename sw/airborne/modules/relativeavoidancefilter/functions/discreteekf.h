@@ -6,30 +6,30 @@
 #include "string.h"
 #include "math.h"
 
-#define N 9
-#define M 8
+#define EKF_N 9
+#define EKF_M 8
 
 typedef struct ekf_filter {
 
   /* state                           */
-  float X[N];
+  float X[EKF_N];
   /* state prediction                */
-  float Xp[N];
+  float Xp[EKF_N];
   /* measurement prediction          */
-  float Zp[M];
+  float Zp[EKF_M];
   /* state covariance matrix         */
-  float P[N*N];
+  float P[EKF_N*EKF_N];
   /* process covariance noise        */
-  float Q[N*N];
+  float Q[EKF_N*EKF_N];
   /* measurement covariance noise    */
-  float R[M*M];
+  float R[EKF_M*EKF_M];
   /* jacobian of the measure wrt X   */
-  float H[N*M];
+  float H[EKF_N*EKF_M];
 
   /* Temp matrices */
-  float tmp1[N*N];
-  float tmp2[N*N];
-  float tmp3[N*N];
+  float tmp1[EKF_N*EKF_N];
+  float tmp2[EKF_N*EKF_N];
+  float tmp3[EKF_N*EKF_N];
 
   float dt;
 

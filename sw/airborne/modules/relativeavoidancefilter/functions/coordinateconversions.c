@@ -74,13 +74,13 @@ void keepbounded(float *value, float min, float max)
 }
 
 
-void ENUearthToNEDbody(float xe, float ye, float psi, float *xb, float *yb)
+void GazeboToBody(float xe, float ye, float psi, float *xb, float *yb)
 {
 	*xb = xe*cos(psi) - ye*sin(psi);
 	*yb = - xe*sin(psi) - ye*cos(psi);
 }
 
-void NEDbodyToENUearth(float xb, float yb, float psi, float *xe, float *ye)
+void BodyToGazebo(float xb, float yb, float psi, float *xe, float *ye)
 {
 	*xe = xb*cos(-psi) - yb*sin(-psi);
 	*ye = - xb*sin(-psi) - yb*cos(-psi);
