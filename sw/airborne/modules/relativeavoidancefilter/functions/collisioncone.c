@@ -1,16 +1,7 @@
 #include "collisioncone.h"
+#define PSISEARCH 10
 
-
-int collisioncone_assess( float *cc,
-	float relx, float rely,
-	float ownvx, float ownvy,
-	float relvx, float relvy,
-	float radius)
-{
-	collisioncone_update(cc, relx, rely, relvx, relvy, radius);
-	return collisioncone_checkdanger(cc, ownvx, ownvy);
-}
-
+// STANDARD IMPLEMENTATION
 /*
 	Updated the coordinates of the triangle for the collision cone of an obstacle.
 */
@@ -39,29 +30,6 @@ void collisioncone_update( float *cc,
 
 }
 
-/*
-	Updated the coordinates of the triangle for the collision cone of an obstacle.
-	The second one is adjusted to be the fusion of its original self and the first one.
-	It could speed things up a little provided that multiple cones share a similar area and that obstacles are not moving, such that the origins of the triangle are shared.
-*/
-void collisioncone_fuse( float *cc0, float *cc1)
-{
-
-	// 2*PI is added everywhere to avoid the issue where a boundary is in between -ang and +ang
-	if ((atan2(cc1[3], cc1[2]) + 2*M_PI > atan2(cc0[3], cc0[2]) + 2*M_PI) 
-		&& (atan2(cc1[3], cc1[2]) + 2*M_PI < atan2(cc0[5], cc0[4]) + 2*M_PI)) {
-		cc1[2] = cc0[2];
-		cc1[3] = cc0[3];
-	}
-
-	if ((atan2(cc1[5], cc1[4]) + 2*M_PI > atan2(cc0[3], cc0[2]) + 2*M_PI)
-		&& (atan2(cc1[5], cc1[4]) + 2*M_PI < atan2(cc0[5], cc0[4]) + 2*M_PI)) {
-		cc1[4] = cc0[4];
-		cc1[5] = cc0[5];
-	}
-}
-
-
 bool collisioncone_checkdanger( float *cc, float ownvx, float ownvy)
 {
 	float vv[2];
@@ -88,7 +56,7 @@ void collisioncone_findnewcmd( float cc[2][6],
 	float psi0 = *psi_des;
 	float vx, vy;
 
-	while (*v_des <= 2.0) {
+	while (*v_des <= 1.0) {
 		polar2cart(*v_des, *psi_des, &vx, &vy);
 
 		for (i = 0; i < nfilters; i++) { // Check if we succeed
@@ -116,11 +84,6 @@ void collisioncone_findnewcmd( float cc[2][6],
 	*v_des = 0.0;
 };
 
-// float collisioncone_expansionangle( float range, float R, float e )
-// {
-// 	return atan((range+(2*R)+e)/range);
-// }
-
 float movingaveragefilter(float *vec, int size, float newelement)
 {
 	array_shiftleft(vec, size, 1);
@@ -129,3 +92,69 @@ float movingaveragefilter(float *vec, int size, float newelement)
 	vec[size-1] = out;
 	return out;
 }
+
+
+///// BOOLEAN IMPLEMENTATION FUNCTIONS
+
+void setboolinrange( bool *cc, float lb, float up, int d){
+	int i;
+		if (lb>up){ // crosses over 360 line
+			for (i = 0.0; i < d; i++) {
+				if (((PSISEARCH*i) > lb) || ((PSISEARCH*i) < up))
+					cc[i] = true;
+			}
+		}
+
+		else{
+			for (i = 0; i < d; i++) {
+				if (((PSISEARCH*i) > lb) && ((PSISEARCH*i) < up))
+					cc[i] = true;
+			}
+		}
+}
+
+/*
+	Updated the coordinates of the triangle for the collision cone of an obstacle.
+*/
+void collisioncone_update_bool( bool *cc,
+	float relx, float rely,
+	float radius)
+{
+	float range, bearing;
+	cart2polar(relx, rely, &range, &bearing);
+
+	float lb = bearing - atan(radius/(1.0*range)); // y_body
+	float up = bearing + atan(radius/(1.0*range));
+	wrapTo2Pi(&lb);
+	wrapTo2Pi(&up);
+
+	lb = 180.0 / M_PI * lb;
+	up = 180.0 / M_PI * up;
+
+	setboolinrange(cc, lb, up, 36);
+}
+
+bool collisioncone_findnewdir_bool( bool *cc, float *psi_des)
+{
+	int i;
+	float temp = *psi_des;
+	*psi_des = 180.0 / M_PI * *psi_des; // convert to degrees
+	float p = *psi_des/PSISEARCH; // round it here
+	array_shiftleft_bool(cc, 36, (int)p);
+	
+	for (i = 0; i < 36; i++)
+	{
+		if (!cc[i]){
+			*psi_des = (i+(int)p)*PSISEARCH;
+			*psi_des = M_PI / 180.0 * *psi_des; // convert to radians
+			wrapTo2Pi(psi_des);
+			break;
+		}
+	}
+
+	if (abs(temp - *psi_des) < 0.01) // check equal but with rounding
+		return false;
+	else
+		return true;
+
+};

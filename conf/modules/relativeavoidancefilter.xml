@@ -1,13 +1,11 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
 <module name="relativeavoidancefilter" dir="relativeavoidancefilter">
-	
 	<doc>
 		<description>
 			Relative Localization Filter for collision avoidance between drones
 		</description>
 	</doc>
-
 	<header>
 		<!-- Main file -->
 		<file name="relativeavoidancefilter.h"/>
@@ -21,10 +19,8 @@
 		<file name="functions/shape.h"/>
 		<file name="functions/randomgenerator.h"/>
 	</header>
-	
-	<init fun="rafilter_init()"/>
-	<periodic fun="rafilter_periodic()" freq="5" autorun="TRUE"/>
-	
+	<init fun="relativeavoidancefilter_init()"/>
+	<periodic fun="relativeavoidancefilter_periodic()" freq="20" autorun="TRUE"/>
 	<makefile>
 		<!-- Main file -->
 		<file name="relativeavoidancefilter.c"/>
@@ -38,5 +34,4 @@
 		<file name="functions/shape.c"/>
 		<file name="functions/randomgenerator.c"/>
 	</makefile>
-
 </module>

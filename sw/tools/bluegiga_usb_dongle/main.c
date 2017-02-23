@@ -573,7 +573,7 @@ void ble_evt_gap_scan_response(const struct ble_msg_gap_scan_response_evt_t *msg
 	uint8 i = 0;
     	while(i++ < MAX_DEVICES)
     	{
-    	  if (!cmp_addr(msg->sender.addr, connected_addr[i].addr))// || (msg->sender.addr[0] != 0xdf && msg->sender.addr[0] != 0x43 && msg->sender.addr[0] != 0x54))
+    	  if (!cmp_addr(msg->sender.addr, connected_addr[i].addr))
     	    return;
     	}
     
@@ -977,6 +977,7 @@ int main(int argc, char *argv[])
 
     if (strcmp(argv[CLARG_ACTION], "scan") == 0) {
       action = action_scan;
+      connect_all = 0;
     } else if (strcmp(argv[CLARG_ACTION], "info") == 0) {
       action = action_info;
     } else if (strcmp(argv[CLARG_ACTION], "broadcast") == 0 || strcmp(argv[CLARG_ACTION], "broadcast_connect") == 0) {

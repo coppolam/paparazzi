@@ -26,6 +26,7 @@
 #include "modules/multi/rssi.h"
 
 #include "subsystems/datalink/datalink.h"
+#include "subsystems/datalink/downlink.h"
 #include "pprzlink/messages.h"
 
 #include "subsystems/abi.h"                 // rssi messages subscription
@@ -44,11 +45,9 @@ uint8_t rssi_acs_id[NB_ACS_ID];
 
 abi_event ev;
 
-void rssi_cb(uint8_t sender_id __attribute__((unused)), uint8_t _ac_id, int8_t _tx_strength, int8_t _rssi);
-void rssi_cb(uint8_t sender_id __attribute__((unused)), uint8_t _ac_id, int8_t _tx_strength, int8_t _rssi)
+static void rssi_cb(uint8_t sender_id __attribute__((unused)), uint8_t _ac_id, int8_t _tx_strength, int8_t _rssi)
 {
-  if(sender_id != RSSI_MODULE_ID)
-    set_rssi(_ac_id, _tx_strength, _rssi);
+  set_rssi(_ac_id, _tx_strength, _rssi);
 }
 
 void rssi_init()
@@ -74,8 +73,7 @@ void parse_rssi_dl(void)
              DL_RSSI_tx_power(dl_buffer),
              DL_RSSI_rssi(dl_buffer));
   }
-
-  AbiSendMsgRSSI(RSSI_MODULE_ID, sender_id, DL_RSSI_tx_power(dl_buffer), DL_RSSI_rssi(dl_buffer));
+   AbiSendMsgRSSI(RSSI_MODULE_ID, sender_id, DL_RSSI_tx_power(dl_buffer), DL_RSSI_rssi(dl_buffer));
 }
 
 void set_rssi(uint8_t _ac_id, int8_t _tx_strength, int8_t _rssi)
@@ -88,9 +86,8 @@ void set_rssi(uint8_t _ac_id, int8_t _tx_strength, int8_t _rssi)
 
     rssi_acs[rssi_acs_id[_ac_id]].rssi = _rssi;
     rssi_acs[rssi_acs_id[_ac_id]].tx_strength = _tx_strength;
-    
-    AbiSendMsgRSSI(RSSI_MODULE_ID, _ac_id, _tx_strength, _rssi);
   }
+  DOWNLINK_SEND_RSSI(DefaultChannel, DefaultDevice, &_rssi, &_tx_strength);
 }
 
 struct rssi_info_ get_rssi(uint8_t _ac_id)

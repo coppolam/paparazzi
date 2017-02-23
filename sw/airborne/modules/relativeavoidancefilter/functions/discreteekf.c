@@ -137,67 +137,46 @@ void linear_measure(float*X, float* Y, float *H, btmodel *model)
 	float gamma = model->gammal;
 
 	// RSSI measurement
-	Y[0] = Pn - (10.0 * gamma * log10(sqrt(pow(X[0],2.0) + pow(X[1],2.0) + pow(X[8],2.0))));
+	Y[0] = Pn - (10.0 * gamma * log10(sqrt(pow(X[0],2.0) + pow(X[1],2.0) + pow(X[5],2.0))));
 
-	// x velocity of i wrt i body frame
+	// x velocity of i (north)
 	Y[1] = X[2];
 
-	// y velocity of i wrt i body frame
+	// y velocity of i (east)
 	Y[2] = X[3];
 
-	// Orientation of i wrt north
-	Y[3] = X[6];
+	// x velocity of j (east)
+	Y[3] = X[4];
 
-	// x velocity of j wrt j body frame
-	Y[4] = cos( X[6] - X[7] ) * X[4] - sin( X[6] - X[7] ) * X[5];
-
-	// y velocity of j wrt  j body frame
-	Y[5] = sin( X[6] - X[7] ) * X[4] + cos( X[6] - X[7] ) * X[5];
-
-	// Orientation of j wrt north
-	Y[6] = X[7];
+	// y velocity of j (east)
+	Y[4] = X[5];
 
 	// Height difference
-	Y[7] = X[8];
+	Y[5] = X[6];
 
 	// Generate the Jacobian Matrix
 	for (row = 0 ; row < EKF_M ; row++ )
 	{
 		for (col = 0 ; col < EKF_N ; col++ )
 		{
-			if ((row == 0) && (col == 0 || col == 1 || col == 8 ))
-				H[ row*EKF_N+col ] = (-gamma*10/log(10))*(X[col]/(pow(X[0],2.0) + pow(X[1],2.0) + pow(X[8],2.0)));
+			// x, y, and z pos columns are affected by the RSSI
+			if ((row == 0) && (col == 0 || col == 1 || col == 5 )) {
+				H[ row*EKF_N+col ] = (-gamma*10/log(10))*(X[col]/(pow(X[0],2.0) + pow(X[1],2.0) + pow(X[5],2.0)));
+			}
 			
+			// All other values are 1
 			else if (((row == 1) && (col == 2)) ||
 				((row == 2) && (col == 3)) ||
-				((row == 3) && (col == 6)) ||
-				((row == 6) && (col == 7)) ||
-				((row == 7) && (col == 8)))
-			{ 
+				((row == 3) && (col == 4)) ||
+				((row == 4) && (col == 5)) ||
+				((row == 5) && (col == 6)))
+			{
 				H[ row*EKF_N+col ] = 1.0;
 			}
 
-			else if ((row == 4) && (col == 4))
-				H[ row*EKF_N+col ] = cos(X[6]-X[7]);
-			else if ((row == 4) && (col == 5))
-				H[ row*EKF_N+col ] = -sin(X[6]-X[7]);
-			else if ((row == 4) && (col == 6))
-				H[ row*EKF_N+col ] = X[4]*sin(X[7]-X[6]) - X[5] * cos(X[7] - X[6]);
-			else if ((row == 4) && (col == 7))
-				H[ row*EKF_N+col ] = X[4]*sin(X[6]-X[7]) + X[5] * cos(X[6] - X[7]);
-			
-
-			else if ((row == 5) && (col == 4))
-				H[ row*EKF_N+col ] = sin(X[6]-X[7]);
-			else if ((row == 5) && (col == 5))
-				H[ row*EKF_N+col ] = cos(X[6]-X[7]);
-			else if ((row == 5) && (col == 6))
-				H[ row*EKF_N+col ] = X[4]*cos(X[7]-X[6]) + X[5] * sin(X[7] - X[6]);
-			else if ((row == 5) && (col == 7))
-				H[ row*EKF_N+col ] = -X[4]*cos(X[6]-X[7]) + X[5] * sin(X[6] - X[7]);
-
-			else 
+			else {
 				H[ row*EKF_N+col ] = 0.0;
+			}
 		}
 	}
 

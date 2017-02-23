@@ -118,11 +118,13 @@
  * @{
  */
 #define WINDSPEED_I 0
-#define AIRSPEED_I  1
-#define WINDSPEED_F 2
-#define AIRSPEED_F  3
-#define AOA_F       4
-#define SIDESLIP_F  5
+#define DOWNWIND_I  1
+#define AIRSPEED_I  2
+#define WINDSPEED_F 3
+#define DOWNWIND_F  4
+#define AIRSPEED_F  5
+#define AOA_F       6
+#define SIDESLIP_F  7
 /**@}*/
 
 
@@ -184,10 +186,10 @@ struct State {
 
   /**
    * Position in UTM coordinates.
-   * Units x,y: centimetres.
-   * Units z: millimetres above MSL
+   * Units x,y: meters.
+   * Units z: meters above MSL
    */
-  struct UtmCoor_i utm_pos_i;
+  struct UtmCoor_f utm_pos_f;
 
   /**
    * Altitude above ground level.
@@ -209,22 +211,15 @@ struct State {
   struct EcefCoor_f ecef_pos_f;
 
   /**
-     * Position in UTM coordinates.
-     * Units x,y: meters.
-     * Units z: meters above MSL
-     */
-    struct UtmCoor_f utm_pos_f;
-
-  /**
    * Definition of the local (flat earth) coordinate system.
    * Defines the origin of the local NorthEastDown coordinate system
    * in ECEF (EarthCenteredEarthFixed) and LLA (LatitudeLongitudeAlt)
-   * coordinates and the rotation matrix from ECEF to local frame.
+   * coordinates and the roation matrix from ECEF to local frame.
    * (float version)
    */
   struct LtpDef_f ned_origin_f;
 
-  /// True if local float coordinate frame is initialised
+  /// True if local float coordinate frame is initialsed
   bool ned_initialized_f;
 
   /**
@@ -232,23 +227,12 @@ struct State {
    * Defines the origin of the local NorthEastDown coordinate system
    * in UTM coordinates, used as a reference when ned_origin is not
    * initialized.
-   * (int version)
-   */
-  struct UtmCoor_i utm_origin_i;
-
-  /// True if utm origin (int) coordinate frame is initialised
-  bool utm_initialized_i;
-
-  /**
-   * Definition of the origin of Utm coordinate system.
-   * Defines the origin of the local NorthEastDown coordinate system
-   * in UTM coordinates, used as a reference when ned_origin is not
-   * initialized.
+   * Altitude is height above MSL.
    * (float version)
    */
   struct UtmCoor_f utm_origin_f;
 
-  /// True if utm origin (int) coordinate frame is initialised
+  /// True if utm origin (float) coordinate frame is initialsed
   bool utm_initialized_f;
 
   /**
@@ -411,10 +395,13 @@ struct State {
   uint8_t wind_air_status;
 
   /**
-   * Horizontal windspeed in north/east.
+   * Horizontal windspeed in north/east/down.
    * Units: m/s in BFP with #INT32_SPEED_FRAC
    */
-  struct Int32Vect2 h_windspeed_i;
+  union {
+    struct Int32Vect3 vect3;
+    struct Int32Vect2 vect2;
+  } windspeed_i;
 
   /**
    * Norm of relative wind speed.
@@ -424,9 +411,12 @@ struct State {
 
   /**
    * Horizontal windspeed.
-   * Units: m/s with x=north, y=east
+   * Units: m/s with x=north, y=east, z=down
    */
-  struct FloatVect2 h_windspeed_f;
+  union {
+    struct FloatVect3 vect3;
+    struct FloatVect2 vect2;
+  } windspeed_f;
 
   /**
    * Norm of relative air speed.
@@ -457,22 +447,6 @@ extern void stateInit(void);
 /** @addtogroup state_position
  *  @{ */
 
-/// Set the local (flat earth) coordinate frame origin from UTM (int).
-static inline void stateSetLocalUtmOrigin_i(struct UtmCoor_i *utm_def)
-{
-  state.utm_origin_i = *utm_def;
-  state.utm_initialized_i = TRUE;
-
-  UTM_FLOAT_OF_BFP(state.utm_origin_f, state.utm_origin_i);
-  state.utm_initialized_f = TRUE;
-
-  /* clear bits for all local frame representations */
-  state.pos_status &= ~(POS_LOCAL_COORD);
-  state.speed_status &= ~(SPEED_LOCAL_COORD);
-  ClearBit(state.accel_status, ACCEL_NED_I);
-  ClearBit(state.accel_status, ACCEL_NED_F);
-}
-
 /// Set the local (flat earth) coordinate frame origin (int).
 static inline void stateSetLocalOrigin_i(struct LtpDef_i *ltp_def)
 {
@@ -491,21 +465,19 @@ static inline void stateSetLocalOrigin_i(struct LtpDef_i *ltp_def)
 
   state.ned_initialized_i = true;
   state.ned_initialized_f = true;
-
-  struct UtmCoor_i utm_def;
-  utm_of_lla_i(&utm_def, &state.ned_origin_i.lla);
-  stateSetLocalUtmOrigin_i(&utm_def);
-  state.utm_initialized_i = true;
 }
 
 /// Set the local (flat earth) coordinate frame origin from UTM (float).
-static inline void stateSetLocalUtmOrigin_f(struct UtmCoor_f *utm_def_f)
+static inline void stateSetLocalUtmOrigin_f(struct UtmCoor_f *utm_def)
 {
-  struct UtmCoor_i utm_def;
-  UTM_BFP_OF_REAL(utm_def,*utm_def_f);
-  stateSetLocalUtmOrigin_i(&utm_def);
-
+  state.utm_origin_f = *utm_def;
   state.utm_initialized_f = true;
+
+  /* clear bits for all local frame representations */
+  state.pos_status &= ~(POS_LOCAL_COORD);
+  state.speed_status &= ~(SPEED_LOCAL_COORD);
+  ClearBit(state.accel_status, ACCEL_NED_I);
+  ClearBit(state.accel_status, ACCEL_NED_F);
 }
 /*******************************************************************************
  *                                                                             *
@@ -514,7 +486,6 @@ static inline void stateSetLocalUtmOrigin_f(struct UtmCoor_f *utm_def_f)
  ******************************************************************************/
 
 /************* declaration of transformation functions ************/
-extern void stateCalcPositionUtm_i(void);
 extern void stateCalcPositionEcef_i(void);
 extern void stateCalcPositionNed_i(void);
 extern void stateCalcPositionEnu_i(void);
@@ -579,8 +550,7 @@ static inline void stateSetPosition_i(
   struct EcefCoor_i *ecef_pos,
   struct NedCoor_i *ned_pos,
   struct EnuCoor_i *enu_pos,
-  struct LlaCoor_i *lla_pos,
-  struct UtmCoor_i *utm_pos)
+  struct LlaCoor_i *lla_pos)
 {
   /* clear all status bit */
   state.pos_status = 0;
@@ -600,18 +570,6 @@ static inline void stateSetPosition_i(
     LLA_COPY(state.lla_pos_i, *lla_pos);
     state.pos_status |= (1 << POS_LLA_I);
   }
-  if (utm_pos != NULL) {
-    UTM_COPY(state.utm_pos_i, *utm_pos);
-    state.pos_status |= (1 << POS_UTM_I);
-  }
-}
-
-/// Set position from UTM coordinates (int).
-static inline void stateSetPositionUtm_i(struct UtmCoor_i *utm_pos)
-{
-  state.utm_pos_i = *utm_pos;
-  /* clear bits for all position representations and only set the new one */
-  state.pos_status = (1 << POS_UTM_I);
 }
 
 /// Set position from UTM coordinates (float).
@@ -722,15 +680,6 @@ static inline struct LlaCoor_i *stateGetPositionLla_i(void)
     stateCalcPositionLla_i();
   }
   return &state.lla_pos_i;
-}
-
-/// Get position in UTM coordinates (int).
-static inline struct UtmCoor_i *stateGetPositionUtm_i(void)
-{
-  if (!bit_is_set(state.pos_status, POS_UTM_I)) {
-    stateCalcPositionUtm_i();
-  }
-  return &state.utm_pos_i;
 }
 
 /// Get position in UTM coordinates (float).
@@ -1252,8 +1201,10 @@ static inline struct FloatRates *stateGetBodyRates_f(void)
 
 /************* declaration of transformation functions ************/
 extern void stateCalcHorizontalWindspeed_i(void);
+extern void stateCalcVerticalWindspeed_i(void);
 extern void stateCalcAirspeed_i(void);
 extern void stateCalcHorizontalWindspeed_f(void);
+extern void stateCalcVerticalWindspeed_f(void);
 extern void stateCalcAirspeed_f(void);
 
 
@@ -1263,6 +1214,12 @@ extern void stateCalcAirspeed_f(void);
 static inline bool stateIsWindspeedValid(void)
 {
   return (state.wind_air_status &= ~((1 << WINDSPEED_I) | (1 << WINDSPEED_F)));
+}
+
+/// test if vertical wind speed is available.
+static inline bool stateIsVerticalWindspeedValid(void)
+{
+  return (state.wind_air_status &= ~((1 << DOWNWIND_I) | (1 << DOWNWIND_F)));
 }
 
 /// test if air speed is available.
@@ -1288,10 +1245,19 @@ static inline bool stateIsSideslipValid(void)
 /// Set horizontal windspeed (int).
 static inline void stateSetHorizontalWindspeed_i(struct Int32Vect2 *h_windspeed)
 {
-  VECT2_COPY(state.h_windspeed_i, *h_windspeed);
-  /* clear bits for all windspeed representations and only set the new one */
+  VECT2_COPY(state.windspeed_i.vect2, *h_windspeed);
+  /* clear bits for all horizontal windspeed representations and only set the new one */
   ClearBit(state.wind_air_status, WINDSPEED_F);
   SetBit(state.wind_air_status, WINDSPEED_I);
+}
+
+/// Set vertical windspeed (int).
+static inline void stateSetVerticalWindspeed_i(int32_t v_windspeed)
+{
+  state.windspeed_i.vect3.z = v_windspeed;
+  /* clear bits for all vertical windspeed representations and only set the new one */
+  ClearBit(state.wind_air_status, DOWNWIND_F);
+  SetBit(state.wind_air_status, DOWNWIND_I);
 }
 
 /// Set airspeed (int).
@@ -1306,10 +1272,19 @@ static inline void stateSetAirspeed_i(int32_t airspeed)
 /// Set horizontal windspeed (float).
 static inline void stateSetHorizontalWindspeed_f(struct FloatVect2 *h_windspeed)
 {
-  VECT2_COPY(state.h_windspeed_f, *h_windspeed);
-  /* clear bits for all windspeed representations and only set the new one */
+  VECT2_COPY(state.windspeed_f.vect2, *h_windspeed);
+  /* clear bits for all horizontal windspeed representations and only set the new one */
   ClearBit(state.wind_air_status, WINDSPEED_I);
   SetBit(state.wind_air_status, WINDSPEED_F);
+}
+
+/// Set vertical windspeed (float).
+static inline void stateSetVerticalWindspeed_f(float v_windspeed)
+{
+  state.windspeed_f.vect3.z = v_windspeed;
+  /* clear bits for all vertical windspeed representations and only set the new one */
+  ClearBit(state.wind_air_status, DOWNWIND_I);
+  SetBit(state.wind_air_status, DOWNWIND_F);
 }
 
 /// Set airspeed (float).
@@ -1347,7 +1322,28 @@ static inline struct Int32Vect2 *stateGetHorizontalWindspeed_i(void)
   if (!bit_is_set(state.wind_air_status, WINDSPEED_I)) {
     stateCalcHorizontalWindspeed_i();
   }
-  return &state.h_windspeed_i;
+  return &state.windspeed_i.vect2;
+}
+
+/// Get vertical windspeed (int).
+static inline float stateGetVerticalWindspeed_i(void)
+{
+  if (!bit_is_set(state.wind_air_status, DOWNWIND_I)) {
+    stateCalcVerticalWindspeed_i();
+  }
+  return state.windspeed_i.vect3.z;
+}
+
+/// Get windspeed (int).
+static inline struct Int32Vect3 *stateGetWindspeed_i(void)
+{
+  if (!bit_is_set(state.wind_air_status, WINDSPEED_I)) {
+    stateCalcHorizontalWindspeed_i();
+  }
+  if (!bit_is_set(state.wind_air_status, DOWNWIND_I)) {
+    stateCalcVerticalWindspeed_i();
+  }
+  return &state.windspeed_i.vect3;
 }
 
 /// Get airspeed (int).
@@ -1365,7 +1361,28 @@ static inline struct FloatVect2 *stateGetHorizontalWindspeed_f(void)
   if (!bit_is_set(state.wind_air_status, WINDSPEED_F)) {
     stateCalcHorizontalWindspeed_f();
   }
-  return &state.h_windspeed_f;
+  return &state.windspeed_f.vect2;
+}
+
+/// Get vertical windspeed (float).
+static inline float stateGetVerticalWindspeed_f(void)
+{
+  if (!bit_is_set(state.wind_air_status, DOWNWIND_F)) {
+    stateCalcVerticalWindspeed_f();
+  }
+  return state.windspeed_f.vect3.z;
+}
+
+/// Get windspeed (float).
+static inline struct FloatVect3 *stateGetWindspeed_f(void)
+{
+  if (!bit_is_set(state.wind_air_status, WINDSPEED_F)) {
+    stateCalcHorizontalWindspeed_f();
+  }
+  if (!bit_is_set(state.wind_air_status, DOWNWIND_F)) {
+    stateCalcVerticalWindspeed_f();
+  }
+  return &state.windspeed_f.vect3;
 }
 
 /// Get airspeed (float).

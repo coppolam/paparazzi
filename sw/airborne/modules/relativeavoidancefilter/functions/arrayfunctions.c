@@ -21,6 +21,23 @@ void array_shiftleft(float *array, int size, int shift)
 
 }
 
+void array_shiftleft_bool(bool *array, int size, int shift)
+{
+	int i;
+	bool temp[size];
+	memcpy(temp, array, size * sizeof(bool));
+
+	for (i = 0; i < size; i++)
+	{
+		if (i+shift >= size) {
+			array[i] = temp[i+shift - size];
+		}
+		else { 
+				array[i] = temp[i+shift];
+			}
+	}
+
+}
 
 /*
 Shifts an array to the right by a defined number of steps at a time
@@ -30,6 +47,21 @@ void array_shiftright(float *array, int size, int shift)
 	int i;
 	float temp[size];
 	memcpy(temp, array, size * sizeof(float));
+
+	for (i = 0; i < size; i++) {
+		if (i-shift < 0) {		
+			array[i] = temp[i-shift + size];
+		}
+		else {
+			array[i] = temp[i-shift];
+		}
+	}
+}
+void array_shiftright_bool(bool *array, int size, int shift)
+{
+	int i;
+	bool temp[size];
+	memcpy(temp, array, size * sizeof(bool));
 
 	for (i = 0; i < size; i++) {
 		if (i-shift < 0) {		
@@ -120,6 +152,7 @@ void array_arraymax(int length, float *x1, float *x2)
 	}
 }
 
+/* Finds a value in an array and returns the location */
 bool array_find_int(int length, int *x, int value, int *location) {
 	int i;
 	for (i = 0; i < length; i++) {
@@ -155,6 +188,17 @@ void array_print_int(int length, int *x)
 
 	printf("\n");
 }
+
+void array_print_bool(int length, bool *x)
+{
+	int i;
+
+	for (i = 0; i < length; i++) {
+		printf("%d\t", x[i]);
+	}
+
+	printf("\n");
+}
 #endif
 
 void array_make_zeros(int length, float *x)
@@ -169,7 +213,15 @@ void array_make_zeros_int(int length, int *x)
 {
 	int i;
 	for(i = 0 ; i < length; i++) {
-		x[i] = 0.0;
+		x[i] = 0;
+	}
+};
+
+void array_make_zeros_bool(int length, bool *x)
+{
+	int i;
+	for(i = 0 ; i < length; i++) {
+		x[i] = false;
 	}
 };
 
@@ -209,4 +261,9 @@ float array_sum_weighted(int length, float *x)
 		out+=(x[i]*(1/((float)length-(float)i+1.0)));
 	}
 	return out;
+}
+
+void array_copy_bool(bool *array_out, bool *array_in, int size)
+{
+	memcpy(array_out, array_in, size * sizeof(bool));
 }

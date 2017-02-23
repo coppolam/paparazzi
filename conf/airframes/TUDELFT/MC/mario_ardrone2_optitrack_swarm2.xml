@@ -4,36 +4,33 @@
 
   <firmware name="rotorcraft">
     <target name="ap" board="ardrone2">
-      <!-- HOST is the Name or IP of your AC -->
-      <configure name="HOST" value="192.168.0.202"/>
-      <!-- MODEM_HOST is where the data should go to, for short normally your laptop IP address -->
-      <configure name="MODEM_HOST" value="192.168.0.45"/>
-      <configure name="MODEM_BROADCAST" value="FALSE"/>
       <configure name="USE_BARO_BOARD" value="FALSE"/>
+      <!-- HOST is the Name or IP of your AC -->
+      <configure name="HOST" value="192.168.40.202"/>
+      <!-- MODEM_HOST is where the data should go to, for short normally your laptop IP address -->
+      <configure name="MODEM_HOST" value="192.168.40.146"/>
+      <configure name="MODEM_BROADCAST" value="FALSE"/>
     </target>
 
     <target name="nps" board="pc">
-      <subsystem name="fdm" type="jsbsim"/>
+      <module name="fdm" type="jsbsim"/>
     </target>
 
     <define name="FAILSAFE_DESCENT_SPEED" value="0.5"/>
     <define name="USE_SONAR" value="0"/>
-
     <configure name="USE_MAGNETOMETER" value="0"/>
-	<!-- Subsystem section -->
-    <subsystem name="telemetry" type="transparent_udp"/>
-    <!--subsystem name="telemetry" type="transparent_usb"/-->
-    <subsystem name="radio_control" type="datalink"/>
-    <subsystem name="motor_mixing"/>
-    <subsystem name="actuators" type="ardrone2"/>
-    <subsystem name="imu" type="ardrone2"/>
-    <subsystem name="gps" type="datalink"/>
-    <subsystem name="stabilization" type="indi"/>
-    <subsystem name="ahrs" type="int_cmpl_quat"/>
-    <subsystem name="ins" type="extended">
-      <define name="INS_INT_VEL_ID" value="ABI_DISABLE"/>
-    </subsystem>
-  </firmware>
+
+  <!-- Subsystem section -->
+    <module name="telemetry" type="transparent_udp"/>
+    <module name="radio_control" type="datalink"/>
+    <module name="motor_mixing"/>
+    <module name="actuators" type="ardrone2"/>
+    <module name="imu" type="ardrone2"/>
+    <module name="gps" type="datalink"/>
+    <module name="stabilization" type="indi"/>
+    <module name="ahrs" type="int_cmpl_quat"/>
+    <module name="ins" type="extended"/>
+    </firmware>
 
      <section name="RELATIVEAVOIDANCEFILTER" prefix="">
       <define name="MAVSIZE" value="0.6"/> <!-- Size of collision cone (= 1.0 + 2*radius)-->
@@ -43,17 +40,17 @@
       <define name="V_NOMINAL" value="0.5"/> <!-- Desired nominal velocity -->
      </section>
 
-  <modules main_freq="512">
-  <load name="bat_voltage_ardrone2.xml"/>
-	<load name="extra_dl.xml">
+<modules main_freq="512">
+    <module name="bat_voltage_ardrone2.xml"/>
+    <!--module name="stereocam_droplet.xml" /-->
+    <module name="extra_dl.xml">
       <configure name="EXTRA_DL_PORT" value="UDP1"/>
       <define name="UDP1_PORT_IN" value="5000"/>
       <define name="UDP1_PORT_OUT" value="5001"/>
       <define name="UDP1_HOST" value="127.0.0.1"/>
-	</load>
-	  <load name="traffic_info.xml"/>
-    <load name="cv_opticflow.xml"/>
-    <load name="rssi.xml"/>
+    </module>
+    <module name="traffic_info.xml"/>
+    <module name="rssi.xml"/>
     <load name="relativeavoidancefilter.xml"/>
   </modules>
 
@@ -128,9 +125,7 @@
   <section name="INS" prefix="INS_">
     <!-- Use GPS altitude measurments and set the R gain -->
     <define name="USE_GPS_ALT" value="1"/>
-    <define name="VFF_R_GPS" value="0.001"/>
-    <define name="USE_GPS_ALT_SPEED" value="1"/>
-    <define name="VFF_VZ_R_GPS" value="0.001"/>
+    <define name="VFF_R_GPS" value="0.01"/>
   </section>
 
 
@@ -200,17 +195,15 @@
 
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
-    <define name="MAX_BANK" value="30" unit="deg"/>
+    <define name="MAX_BANK" value="20" unit="deg"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
 
-    <define name="PGAIN" value="330"/>
-    <define name="DGAIN" value="260"/>
-    <define name="IGAIN" value="0"/>
+    <define name="PGAIN" value="363"/>
+    <define name="DGAIN" value="237"/>
+    <define name="IGAIN" value="30"/>
     <define name="VGAIN" value="0"/>
-    <define name="AGAIN" value="40"/>
-    <define name="REF_TAU" value="0.3"/>
-    <define name="REF_MAX_SPEED" value="1."/>
+    <define name="AGAIN" value="0"/>
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">

@@ -15,149 +15,153 @@
 #include "subsystems/abi.h"
 #include "subsystems/datalink/telemetry.h"
 
-//#include "subsystems/gps.h"
-
-#ifndef SENDER_ID
-#define SENDER_ID 1
+#ifndef STEREOCAM2STATE_SENDER_ID
+#define STEREOCAM2STATE_SENDER_ID ABI_BROADCAST
 #endif
 
-/** ABI binding for gps messages*/
-#ifndef STEREOCAM_GPS_ID
-#define STEREOCAM_GPS_ID GPS_MULTI_ID
+#ifndef STEREOCAM2STATE_RECEIVED_DATA_TYPE
+#define STEREOCAM2STATE_RECEIVED_DATA_TYPE 0
 #endif
-static abi_event gps_ev;
+PRINT_CONFIG_VAR(STEREOCAM2STATE_RECEIVED_DATA_TYPE)
 
-
-/** For extra functionality for derotation of velocity to state measurements*/
-#ifndef USE_DEROTATION_OPTICFLOW
-#define USE_DEROTATION_OPTICFLOW FALSE
+#if STEREOCAM2STATE_RECEIVED_DATA_TYPE == 0
+#ifndef STEREOCAM2STATE_EDGEFLOW_PIXELWISE
+#define STEREOCAM2STATE_EDGEFLOW_PIXELWISE FALSE
+PRINT_CONFIG_VAR(STEREOCAM2STATE_EDGEFLOW_PIXELWISE)
 #endif
-#ifndef STATE_MEASURE_OPTICFLOW
-#define STATE_MEASURE_OPTICFLOW TRUE
+uint8_t stereocam_medianfilter_on = 1;
 #endif
+PRINT_CONFIG_VAR(STEREOCAM2STATE_EDGEFLOW_PIXELWISE)
 
-static float prev_phi;
-static float prev_theta;
+#include "filters/median_filter.h"
+struct MedianFilterInt medianfilter_x, medianfilter_y, medianfilter_z, medianfilter_agl;
 
-struct GpsStereoCam gps_stereocam;
+#include "subsystems/datalink/telemetry.h"
 
-void stereocam_to_state(float dphi, float dtheta);
+float distance_stereo=2.0f;
 
-static void stereocam_gps_cb(uint8_t sender_id __attribute__((unused)),
-                             uint32_t stamp __attribute__((unused)),
-                             struct GpsState *gps_s)
-{
-  gps_stereocam.ecef_vel.x = gps_s->ecef_vel.x;
-  gps_stereocam.ecef_vel.y = gps_s->ecef_vel.y;
-  gps_stereocam.ecef_vel.z = gps_s->ecef_vel.y;
-
-}
+void stereocam_to_state(void);
 
 void stereo_to_state_init(void)
 {
-  //subscribe to GPS abi-messages for state measurements
-  AbiBindMsgGPS(STEREOCAM_GPS_ID, &gps_ev, stereocam_gps_cb);
+
+  init_median_filter(&medianfilter_x);
+  init_median_filter(&medianfilter_y);
+  init_median_filter(&medianfilter_z);
+  init_median_filter(&medianfilter_agl);
 
 }
+
 void stereo_to_state_periodic(void)
 {
-
   if (stereocam_data.fresh) {
+    stereocam_to_state();
     stereocam_data.fresh = 0;
-    float phi = stateGetNedToBodyEulers_f()->phi;
-    float theta = stateGetNedToBodyEulers_f()->theta;
-    float dphi =  phi - prev_phi;
-    float dtheta = theta - prev_theta;
-
-    stereocam_to_state(dphi, dtheta);
-
-    prev_theta = theta;
-    prev_phi = phi;
   }
 }
 
-void stereocam_to_state(float dphi, float dtheta)
+void stereocam_to_state(void)
 {
+  int16_t RES = 100;
 
-  // Get info from stereocam data
-  float vel_hor = ((float)(stereocam_data.data[8]) - 127) / 100;
-  float vel_ver = ((float)(stereocam_data.data[9]) - 127) / 100;
-  float vel_x = 0;
-  float vel_y = 0;
+  // Sort the info from stereocam data from UART
 
+  // 0 = stereoboard's #define SEND_EDGEFLOW
+#if STEREOCAM2STATE_RECEIVED_DATA_TYPE == 0
+  // opticflow and divergence (unscaled with depth)
+  int16_t div_x = (int16_t)stereocam_data.data[0] << 8;
+  div_x |= (int16_t)stereocam_data.data[1];
+  int16_t flow_x = (int16_t)stereocam_data.data[2] << 8;
+  flow_x |= (int16_t)stereocam_data.data[3];
+  int16_t div_y = (int16_t)stereocam_data.data[4] << 8;
+  div_y |= (int16_t)stereocam_data.data[5];
+  int16_t flow_y = (int16_t)stereocam_data.data[6] << 8;
+  flow_y |= (int16_t)stereocam_data.data[7];
 
-  // Calculate derotated velocity
-#if USE_DEROTATION_OPTICFLOW
-  float agl_stereo = (float)(stereocam_data.data[4]) / 10;
+  uint8_t agl = stereocam_data.data[8]; // in cm //TODO: use agl for in a guided obstacle avoidance.
+  //float fps = (float)stereocam_data.data[9];
+  uint8_t obst_px = stereocam_data.data[9];
 
+  // velocity global
+  int16_t vel_x_global_int = (int16_t)stereocam_data.data[10] << 8;
+  vel_x_global_int |= (int16_t)stereocam_data.data[11];
+  int16_t vel_y_global_int = (int16_t)stereocam_data.data[12] << 8;
+  vel_y_global_int |= (int16_t)stereocam_data.data[13];
+  int16_t vel_z_global_int = (int16_t)stereocam_data.data[14] << 8;
+  vel_z_global_int |= (int16_t)stereocam_data.data[15];
 
-  float diff_flow_hor = dtheta * 128 / 1.04;
-  float diff_flow_ver = dphi * 96 / 0.785;
+  // Velocity Pixelwise
+  int16_t vel_x_pixelwise_int = (int16_t)stereocam_data.data[16] << 8;
+  vel_x_pixelwise_int |= (int16_t)stereocam_data.data[17];
+  int16_t vel_z_pixelwise_int = (int16_t)stereocam_data.data[18] << 8;
+  vel_z_pixelwise_int |= (int16_t)stereocam_data.data[19];
 
-  float diff_vel_hor = diff_flow_hor * agl_stereo * 12 * 1.04 / 128;
-  float diff_vel_ver = diff_flow_ver * agl_stereo * 12 * 0.785 / 96;
+// Select what type of velocity estimate fom edgeflow is wanted
+#if STEREOCAM2STATE_EDGEFLOW_PIXELWISE == TRUE
+  struct FloatVect3 camera_frame_vel;
+  camera_frame_vel.x = (float)vel_x_pixelwise_int / RES;
+  camera_frame_vel.y = (float)vel_y_global_int / RES;
+  camera_frame_vel.z = (float)vel_z_pixelwise_int / RES;
 
-  vel_x = - (vel_ver - diff_vel_ver);
-  vel_y = (vel_hor - diff_vel_hor);
+#else
+  struct FloatVect3 camera_frame_vel;
+  camera_frame_vel.x = (float)vel_x_global_int / RES;
+  camera_frame_vel.y = (float)vel_y_global_int / RES;
+  camera_frame_vel.z = (float)vel_z_global_int / RES;
+
 #endif
 
-  // Derotate velocity and transform from frame to body coordinates
-  vel_x = - (vel_ver);
-  vel_y = (vel_hor);
 
-
-#if STATE_MEASURE_OPTICFLOW
-  // Calculate velocity in body fixed coordinates from opti-track and the state filter
-  struct NedCoor_f coordinates_speed_state;
-  coordinates_speed_state.x = stateGetSpeedNed_f()->x;
-  coordinates_speed_state.y = stateGetSpeedNed_f()->y;
-  coordinates_speed_state.z = stateGetSpeedNed_f()->z;
-
-  struct NedCoor_f opti_state;
-  opti_state.x = (float)(gps_stereocam.ecef_vel.y) / 100;
-  opti_state.y = (float)(gps_stereocam.ecef_vel.x) / 100;
-  opti_state.z = -(float)(gps_stereocam.ecef_vel.z) / 100;
-
-  struct FloatVect3 velocity_rot_state;
-  struct FloatVect3 velocity_rot_gps;
-
-  float_rmat_vmult(&velocity_rot_state , stateGetNedToBodyRMat_f(), (struct FloatVect3 *)&coordinates_speed_state);
-  float_rmat_vmult(&velocity_rot_gps , stateGetNedToBodyRMat_f(), (struct FloatVect3 *)&opti_state);
-
-  float vel_x_opti = -((float)(velocity_rot_gps.y));
-  float vel_y_opti = ((float)(velocity_rot_gps.x));
-
-  // Calculate velocity error
-  float vel_x_error = vel_x_opti - vel_x;
-  float vel_y_error = vel_y_opti - vel_y;
-
-//TODO:: Check out why vel_x_opti is 10 x big as stereocamera's output
-  stereocam_data.data[8] = (uint8_t)((vel_x * 10) + 127); // dm/s
-  stereocam_data.data[9] = (uint8_t)((vel_y * 10) + 127); // dm/s
-  stereocam_data.data[19] = (uint8_t)((vel_x_opti) * 10 + 127); // dm/s
-  stereocam_data.data[20] = (uint8_t)((vel_y_opti) * 10 + 127); // dm/s
-  stereocam_data.data[21] = (uint8_t)((vel_x_error) * 10 + 127); // dm/s
-  stereocam_data.data[22] = (uint8_t)((vel_y_error) * 10 + 127); // dm/s
-  stereocam_data.data[23] = (uint8_t)((velocity_rot_state.x) * 10 + 127); // dm/s
-  stereocam_data.data[24] = (uint8_t)((velocity_rot_state.y) * 10 + 127); // dm/s
-
-  //Send measurement values in same structure as stereocam message (make sure SEND_STEREO in stereocam.c is FALSE)
-  uint8_t frequency = 0;
-  DOWNLINK_SEND_STEREO_IMG(DefaultChannel, DefaultDevice, &frequency, &(stereocam_data.len), stereocam_data.len,
-                           stereocam_data.data);
-#endif
+//Rotate velocity back to quad's frame
+  struct FloatVect3 quad_body_vel;
+  float_rmat_transp_vmult(&quad_body_vel, &body_to_stereocam, &camera_frame_vel);
 
   //Send velocity estimate to state
   //TODO:: Make variance dependable on line fit error, after new horizontal filter is made
   uint32_t now_ts = get_sys_time_usec();
 
-  if (!(abs(vel_y) > 0.5 || abs(vel_x) > 0.5) || abs(dphi) > 0.05 || abs(dtheta) > 0.05) {
-    AbiSendMsgVELOCITY_ESTIMATE(SENDER_ID, now_ts,
-                                vel_x,
-                                vel_y,
-                                0.0f,
-                                0.3f
-                               );
+  float vel_body_x_processed=0;// = quad_body_vel.x;
+  float vel_body_y_processed = 0;// quad_body_vel.y;
+  float vel_body_z_processed = 0;//quad_body_vel.z;
+
+   quad_body_vel.x = (float)vel_z_pixelwise_int / RES;
+   quad_body_vel.y = -(float)vel_x_pixelwise_int / RES;
+   quad_body_vel.z = (float)vel_y_global_int / RES;
+   float filtered_agl = 0;
+   if ( fabs(quad_body_vel.x)>1)
+	   quad_body_vel.x = 0;
+
+  if (stereocam_medianfilter_on == 1) {
+    // Use a slight median filter to filter out the large outliers before sending it to state
+    // TODO: if a float median filter exist, replace this version
+    vel_body_x_processed = (float)update_median_filter(&medianfilter_x, (int32_t)(quad_body_vel.x * 100)) / 100;
+    vel_body_y_processed = (float)update_median_filter(&medianfilter_y, (int32_t)(quad_body_vel.y * 100)) / 100;
+    vel_body_z_processed = (float)update_median_filter(&medianfilter_z, (int32_t)(quad_body_vel.z * 100)) / 100;
+    filtered_agl = (float)update_median_filter(&medianfilter_agl, (int32_t)(agl * 10)) / 100;
+
   }
+
+  distance_stereo = filtered_agl;
+  float heading_obstacle = (64.0f-(float)(obst_px)) * 57.8f / 128.0f;
+
+  AbiSendMsgSTEREOCAM_OBSTACLE(STEREOCAM2STATE_SENDER_ID,heading_obstacle,filtered_agl);
+  //Send velocities to state
+  AbiSendMsgVELOCITY_ESTIMATE(STEREOCAM2STATE_SENDER_ID, now_ts,
+                              vel_body_x_processed,
+                              vel_body_y_processed,
+                              vel_body_z_processed,
+                              0.3f
+                             );
+
+  // Reusing the OPTIC_FLOW_EST telemetry messages, with some values replaced by 0
+  uint16_t dummy_uint16 = 0;
+  int16_t dummy_int16 = 0;
+  float dummy_float = 0;
+//
+  DOWNLINK_SEND_OPTIC_FLOW_EST(DefaultChannel, DefaultDevice, &dummy_float, &dummy_uint16, &dummy_uint16, &flow_x, &flow_y,
+                               &dummy_int16, &dummy_int16, &vel_body_x_processed, &vel_body_y_processed,
+                               &distance_stereo, &heading_obstacle, &dummy_float);
+
+#endif
 
 }

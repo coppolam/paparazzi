@@ -9,14 +9,15 @@
       <message name="AUTOPILOT_VERSION"      period="11.1"/>
       <message name="DL_VALUE"               period="1.1"/>
       <message name="ROTORCRAFT_STATUS"      period="1.2"/>
-      <message name="ROTORCRAFT_FP"          period="0.2"/>
+      <message name="ROTORCRAFT_FP"          period="0.25"/>
       <message name="ALIVE"                  period="2.1"/>
       <message name="INS_REF"                period="5.1"/>
-      <message name="ROTORCRAFT_NAV_STATUS"  period="1.6"/>
-      <message name="WP_MOVED"               period="1.3"/>
+      <message name="ROTORCRAFT_NAV_STATUS"  period="0.1"/>
+      <!--message name="WP_MOVED"               period="1.3"/-->
       <message name="ROTORCRAFT_CAM"         period="1."/>
       <message name="GPS_INT"                period=".25"/>
-      <message name="INS"                    period=".25"/>
+      <!--message name="GPS_ERROR"              period=".21"/-->
+      <message name="INS"                    period=".5"/>
       <message name="I2C_ERRORS"             period="4.1"/>
       <message name="UART_ERRORS"            period="3.1"/>
       <message name="SUPERBITRF"             period="3"/>
@@ -25,8 +26,8 @@
       <message name="STATE_FILTER_STATUS"    period="3.2"/>
       <message name="AIR_DATA"               period="1.3"/>
       <message name="SURVEY"                 period="2.5"/>
-      <message name="OPTIC_FLOW_EST"         period="0.25"/>
-      <message name="VECTORNAV_INFO"         period="0.5"/>
+      <!--message name="OPTIC_FLOW_EST"         period="0.2"/-->
+      <message name="VECTORNAV_INFO"      period="0.5"/>
       <message name="POTENTIAL"              period="0.11"/>
       <message name="RAFILTERDATA"           period="0.2"/>
     </mode>
@@ -112,6 +113,19 @@
       <message name="INS_Z"             period=".05"/>
       <message name="INS"               period=".11"/>
       <message name="INS_REF"           period="5.1"/>
+    </mode>
+
+    <mode name="vel_guidance" key_press="q">
+      <message name="ALIVE" period="0.9"/>
+      <message name="HYBRID_GUIDANCE" period="0.062"/>
+      <!--<message name="STAB_ATTITUDE_REF" period="0.4"/>-->
+      <message name="ROTORCRAFT_FP" period="0.8"/>
+      <message name="ROTORCRAFT_STATUS" period="1.2"/>
+      <message name="ROTORCRAFT_NAV_STATUS" period="1.6"/>
+      <message name="INS_REF" period="5.1"/>
+      <message name="WP_MOVED" period="1.3"/>
+      <message name="GPS_INT" period="1.0"/>
+      <message name="INS" period="1.0"/>
     </mode>
 
     <mode name="h_loop" key_press="h">

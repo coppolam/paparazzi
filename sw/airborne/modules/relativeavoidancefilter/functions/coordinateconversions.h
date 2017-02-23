@@ -31,5 +31,6 @@ void keepbounded(float *value, float min, float max);
 /* Planar conversions between Body frame and Gazebo world frame */
 void GazeboToBody(float xe, float ye, float psi, float *xb, float *yb);
 void BodyToGazebo(float xb, float yb, float psi, float *xe, float *ye);
+void BodyToNED(float xb, float yb, float psi, float *xe, float *ye);
 
 #endif

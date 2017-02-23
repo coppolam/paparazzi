@@ -54,8 +54,6 @@
 #include "math/pprz_geodetic_int.h"
 #include "math/pprz_isa.h"
 
-#include "generated/flight_plan.h"
-
 
 #if USE_SONAR
 #if !USE_VFF_EXTENDED
@@ -63,8 +61,8 @@
 #endif
 
 /** default sonar to use in INS */
-#ifndef INS_SONAR_ID
-#define INS_SONAR_ID ABI_BROADCAST
+#ifndef INS_INT_SONAR_ID
+#define INS_INT_SONAR_ID ABI_BROADCAST
 #endif
 abi_event sonar_ev;
 static void sonar_cb(uint8_t sender_id, float distance);
@@ -73,9 +71,6 @@ static void sonar_cb(uint8_t sender_id, float distance);
 #include "firmwares/rotorcraft/stabilization.h"
 #endif
 
-#ifndef INS_SONAR_OFFSET
-#define INS_SONAR_OFFSET 0.
-#endif
 #ifndef INS_SONAR_MIN_RANGE
 #define INS_SONAR_MIN_RANGE 0.001
 #endif
@@ -114,19 +109,18 @@ PRINT_CONFIG_MSG("INS_SONAR_UPDATE_ON_AGL defaulting to FALSE")
 PRINT_CONFIG_MSG("USE_INS_NAV_INIT defaulting to TRUE")
 #endif
 
-#ifdef INS_BARO_SENS
-#warning INS_BARO_SENS is obsolete, please remove it from your airframe file.
-#endif
-
 /** default barometer to use in INS */
-#ifndef INS_BARO_ID
+#ifndef INS_INT_BARO_ID
 #if USE_BARO_BOARD
-#define INS_BARO_ID BARO_BOARD_SENDER_ID
+#define INS_INT_BARO_ID BARO_BOARD_SENDER_ID
 #else
-#define INS_BARO_ID ABI_BROADCAST
+#define INS_INT_BARO_ID ABI_BROADCAST
 #endif
 #endif
-PRINT_CONFIG_VAR(INS_BARO_ID)
+PRINT_CONFIG_VAR(INS_INT_BARO_ID)
+PRINT_CONFIG_VAR(INS_OPTITRACK_DONOTUSESPEED)
+
+
 abi_event baro_ev;
 static void baro_cb(uint8_t sender_id, float pressure);
 
@@ -136,12 +130,14 @@ static void baro_cb(uint8_t sender_id, float pressure);
 #ifndef INS_INT_IMU_ID
 #define INS_INT_IMU_ID ABI_BROADCAST
 #endif
+static abi_event accel_ev;
+static void accel_cb(uint8_t sender_id, uint32_t stamp, struct Int32Vect3 *accel);
+
 #ifndef INS_INT_GPS_ID
 #define INS_INT_GPS_ID GPS_MULTI_ID
 #endif
-static abi_event accel_ev;
 static abi_event gps_ev;
-
+static void gps_cb(uint8_t sender_id, uint32_t stamp, struct GpsState *gps_s);
 
 /** ABI binding for VELOCITY_ESTIMATE.
  * Usually this is coming from opticflow.
@@ -182,7 +178,6 @@ static void send_ins_ref(struct transport_tx *trans, struct link_device *dev)
 }
 #endif
 
-static void ins_init_origin_from_flightplan(void);
 static void ins_ned_to_state(void);
 static void ins_update_from_vff(void);
 #if USE_HFF
@@ -194,7 +189,7 @@ void ins_int_init(void)
 {
 
 #if USE_INS_NAV_INIT
-  ins_init_origin_from_flightplan();
+  ins_init_origin_i_from_flightplan(&ins_int.ltp_def);
   ins_int.ltp_initialized = true;
 #else
   ins_int.ltp_initialized  = false;
@@ -204,13 +199,13 @@ void ins_int_init(void)
   ins_int.propagation_cnt = INS_MAX_PROPAGATION_STEPS;
 
   // Bind to BARO_ABS message
-  AbiBindMsgBARO_ABS(INS_BARO_ID, &baro_ev, baro_cb);
+  AbiBindMsgBARO_ABS(INS_INT_BARO_ID, &baro_ev, baro_cb);
   ins_int.baro_initialized = false;
 
 #if USE_SONAR
   ins_int.update_on_agl = INS_SONAR_UPDATE_ON_AGL;
   // Bind to AGL message
-  AbiBindMsgAGL(INS_SONAR_ID, &sonar_ev, sonar_cb);
+  AbiBindMsgAGL(INS_INT_SONAR_ID, &sonar_ev, sonar_cb);
 #endif
 
   ins_int.vf_reset = false;
@@ -231,6 +226,13 @@ void ins_int_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_Z, send_ins_z);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_INS_REF, send_ins_ref);
 #endif
+
+  /*
+   * Subscribe to scaled IMU measurements and attach callbacks
+   */
+  AbiBindMsgIMU_ACCEL_INT32(INS_INT_IMU_ID, &accel_ev, accel_cb);
+  AbiBindMsgGPS(INS_INT_GPS_ID, &gps_ev, gps_cb);
+  AbiBindMsgVELOCITY_ESTIMATE(INS_INT_VEL_ID, &vel_est_ev, vel_est_cb);
 }
 
 void ins_reset_local_origin(void)
@@ -386,33 +388,35 @@ void ins_int_update_gps(struct GpsState *gps_s)
   ins_int.propagation_cnt = 0;
 #endif
 
-#if USE_HFF
-  /* horizontal gps transformed to NED in meters as float */
-  struct FloatVect2 gps_pos_m_ned;
-  VECT2_ASSIGN(gps_pos_m_ned, gps_pos_cm_ned.x, gps_pos_cm_ned.y);
-  VECT2_SDIV(gps_pos_m_ned, gps_pos_m_ned, 100.0f);
+// #ifndef INS_USE_GPS_ALT
+// #if USE_HFF
+//   /* horizontal gps transformed to NED in meters as float */
+//   struct FloatVect2 gps_pos_m_ned;
+//   VECT2_ASSIGN(gps_pos_m_ned, gps_pos_cm_ned.x, gps_pos_cm_ned.y);
+//   VECT2_SDIV(gps_pos_m_ned, gps_pos_m_ned, 100.0f);
 
-  struct FloatVect2 gps_speed_m_s_ned;
-  VECT2_ASSIGN(gps_speed_m_s_ned, gps_speed_cm_s_ned.x, gps_speed_cm_s_ned.y);
-  VECT2_SDIV(gps_speed_m_s_ned, gps_speed_m_s_ned, 100.);
+//   struct FloatVect2 gps_speed_m_s_ned;
+//   VECT2_ASSIGN(gps_speed_m_s_ned, gps_speed_cm_s_ned.x, gps_speed_cm_s_ned.y);
+//   VECT2_SDIV(gps_speed_m_s_ned, gps_speed_m_s_ned, 100.);
 
-  if (ins_int.hf_realign) {
-    ins_int.hf_realign = false;
-    const struct FloatVect2 zero = {0.0f, 0.0f};
-    b2_hff_realign(gps_pos_m_ned, zero);
-  }
-  // run horizontal filter
-  b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
-  // convert and copy result to ins_int
-  ins_update_from_hff();
+//   if (ins_int.hf_realign) {
+//     ins_int.hf_realign = false;
+//     const struct FloatVect2 zero = {0.0f, 0.0f};
+//     b2_hff_realign(gps_pos_m_ned, zero);
+//   }
+//   // run horizontal filter
+//   b2_hff_update_gps(&gps_pos_m_ned, &gps_speed_m_s_ned);
+//   // convert and copy result to ins_int
+//   ins_update_from_hff();
 
-#else  /* hff not used */
-  /* simply copy horizontal pos/speed from gps */
-  INT32_VECT2_SCALE_2(ins_int.ltp_pos, gps_pos_cm_ned,
-                      INT32_POS_OF_CM_NUM, INT32_POS_OF_CM_DEN);
-  INT32_VECT2_SCALE_2(ins_int.ltp_speed, gps_speed_cm_s_ned,
-                      INT32_SPEED_OF_CM_S_NUM, INT32_SPEED_OF_CM_S_DEN);
-#endif /* USE_HFF */
+// #else  /* hff not used */
+//   /* simply copy horizontal pos/speed from gps */
+//   INT32_VECT2_SCALE_2(ins_int.ltp_pos, gps_pos_cm_ned,
+//                       INT32_POS_OF_CM_NUM, INT32_POS_OF_CM_DEN);
+//   INT32_VECT2_SCALE_2(ins_int.ltp_speed, gps_speed_cm_s_ned,
+//                      INT32_SPEED_OF_CM_S_NUM, INT32_SPEED_OF_CM_S_DEN);
+// #endif /* USE_HFF */
+// #endif
 
   ins_ned_to_state();
 
@@ -422,7 +426,6 @@ void ins_int_update_gps(struct GpsState *gps_s)
 #else
 void ins_int_update_gps(struct GpsState *gps_s __attribute__((unused))) {}
 #endif /* USE_GPS */
-
 
 #if USE_SONAR
 static void sonar_cb(uint8_t __attribute__((unused)) sender_id, float distance)
@@ -450,26 +453,6 @@ static void sonar_cb(uint8_t __attribute__((unused)) sender_id, float distance)
   ins_int.propagation_cnt = 0;
 }
 #endif // USE_SONAR
-
-
-/** initialize the local origin (ltp_def) from flight plan position */
-static void ins_init_origin_from_flightplan(void)
-{
-
-  struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
-  llh_nav0.lat = NAV_LAT0;
-  llh_nav0.lon = NAV_LON0;
-  /* NAV_ALT0 = ground alt above msl, NAV_MSL0 = geoid-height (msl) over ellipsoid */
-  llh_nav0.alt = NAV_ALT0 + NAV_MSL0;
-
-  struct EcefCoor_i ecef_nav0;
-  ecef_of_lla_i(&ecef_nav0, &llh_nav0);
-
-  ltp_def_from_ecef_i(&ins_int.ltp_def, &ecef_nav0);
-  ins_int.ltp_def.hmsl = NAV_ALT0;
-  stateSetLocalOrigin_i(&ins_int.ltp_def);
-
-}
 
 /** copy position and speed to state interface */
 static void ins_ned_to_state(void)
@@ -525,7 +508,9 @@ static void gps_cb(uint8_t sender_id __attribute__((unused)),
                    uint32_t stamp __attribute__((unused)),
                    struct GpsState *gps_s)
 {
+ // #ifndef INS_OPTITRACK_DONOTUSESPEED
   ins_int_update_gps(gps_s);
+  // #endif
 }
 
 static void vel_est_cb(uint8_t sender_id __attribute__((unused)),
@@ -562,8 +547,10 @@ static void vel_est_cb(uint8_t sender_id __attribute__((unused)),
   ins_int.ltp_speed.x = SPEED_BFP_OF_REAL(vel_ned.x);
   ins_int.ltp_speed.y = SPEED_BFP_OF_REAL(vel_ned.y);
   if (last_stamp > 0) {
+   // #ifndef INS_OPTITRACK_DONOTUSESPEED
     ins_int.ltp_pos.x = ins_int.ltp_pos.x + POS_BFP_OF_REAL(dt * vel_ned.x);
     ins_int.ltp_pos.y = ins_int.ltp_pos.y + POS_BFP_OF_REAL(dt * vel_ned.y);
+    //#endif
   }
 #endif
 
@@ -571,16 +558,4 @@ static void vel_est_cb(uint8_t sender_id __attribute__((unused)),
 
   /* reset the counter to indicate we just had a measurement update */
   ins_int.propagation_cnt = 0;
-}
-
-void ins_int_register(void)
-{
-  ins_register_impl(ins_int_init);
-
-  /*
-   * Subscribe to scaled IMU measurements and attach callbacks
-   */
-  AbiBindMsgIMU_ACCEL_INT32(INS_INT_IMU_ID, &accel_ev, accel_cb);
-  AbiBindMsgGPS(INS_INT_GPS_ID, &gps_ev, gps_cb);
-  AbiBindMsgVELOCITY_ESTIMATE(INS_INT_VEL_ID, &vel_est_ev, vel_est_cb);
 }

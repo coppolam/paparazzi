@@ -55,16 +55,6 @@
     </program>
   </section>
   <section name="sessions">
-    <session name="Flight ACM0 @57600">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyACM0"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech"/>
-      </program>
-    </session>
     <session name="Bluegiga">
       <program name="Data Link">
         <arg flag="-udp"/>
@@ -174,36 +164,6 @@
         <arg flag="-ac" constant="@AIRCRAFT"/>
       </program>
     </session>
-    <session name="Flight XBee @57600">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/paparazzi/xbee"/>
-        <arg flag="-transport" constant="xbee"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech"/>
-      </program>
-    </session>
-    <session name="Flight UDP">
-      <program name="Data Link">
-        <arg flag="-udp"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech"/>
-      </program>
-    </session>
-    <session name="Flight USB0 @57600">
-      <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyUSB0"/>
-        <arg flag="-s" constant="57600"/>
-      </program>
-      <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech"/>
-      </program>
-    </session>
     <session name="Raw Sensors">
       <program name="Real-time Plotter">
         <arg flag="-g" constant="1000x250-0+0"/>
@@ -237,17 +197,50 @@
         <arg flag="-c" constant="*:telemetry:BARO_RAW:abs"/>
       </program>
     </session>
-    <session name="Flight ACM1 @57600">
+    <session name="pocketdrones_swarm">
       <program name="Data Link">
-        <arg flag="-d" constant="/dev/ttyACM1"/>
-        <arg flag="-s" constant="57600"/>
+        <arg flag="-udp"/>
       </program>
       <program name="Server"/>
-      <program name="GCS">
-        <arg flag="-speech"/>
+      <program name="Messages"/>
+      <program name="GCS"/>
+      <program name="NatNet">
+        <arg flag="-ac" constant="2"/>
+        <arg flag="15"/> <!-- blue -->
+        <arg flag="-ac" constant="1"/>
+        <arg flag="16"/> <!-- red -->
       </program>
+      <program name="Joystick">
+        <arg flag="-d" constant="1"/>
+        <arg flag="hobbyking.xml"/>
+        <arg flag="-ac" constant="LadybirdMXS_swarm_1"/>
+      </program>
+      <program name="Joystick">
+        <arg flag="-d" constant="2"/>
+        <arg flag="hobbyking.xml"/>
+        <arg flag="-ac" constant="LadybirdMXS_swarm_2"/>
+      </program>
+      <program name="Real-time Plotter"/>
     </session>
-    <session name="ARDrone_swarm">
+    <session name="pocketdrones_swarm_2">
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server"/>
+      <program name="Messages"/>
+      <program name="GCS"/>
+      <program name="NatNet">
+        <arg flag="-ac" constant="2"/>
+        <arg flag="16"/>
+      </program>
+      <program name="Joystick">
+        <arg flag="-d" constant="2"/>
+        <arg flag="hobbyking.xml"/>
+        <arg flag="-ac" constant="LadybirdMXS_swarm_2"/>
+      </program>
+      <program name="Real-time Plotter"/>
+    </session>
+    <session name="ARDrone_swarm_opticflow">
       <program name="Data Link">
         <arg flag="-udp"/>
       </program>
@@ -259,25 +252,59 @@
         <arg flag="-tf" constant="10"/>
         <arg flag="-ac" constant="10"/>
         <arg flag="200"/>
-        <arg flag="-ac" constant="11"/>
+        <arg flag="-ac" constant="3"/>
         <arg flag="201"/>
-        <arg flag="-ac" constant="12"/>
+        <arg flag="-ac" constant="4"/>
         <arg flag="202"/>
       </program>
       <program name="Joystick">
         <arg flag="-d" constant="2"/>
         <arg flag="extreme_3d_pro.xml"/>
-        <arg flag="-ac" constant="ARDrone2_optitrack"/>
+        <arg flag="-ac" constant="ARDrone2_opticflow_swarm0"/>
       </program>
       <program name="Joystick">
         <arg flag="-d" constant="2"/>
         <arg flag="extreme_3d_pro.xml"/>
-        <arg flag="-ac" constant="ARDrone2_optitrack1"/>
+        <arg flag="-ac" constant="ARDrone2_opticflow_swarm1"/>
       </program>
       <program name="Joystick">
         <arg flag="-d" constant="2"/>
         <arg flag="extreme_3d_pro.xml"/>
-        <arg flag="-ac" constant="ARDrone2_optitrack2"/>
+        <arg flag="-ac" constant="ARDrone2_opticflow_swarm2"/>
+      </program>
+      <program name="Real-time Plotter"/>
+    </session>
+    <session name="ARDrone_swarm_optitrack">
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Server"/>
+      <program name="Messages"/>
+      <program name="GCS"/>
+      <program name="NatNet">
+        <arg flag="-small"/>
+        <arg flag="-tf" constant="10"/>
+        <arg flag="-ac" constant="6"/>
+        <arg flag="200"/>
+        <arg flag="-ac" constant="3"/>
+        <arg flag="201"/>
+        <arg flag="-ac" constant="4"/>
+        <arg flag="202"/>
+      </program>
+      <program name="Joystick">
+        <arg flag="-d" constant="2"/>
+        <arg flag="extreme_3d_pro.xml"/>
+        <arg flag="-ac" constant="ARDrone2_optitrack_swarm0"/>
+      </program>
+      <program name="Joystick">
+        <arg flag="-d" constant="2"/>
+        <arg flag="extreme_3d_pro.xml"/>
+        <arg flag="-ac" constant="ARDrone2_optitrack_swarm1"/>
+      </program>
+      <program name="Joystick">
+        <arg flag="-d" constant="2"/>
+        <arg flag="extreme_3d_pro.xml"/>
+        <arg flag="-ac" constant="ARDrone2_optitrack_swarm2"/>
       </program>
       <program name="Real-time Plotter"/>
     </session>

@@ -82,6 +82,14 @@ void GazeboToBody(float xe, float ye, float psi, float *xb, float *yb)
 
 void BodyToGazebo(float xb, float yb, float psi, float *xe, float *ye)
 {
-	*xe = xb*cos(-psi) - yb*sin(-psi);
-	*ye = - xb*sin(-psi) - yb*cos(-psi);
+	// *xe = xb*cos(-psi) - yb*sin(-psi);
+	// *ye = - xb*sin(-psi) - yb*cos(-psi);
+	*xe = xb*cos(psi) + yb*sin(psi);
+	*ye = -xb*sin(psi) + yb*cos(psi);
+}		
+
+void BodyToNED(float xb, float yb, float psi, float *xe, float *ye)
+{
+	*xe = xb*cos(psi) + yb*sin(psi);
+	*ye = -xb*sin(psi) + yb*cos(psi);
 }		

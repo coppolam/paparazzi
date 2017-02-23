@@ -1,0 +1,111 @@
+<!DOCTYPE flight_plan SYSTEM "flight_plan.dtd">
+
+<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="20" name="Rotorcraft Optitrack (Delft)" security_height="0.3">
+  <header>
+	  #include "autopilot.h"
+    #include "guidance/guidance_h.h"
+    #include "guidance/guidance_v.h"
+    #include "modules/flight_plan_guided/flight_plan_guided.h"
+    #include "subsystems/datalink/datalink.h"
+	  #include "subsystems/radio_control.h"
+</header>
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="0.0"/>
+    <waypoint name="STDBY" x="0.0" y="0.0"/>
+    <waypoint lat="51.9906213" lon="4.3768628" name="FA1"/>
+    <waypoint lat="51.9905874" lon="4.3767766" name="FA2"/>
+    <waypoint lat="51.9906409" lon="4.3767226" name="FA3"/>
+    <waypoint lat="51.9906737" lon="4.3768074" name="FA4"/>
+  </waypoints>
+  <sectors>
+    <sector color="red" name="Flight_Area">
+      <corner name="FA4"/>
+      <corner name="FA3"/>
+      <corner name="FA2"/>
+      <corner name="FA1"/>
+    </sector>
+  </sectors>
+  
+  <exceptions>
+    <exception cond="datalink_time > 5" deroute="landed"/>
+    <exception cond="radio_control.status == RC_REALLY_LOST" deroute="kill"/>
+    <exception cond="autopilot_mode == AP_MODE_ATTITUDE_DIRECT" deroute="CL Start"/>
+    <!--exception cond="stateGetPositionEnu_f()->z > 8." deroute="Land here"/-->
+  </exceptions>
+
+  <blocks>
+    <block name="Geo init">
+      <call_once fun="ResetAlt()"/>
+      <while cond="1"/>
+    </block>
+    <block name="Start Engine">
+      <call fun="NavResurrect()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
+    </block>
+
+
+
+<!--EKF turning closed loop-->
+
+ <!--start block: hover for 2 sec -->
+		<block name="CL Start">
+        <call fun="change_h_mode(GUIDANCE_H_MODE_ATTITUDE)"/>
+        <call fun="wait_for_mode(GUIDANCE_H_MODE_GUIDED)"/>
+        <!--call fun="change_v_mode(GUIDANCE_V_MODE_RC_DIRECT)"/-->
+		</block>
+		<!--block name="CL forcefield"> 
+        <call fun="avoid_wall_and_sides(-0.05)"/>
+        <while cond="1"/> 
+    </block-->
+
+		<block name="CL Hover">
+        <call fun="wait_for_mode(GUIDANCE_H_MODE_GUIDED)"/>
+		    <call fun="avoid_wall_and_sides(-0.01)"/>
+        <exception cond="stage_time>2" deroute="CL Go Forward with forcefield"/>
+		</block>
+
+<!--go forward, with a forcefield to prevent collissons -->
+		<block name="CL Go Forward with forcefield"> 
+        <call fun="avoid_wall_and_sides(-0.05)"/>
+        <exception cond="1.2>stereo_distance||turn_trigger" deroute="CL Hover with forcefield"/> <!-- If obstacle is within 1 meter, go to hover -->
+    </block>
+
+<!--Hover with a forcefield to prevent collissons -->
+		<block name="CL Hover with forcefield">
+        <set var="wanted_heading" value="turn_angle + RadOfDeg(180.0)"/>
+        <call fun="avoid_wall_and_sides(-0.05)"/>
+        <exception cond="stereo_distance>1.0&&stage_time>1.5" deroute="CL Turn"/> <!-- If 2 seconds are passed, go turn -->
+    </block>
+
+
+<!-- turn 60 deg from current heading -->
+    <block name = "CL Turn"> 
+        <call fun="change_h_mode(GUIDANCE_H_MODE_ATTITUDE)"/>
+        <!--set var="wanted_heading" value="stateGetNedToBodyEulers_f()->psi + RadOfDeg(60.0)"/-->
+				<call fun="RotateToHeading_ATT(wanted_heading, RadOfDeg(0.0f),RadOfDeg(0.0f))"/>
+		    <!--while cond="WaitforHeadingCondition(wanted_heading)"/>
+ 				<call fun="ResetAngles_ATT(wanted_heading)"/-->
+        <call fun="reset_counter()"/>
+        <call fun="wait_counter(30)"/>
+ 				<call fun="ResetAngles_ATT(wanted_heading)"/>
+        <call fun="change_h_mode(GUIDANCE_H_MODE_GUIDED)"/>
+ 		</block>
+
+ <!--check for obstacle -->
+    <block name = "CL Hover and Check obstacle"> 
+        <call fun="avoid_wall_and_sides(-0.05)"/>
+        <exception cond="1.2 > distance_stereo" deroute="CL Hover with forcefield"/>  <!-- if still obstacle, go to hover->turn again -->
+        <exception cond="stage_time>1.0" deroute="CL Go Forward with forcefield"/>			<!-- No obstacle, go forward -->
+ 		</block>
+
+    <block name="landed">
+      <call fun="kill_mode()"/>
+      <!--call fun="NavKillThrottle()"/>
+      <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/-->
+    </block>
+
+    <block name="kill">
+      <call_once  fun = "autopilot_set_mode(AP_MODE_KILL)"/>
+    </block>
+  </blocks>
+</flight_plan>
