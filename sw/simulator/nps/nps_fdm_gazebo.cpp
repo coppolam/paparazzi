@@ -50,14 +50,14 @@ extern "C" {
 
 #include "generated/airframe.h"
 #include "autopilot.h"
-#ifdef NPS_OLD_STEREOBOARD_CODE
-#include "/home/knmcguire/stereoboard_old_repositories/stereoboard_old_2/stereoboard/edgeflow.h"
-//#include "/home/knmcguire/stereoboard/stereoboard/edgeflow.h"
 
+#ifdef NPS_OLD_STEREOBOARD_CODE
+#include "/home/mario/stereoboard_old_repositories/stereoboard_old_2/stereoboard/edgeflow.h"
+// #include "/home/mario/stereoboard/stereoboard/edgeflow.h"
 struct edgeflow_results_t edgeflow_results;
  struct  edgeflow_parameters_t edgeflow_parameters;
 #else
-#include "/home/knmcguire/stereoboard/stereoboard/edgeflow.h"
+#include "/home/mario/stereoboard/stereoboard/edgeflow.h"
 #endif
 
 

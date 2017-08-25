@@ -88,11 +88,11 @@
   	</raw>
     <file name="nps_fdm_gazebo.cpp" dir="nps"/>
 <!--new code-->
-    <file name="edgeflow.c" dir="/home/knmcguire/stereoboard/stereoboard/"/>
-    <include name="/home/knmcguire/stereoboard/common/"/>
-    <include name="/home/knmcguire/stereoboard/stereoboard/"/>
-    <file name="filter.c" dir="/home/knmcguire/stereoboard/stereoboard/math/"/>
-    <file name="stats.c" dir="/home/knmcguire/stereoboard/stereoboard/math/"/>
+    <file name="edgeflow.c" dir="/home/mario/stereoboard/stereoboard/"/>
+    <include name="/home/mario/stereoboard/common/"/>
+    <include name="/home/mario/stereoboard/stereoboard/"/>
+    <file name="filter.c" dir="/home/mario/stereoboard/stereoboard/math/"/>
+    <file name="stats.c" dir="/home/mario/stereoboard/stereoboard/math/"/>
 <!-- Old code-->
     <!--define name= "NPS_OLD_STEREOBOARD_CODE" value="1"/>
     <file name="edgeflow.c" dir="/home/knmcguire/stereoboard_old_repositories/stereoboard_old_2/stereoboard/"/>
