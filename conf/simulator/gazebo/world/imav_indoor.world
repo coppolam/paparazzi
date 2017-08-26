@@ -196,7 +196,7 @@
           <pose>0 0 0 0 0 0</pose>
           <geometry>
             <mesh>
-              <uri>file://xacro/wall.dae</uri>
+              <uri>file:///home/mario/paparazzi/conf/simulator/gazebo/world/xacro/wall.dae</uri>
               <scale>0.1 0.1 0.1</scale>
             </mesh>
           </geometry>
@@ -210,7 +210,7 @@
           <pose>0 0 0 0 0 0</pose>
           <geometry>
             <mesh>
-              <uri>file://xacro/wall.dae</uri>
+              <uri>file:///home/mario/paparazzi/conf/simulator/gazebo/world/xacro/wall.dae</uri>
               <scale>0.1 0.1 0.1</scale>
             </mesh>
           </geometry>
@@ -244,7 +244,7 @@
           </geometry>
           <material>
             <script>
-              <uri>file://xacro/custom.material</uri>
+              <uri>file:///home/mario/paparazzi/conf/simulator/gazebo/world/xacro/custom.material</uri>
               <name>MathWorks_branding</name>
             </script>
           </material>
@@ -278,7 +278,7 @@
           </geometry>
           <material>
             <script>
-              <uri>file://xacro/custom.material</uri>
+              <uri>file:///home/mario/paparazzi/conf/simulator/gazebo/world/xacro/custom.material</uri>
               <name>imav_branding</name>
             </script>
           </material>
@@ -334,7 +334,7 @@
             <pose>0 0 0 1.5708 0 0</pose>
             <geometry>
               <mesh>
-                <uri>file://xacro/tree1.dae</uri>
+                <uri>file:///home/mario/paparazzi/conf/simulator/gazebo/world/xacro/tree1.dae</uri>
                 <scale>0.01 0.01 0.01</scale>
               </mesh>
             </geometry>
@@ -343,7 +343,7 @@
             <pose>0 0 0 1.5708 0 0</pose>
             <geometry>
               <mesh>
-                <uri>file://xacro/tree1.dae</uri>
+                <uri>file:///home/mario/paparazzi/conf/simulator/gazebo/world/xacro/tree1.dae</uri>
                 <scale>0.01 0.01 0.01</scale>
               </mesh>
             </geometry>
@@ -367,7 +367,7 @@
             <pose>0 0 0 1.5708 0 0</pose>
             <geometry>
               <mesh>
-                <uri>file://xacro/tree1.dae</uri>
+                <uri>file:///home/mario/paparazzi/conf/simulator/gazebo/world/xacro/tree1.dae</uri>
                 <scale>0.01 0.004 0.01</scale>
               </mesh>
             </geometry>
@@ -376,7 +376,7 @@
             <pose>0 0 0 1.5708 0 0</pose>
             <geometry>
               <mesh>
-                <uri>file://xacro/tree1.dae</uri>
+                <uri>file:///home/mario/paparazzi/conf/simulator/gazebo/world/xacro/tree1.dae</uri>
                 <scale>0.01 0.004 0.01</scale>
               </mesh>
             </geometry>
@@ -419,7 +419,7 @@
           </geometry>
           <material>
             <script>
-              <uri>file://xacro/custom.material</uri>
+              <uri>file:///home/mario/paparazzi/conf/simulator/gazebo/world/xacro/custom.material</uri>
               <name>Helipad</name>
             </script>
           </material>
@@ -512,7 +512,7 @@
           </geometry>
           <material>
             <script>
-              <uri>file://xacro/custom.material</uri>
+              <uri>file:///home/mario/paparazzi/conf/simulator/gazebo/world/xacro/custom.material</uri>
               <name>Helipad</name>
             </script>
           </material>
@@ -546,7 +546,7 @@
           </geometry>
           <material>
             <script>
-              <uri>file://xacro/custom.material</uri>
+              <uri>file:///home/mario/paparazzi/conf/simulator/gazebo/world/xacro/custom.material</uri>
               <name>QR1</name>
             </script>
           </material>
