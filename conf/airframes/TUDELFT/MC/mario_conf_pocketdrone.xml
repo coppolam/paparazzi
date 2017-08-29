@@ -45,7 +45,7 @@
   />
   <aircraft
    name="simulation_swarm"
-   ac_id="20"
+   ac_id="21"
    airframe="airframes/TUDELFT/tudelft_ardrone2_gazebo_opticflow.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
