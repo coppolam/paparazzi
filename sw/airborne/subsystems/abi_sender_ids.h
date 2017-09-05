@@ -285,6 +285,14 @@
 #endif
 
 /*
+ * IDs of RSSI measurements (message 13)
+ */
+#ifndef UWB_COMM_ID
+#define UWB_COMM_ID 20
+#endif
+
+
+/*
  * IDs of RPM sensors (message 15)
  */
 #ifndef RPM_SENSOR_ID
