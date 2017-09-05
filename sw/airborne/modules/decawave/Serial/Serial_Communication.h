@@ -37,8 +37,7 @@
 #define VX 0
 #define VY 1
 #define Z 2
-#define R 3
-
+#define RANGE 3
 
 extern void decawave_serial_init(void);
 extern void decawave_serial_periodic(void);

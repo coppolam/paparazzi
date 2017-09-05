@@ -1,20 +1,20 @@
  <!DOCTYPE module SYSTEM "module.dtd">
 
-<module name="decawave_serial" dir="decawave">
+<module name="Decawave_Serial_Communication" dir="decawave/Serial">
 	<doc>
 		<description>
 			Decawave DWM1000 module serial communication
 		</description>
 	</doc>
 	<header>
-		<file name="Serial/Serial_Communication.h" />
+		<file name="Serial_Communication.h" />
 	</header>
 	<init fun="decawave_serial_init()" />
 	<periodic fun="decawave_serial_periodic()" freq="30"
 		autorun="TRUE" />
 	<event fun="decawave_serial_event()"/>
 	<makefile target="ap">
-		<file name="Serial/Serial_Communication.c" />
+		<file name="Serial_Communication.c" />
 		<configure name="SERIAL_UART" default="uart2" case="upper|lower" />
 		<configure name="SERIAL_BAUD" default="B9600" />
 		<configure name="SERIAL_LED" default="3" />

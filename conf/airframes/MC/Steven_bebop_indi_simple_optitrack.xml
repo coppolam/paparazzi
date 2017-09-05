@@ -42,7 +42,7 @@
     <module name="geo_mag"/>
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
-    <!-- <module name="relativelocalizationfilter.xml"/> -->
+    <module name="relativelocalizationfilter"/>
     <module name="Decawave_Serial_Communication">
 		<configure name="SERIAL_UART" value="UART2" />
 		<configure name="SERIAL_BAUD" value="B57600" />

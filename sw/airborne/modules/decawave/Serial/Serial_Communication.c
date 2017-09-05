@@ -273,7 +273,7 @@ static void handleNewStateValue(uint8_t nodeIndex, uint8_t msgType, float value)
 	case VX : node->vx=value; node->stateUpdated[VX] = true; break;
 	case VY : node->vy=value; node->stateUpdated[VY] = true; break;
 	case Z  : node->z=value ; node->stateUpdated[Z]  = true; break;
-	case R  : node->r=value ; node->stateUpdated[R]  = true; break;
+	case RANGE : node->r=value ; node->stateUpdated[RANGE]  = true; break;
 	}
 
 }
