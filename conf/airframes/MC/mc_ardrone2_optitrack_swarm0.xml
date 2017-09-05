@@ -36,20 +36,21 @@
   <define name="RSSINOISE" value="5.0"/>  <!-- (Expected) Noise on RSSI -->
   <define name="SPEEDNOISE" value="0.2"/> <!-- (Expected) Noise on other measurements -->
   <define name="NUAVS" value="5"/>        <!-- Maximum number of UAVs to track -->
-  <define name="BLUEGIGA_DONGLE" value="TRUE" />
+  <!-- <define name="BLUEGIGA_DONGLE" value="TRUE" /> -->
  </section>
 
 <modules main_freq="512">
     <module name="bat_voltage_ardrone2.xml"/>
     <!--module name="stereocam_droplet.xml" /-->
-    <module name="extra_dl.xml">
+    <!--module name="extra_dl.xml">
       <configure name="EXTRA_DL_PORT" value="UDP1"/>
       <define name="UDP1_PORT_IN" value="5000"/>
       <define name="UDP1_PORT_OUT" value="5001"/>
       <define name="UDP1_HOST" value="127.0.0.1"/>
     </module>
     <module name="traffic_info.xml"/>
-    <module name="rssi.xml"/>
+    <module name="rssi.xml"/-->
+    <module name="Decawave_Serial_Communication.xml"/>
     <module name="relativelocalizationfilter.xml"/>
   </modules>
 
