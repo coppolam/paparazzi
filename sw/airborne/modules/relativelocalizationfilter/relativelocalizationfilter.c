@@ -41,16 +41,16 @@
 #define INS_INT_VEL_ID ABI_BROADCAST
 #endif
 
-ekf_filter ekf[NUAVS-1]; 	// EKF structure
 int IDarray[NUAVS-1]; 		// Array of IDs of other MAVs
-int8_t srcstrength[NUAVS-1];// Source strength
 uint32_t now_ts[NUAVS-1]; 	// Time of last received message from each MAV
 int nf;						// Number of filters registered
-
+ekf_filter ekf[NUAVS-1]; 	// EKF structure
 
 #ifdef RSSI_LOCALIZATION
+int8_t srcstrength[NUAVS-1];// Source strength
 float RSSIarray[NUAVS-1];	// Recorded RSSI values (so they can all be sent)
 btmodel model[NUAVS-1];  	// Bluetooth model structure 
+
 static abi_event rssi_ev;
 static void bluetoothmsg_cb(uint8_t sender_id __attribute__((unused)), 
 	uint8_t ac_id, int8_t source_strength, int8_t rssi);
@@ -141,16 +141,15 @@ static void bluetoothmsg_cb(uint8_t sender_id __attribute__((unused)),
 
 	}
 };
-#elif
-float RSSIarray[NUAVS-1];	// Recorded RSSI values (so they can all be sent)
-btmodel model[NUAVS-1];  	// Bluetooth model structure 
-static abi_event rssi_ev;
-static void bluetoothmsg_cb(uint8_t sender_id __attribute__((unused)), 
-	uint8_t ac_id, int8_t source_strength, int8_t rssi);
+#elseif UWB_LOCALIZATION
+float rangearray[NUAVS-1];	// Recorded RSSI values (so they can all be sent)
+static abi_event uwb_ev;
+static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)), 
+	uint8_t ac_id, float range, float trackedVx, float trackedVy, float trackedh);
 
-static void bluetoothmsg_cb(uint8_t sender_id __attribute__((unused)), 
-	uint8_t ac_id, int8_t source_strength, int8_t rssi)
-{ 
+static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)), 
+	uint8_t ac_id, float range, float trackedVx, float trackedVy, float trackedh) 
+{
 	int i = -1; // Initialize the index of all tracked drones (-1 for null assumption of no drone found).
 
 	// Check if a new aircraft ID is present, if it's a new ID we start a new EKF for it.
@@ -158,14 +157,13 @@ static void bluetoothmsg_cb(uint8_t sender_id __attribute__((unused)),
 		   && (nf < NUAVS-1))  // If yes, the amount of drones does not exceed the maximum.
 	{
 		IDarray[nf] = ac_id; 				// Store ID in an array (logging purposes)
-		srcstrength[nf] = source_strength;  // Store source strength in an array (logging purposes)
 		ekf_filter_new(&ekf[nf]); 			// Initialize an EKF filter for the newfound drone
 
 		// Set up the Q and R matrices and all the rest
 		// Weights are based on:
 		// Coppola et al, "On-board Communication-based Relative Localization for Collision Avoidance in Micro Air Vehicle teams", 2017
-		fmat_scal_mult(EKF_N,EKF_N, ekf[nf].Q, pow(0.5,2.0), ekf[nf].Q);
-		fmat_scal_mult(EKF_M,EKF_M, ekf[nf].R, pow(SPEEDNOISE,2.0), ekf[nf].R);
+		fmat_scal_mult(EKF_N, EKF_N, ekf[nf].Q, pow(0.5,2.0), ekf[nf].Q);
+		fmat_scal_mult(EKF_M, EKF_M, ekf[nf].R, pow(SPEEDNOISE,2.0), ekf[nf].R);
 		ekf[nf].Q[0]   	   = 0.01; // Reccomended 0.01 to give this process a high level of trust
 		ekf[nf].Q[EKF_N+1] = 0.01;
 		ekf[nf].R[0]   = pow(RSSINOISE,2.0);
@@ -181,9 +179,7 @@ static void bluetoothmsg_cb(uint8_t sender_id __attribute__((unused)),
 		ekf[i].X[5] = 0.0; // Relative velocity East
 		ekf[i].X[6] = 0.0; // Height difference
 
-		ekf[nf].dt       = 0.2;  // Initial assumption for time difference between messages (STDMA code runs at 5Hz)
-		model[nf].Pn     = -63;  // Expected RSSI at 1m (based on experience)
-		model[nf].gammal = 2.0;	 // Expected Space-loss parameter (based on free space assumption)
+		ekf[nf].dt  = 0.1;  // Initial assumption for time difference between messages (STDMA code runs at 5Hz)
 		nf++; 					 // Number of filter is present is increased
 	}
 	// Else, if we do recognize the ID, then we can update the measurement message data
@@ -205,9 +201,6 @@ static void bluetoothmsg_cb(uint8_t sender_id __attribute__((unused)),
 		{
 			ekf[i].dt = (get_sys_time_usec() - now_ts[i])/pow(10,6); // Update the time between messages
 			
-			// Get the velocity in NED for the tracked aircraft
-			float trackedVx, trackedVy;
-			polar2cart(acInfoGetGspeed(ac_id), acInfoGetCourse(ac_id), &trackedVx, &trackedVy); // get North and East velocities (m/s)
 			// As for own velocity, bind to realistic amounts to avoid occasional spikes/NaN/inf errors
 			keepbounded(&trackedVx,-2.0,2.0);
 			keepbounded(&trackedVy,-2.0,2.0);
@@ -220,14 +213,11 @@ static void bluetoothmsg_cb(uint8_t sender_id __attribute__((unused)),
 			Y[2] = ownVy;			// Own velocity East  (NED frame)
 			Y[3] = trackedVx;  		// Velocity of other drone Norht (NED frame)
 			Y[4] = trackedVy;		// Velocity of other drone East  (NED frame)
-			Y[5] = acInfoGetPositionUtm_f(ac_id)->alt - stateGetPositionEnu_f()->z;  // Height difference
+			Y[5] = trackedh - stateGetPositionEnu_f()->z;  // Height difference
 			
 			// Run the steps of the EKF, but only if velocity difference is significant (to filter out minimal noise)
-			if (  sqrt( pow(Y[1]-Y[3],2) + pow(Y[2]-Y[4],2) ) > 0.05 )
-			{
-				ekf_filter_predict(&ekf[i], &model[i]); // Prediction step of the EKF 
-				ekf_filter_update(&ekf[i], Y);	// Update step of the EKF
-			}
+			ekf_filter_predict(&ekf[i], &model[i]); // Prediction step of the EKF 
+			ekf_filter_update(&ekf[i], Y);	// Update step of the EKF
 		}
 
 		now_ts[i] = get_sys_time_usec();  // Store latest time
@@ -235,6 +225,7 @@ static void bluetoothmsg_cb(uint8_t sender_id __attribute__((unused)),
 	}
 };
 #endif
+
 
 #ifdef PPRZ_MSG_ID_RLFILTER
 int cnt;
@@ -255,7 +246,7 @@ static void send_rafilterdata(struct transport_tx *trans, struct link_device *de
 		&ekf[i].X[2], &ekf[i].X[3],  // Own velocity [North, East]
 		&ekf[i].X[4], &ekf[i].X[5],  // Relative velocity of other drone [North, East]
 		&ekf[i].X[6]				 // Height separation [Down]
-		); 
+		);
 			 
 };
 #endif
@@ -265,9 +256,9 @@ void relativelocalizationfilter_init(void)
 	array_make_zeros_int(NUAVS-1, IDarray); // Clear out the known IDs
 	nf = 0; // Number of active filters upon initialization
 
-	#ifdef BLUETOOTH
+	#ifdef RSSI_LOCALIZATION
 	AbiBindMsgRSSI(ABI_BROADCAST, &rssi_ev, bluetoothmsg_cb); // Subscribe to the ABI RSSI messages
-	#elif UWB
+	#elseif UWB_LOCALIZATION
 	AbiBindMsgUWB(ABI_BROADCAST, &uwb_ev, uwbmsg_cb); // Subscribe to the ABI RSSI messages
 	#endif
 

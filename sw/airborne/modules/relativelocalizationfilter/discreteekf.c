@@ -25,6 +25,7 @@
 
 #include "discreteekf.h"
 
+
 /* Creates a basic Extended Kalman filter with 
 Zero intial state
 P, Q, R as identity matrices 
@@ -77,6 +78,7 @@ void ekf_filter_get_state(ekf_filter* filter, float *X, float* P){
 			H = Jacobian of h(x)
 	
 */
+#ifdef RSSI_LOCALIZATION
 void ekf_filter_predict(ekf_filter* filter, btmodel* model) {
 
 	// Fetch dt, dX and A given the current state X and input u
@@ -93,8 +95,26 @@ void ekf_filter_predict(ekf_filter* filter, btmodel* model) {
 	fmat_transpose(EKF_N, EKF_N, filter->tmp2, filter->tmp3); // A'
 	fmat_mult(EKF_N, EKF_N, EKF_N, filter->tmp3, filter->tmp1, filter->tmp2); // A*P*A'
 	fmat_add(EKF_N, EKF_N, filter->P, filter->tmp3, filter->Q); // A*P*A' + Q
-
 }
+#elseif UWB_LOCALIZATION
+void ekf_filter_predict(ekf_filter* filter) {
+
+	// Fetch dt, dX and A given the current state X and input u
+	linear_filter(filter->X, filter->dt, filter->tmp1, filter->tmp3);
+
+	// Get state prediction Xp = X + dX
+	fmat_add(EKF_N, 1, filter->Xp, filter->X, filter->tmp1); 
+
+	// Get measurement prediction Zp based on Xp and get Jacobian H
+	linear_measure(filter->Xp, filter->Zp, filter->H);
+
+	//P = A * P * A' + Q
+	fmat_mult(EKF_N, EKF_N, EKF_N, filter->tmp1, filter->tmp3, filter->P); // A*P
+	fmat_transpose(EKF_N, EKF_N, filter->tmp2, filter->tmp3); // A'
+	fmat_mult(EKF_N, EKF_N, EKF_N, filter->tmp3, filter->tmp1, filter->tmp2); // A*P*A'
+	fmat_add(EKF_N, EKF_N, filter->P, filter->tmp3, filter->Q); // A*P*A' + Q
+}
+#endif
 
 /* Perform the update step
 	UPDATE:
@@ -154,6 +174,7 @@ void linear_filter(float* X, float dt, float *dX, float* A)
 	A[1*EKF_N+5] =  dt;
 };
 
+#ifdef RSSI_LOCALIZATION
 /* Linearized (Jacobian) measure function */
 void linear_measure(float*X, float* Y, float *H, btmodel *model)
 {
@@ -206,3 +227,55 @@ void linear_measure(float*X, float* Y, float *H, btmodel *model)
 	}
 
 };
+#elseif UWB_LOCALIZATION
+/* Linearized (Jacobian) measure function */
+void linear_measure(float*X, float* Y, float *H)
+{
+	int row, col;
+
+	// RSSI measurement
+	Y[0] = sqrt(pow(X[0],2.0) + pow(X[1],2.0) + pow(X[5],2.0));
+
+	// x velocity of i (north)
+	Y[1] = X[2];
+
+	// y velocity of i (east)
+	Y[2] = X[3];
+
+	// x velocity of j (east)
+	Y[3] = X[4];
+
+	// y velocity of j (east)
+	Y[4] = X[5];
+
+	// Height difference
+	Y[5] = X[6];
+
+	// Generate the Jacobian Matrix
+	for (row = 0 ; row < EKF_M ; row++ )
+	{
+		for (col = 0 ; col < EKF_N ; col++ )
+		{
+			// x, y, and z pos columns are affected by the RSSI
+			if ((row == 0) && (col == 0 || col == 1 || col == 5 )) {
+				H[ row*EKF_N+col ] = X[col]/(pow(X[0],2.0) + pow(X[1],2.0) + pow(X[5],2.0));
+			}
+			
+			// All other values are 1
+			else if (((row == 1) && (col == 2)) ||
+				((row == 2) && (col == 3)) ||
+				((row == 3) && (col == 4)) ||
+				((row == 4) && (col == 5)) ||
+				((row == 5) && (col == 6)))
+			{
+				H[ row*EKF_N+col ] = 1.0;
+			}
+
+			else {
+				H[ row*EKF_N+col ] = 0.0;
+			}
+		}
+	}
+
+};
+#endif
