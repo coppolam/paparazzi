@@ -50,7 +50,7 @@
     </module>
     <module name="traffic_info.xml"/>
     <module name="rssi.xml"/>
-    <!--module name="Decawave_Serial_Communication.xml"/-->
+    <module name="Decawave_Serial_Communication.xml"/>
     <module name="relativelocalizationfilter.xml"/>
   </modules>
 

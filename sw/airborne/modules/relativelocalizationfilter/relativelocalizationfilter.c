@@ -27,6 +27,7 @@
 #include "subsystems/datalink/telemetry.h"
 #include "modules/multi/traffic_info.h"
 #include "modules/stdma/stdma.h"
+#include "modules/decawave/Serial/Serial_Communication.h"
 #include "subsystems/datalink/bluegiga.h"
 
 #include "pprzlink/pprz_transport.h"
