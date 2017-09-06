@@ -84,7 +84,6 @@ static uint8_t _dataSendCount = 0;
 static uint8_t _dataTotalSend = 0;
 
 static bool _inProgress = false;
-static bool _startFound = false;
 static bool _allReceived = false;
 
 static uint8_t _varByte = 0;
@@ -104,12 +103,11 @@ float range_float = 0.0;
 
 static void decodeHighBytes(void);
 static void encodeHighBytes(uint8_t* sendData, uint8_t msgSize);
-static void checkBigEndian(void);
-static void send_range_pos(struct transport_tx *trans, struct link_device *dev);
+//static void send_range_pos(struct transport_tx *trans, struct link_device *dev);
 static void handleNewStateValue(uint8_t nodeIndex, uint8_t msgType, float value);
 static void setNodeStatesFalse(uint8_t index);
-static void setAllNodeStatesFalse();
-static void checkStatesUpdated();
+static void setAllNodeStatesFalse(void);
+static void checkStatesUpdated(void);
 //static void initNodes();
 
 
@@ -167,7 +165,7 @@ static void setNodeStatesFalse(uint8_t index){
 /**
  * Helper function that sets the booleans to false for all the remote drones (DIST_NUM_NODES)
  */
-static void setAllNodeStatesFalse(){
+static void setAllNodeStatesFalse(void){
 	for (uint8_t i = 0; i < DIST_NUM_NODES; i++){
 		setNodeStatesFalse(i);
 	}
@@ -177,7 +175,7 @@ static void setAllNodeStatesFalse(){
  * This function checks if all the states of all the distant nodes have at least once been updated.
  * If all the states are updated, then do something with it! AKA CALLBACK TO MARIO
  */
-static void checkStatesUpdated(){
+static void checkStatesUpdated(void){
 	bool checkbool;
 	for (uint8_t i = 0; i < DIST_NUM_NODES; i++){
 		checkbool = true;
@@ -194,14 +192,14 @@ static void checkStatesUpdated(){
 
 }
 
-
+/*
 static void send_range_pos(struct transport_tx *trans, struct link_device *dev){
 	current_pos = *stateGetPositionNed_f();
 	current_speed = *stateGetSpeedNed_f();
 	current_accel = *stateGetAccelNed_f();
 	current_angles = *stateGetNedToBodyEulers_f();
 	// pprz_msg_send_RANGE_POS(trans,dev,AC_ID,&range_float,&current_pos.x,&current_pos.y,&current_pos.z,&current_speed.x,&current_speed.y,&current_speed.z,&current_accel.x,&current_accel.y,&current_accel.z,&current_angles.phi,&current_angles.theta,&current_angles.psi);
-}
+}*/
 
 
 /**
