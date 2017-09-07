@@ -74,11 +74,11 @@ typedef struct btmodel {
 
 extern void linear_filter(float* X, float dt, float *dX, float* A);
 
-#ifdef RSSI_LOCALIZATION
-extern void linear_measure(float*X, float* Y, float *H, btmodel *model);
-#elseif UWB_LOCALIZATION
+//#ifdef RSSI_LOCALIZATION
+//extern void linear_measure(float*X, float* Y, float *H, btmodel *model);
+//#elseif UWB_LOCALIZATION
 extern void linear_measure(float*X, float* Y, float *H);
-#endif
+//#endif
 
 extern void ekf_filter_new(ekf_filter* filter);
 
@@ -90,11 +90,11 @@ extern void ekf_filter_setup(
 
 extern void ekf_filter_reset(ekf_filter *filter);
 
-#ifdef RSSI_LOCALIZATION
-extern void ekf_filter_predict(ekf_filter *filter, btmodel *model);
-#elseif UWB_LOCALIZATION
+//#ifdef RSSI_LOCALIZATION
+//extern void ekf_filter_predict(ekf_filter *filter, btmodel *model);
+//#elseif UWB_LOCALIZATION
 extern void ekf_filter_predict(ekf_filter *filter);
-#endif
+//#endif
 
 extern void ekf_filter_update(ekf_filter *filter, float *y);
 

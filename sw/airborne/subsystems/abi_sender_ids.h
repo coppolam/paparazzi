@@ -285,10 +285,10 @@
 #endif
 
 /*
- * IDs of RSSI measurements (message 13)
+ * IDs of UWB measurements (message 18)
  */
 #ifndef UWB_COMM_ID
-#define UWB_COMM_ID 20
+#define UWB_COMM_ID 1
 #endif
 
 

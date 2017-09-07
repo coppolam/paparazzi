@@ -78,6 +78,7 @@ void ekf_filter_get_state(ekf_filter* filter, float *X, float* P){
 			H = Jacobian of h(x)
 	
 */
+/*
 #ifdef RSSI_LOCALIZATION
 void ekf_filter_predict(ekf_filter* filter, btmodel* model) {
 
@@ -97,6 +98,7 @@ void ekf_filter_predict(ekf_filter* filter, btmodel* model) {
 	fmat_add(EKF_N, EKF_N, filter->P, filter->tmp3, filter->Q); // A*P*A' + Q
 }
 #elseif UWB_LOCALIZATION
+*/
 void ekf_filter_predict(ekf_filter* filter) {
 
 	// Fetch dt, dX and A given the current state X and input u
@@ -114,7 +116,7 @@ void ekf_filter_predict(ekf_filter* filter) {
 	fmat_mult(EKF_N, EKF_N, EKF_N, filter->tmp3, filter->tmp1, filter->tmp2); // A*P*A'
 	fmat_add(EKF_N, EKF_N, filter->P, filter->tmp3, filter->Q); // A*P*A' + Q
 }
-#endif
+//#endif
 
 /* Perform the update step
 	UPDATE:
@@ -128,7 +130,7 @@ void ekf_filter_predict(ekf_filter* filter) {
 		Update P
 			P = (eye(numel(x)) - K * H) * P;
 */
-void ekf_filter_update(ekf_filter* filter, float *y) {
+void ekf_filter_update(ekf_filter* filter, float *Y) {
 
 	/*  E = H * P * H' + R */
 	fmat_transpose(EKF_M, EKF_N, filter->tmp1, filter->H); // H'
@@ -148,7 +150,7 @@ void ekf_filter_update(ekf_filter* filter, float *y) {
 	fmat_sub(EKF_N, EKF_N, filter->P, filter->P, filter->tmp3); //P = P (1 - K*H)
 	
 	/*  X = X + K * err */
-	fmat_sub(EKF_M, 1, filter->tmp1, y, filter->Zp); // err = Z - Zp
+	fmat_sub(EKF_M, 1, filter->tmp1, Y, filter->Zp); // err = Y - Yp
 	fmat_mult(EKF_N, EKF_M, 1, filter->tmp3, filter->tmp2, filter->tmp1); // K*err
 	fmat_add(EKF_N, 1, filter->X, filter->Xp, filter->tmp3); // X = X + K*err
 
@@ -173,9 +175,9 @@ void linear_filter(float* X, float dt, float *dX, float* A)
 	A[1*EKF_N+3] = -dt;
 	A[1*EKF_N+5] =  dt;
 };
-
+/*
 #ifdef RSSI_LOCALIZATION
-/* Linearized (Jacobian) measure function */
+// Linearized (Jacobian) measure function
 void linear_measure(float*X, float* Y, float *H, btmodel *model)
 {
 	int row, col;
@@ -228,13 +230,14 @@ void linear_measure(float*X, float* Y, float *H, btmodel *model)
 
 };
 #elseif UWB_LOCALIZATION
+*/
 /* Linearized (Jacobian) measure function */
 void linear_measure(float*X, float* Y, float *H)
 {
 	int row, col;
 
 	// RSSI measurement
-	Y[0] = sqrt(pow(X[0],2.0) + pow(X[1],2.0) + pow(X[5],2.0));
+	Y[0] = sqrt(pow(X[0],2.0) + pow(X[1],2.0) + pow(X[6],2.0));
 
 	// x velocity of i (north)
 	Y[1] = X[2];
@@ -257,8 +260,8 @@ void linear_measure(float*X, float* Y, float *H)
 		for (col = 0 ; col < EKF_N ; col++ )
 		{
 			// x, y, and z pos columns are affected by the RSSI
-			if ((row == 0) && (col == 0 || col == 1 || col == 5 )) {
-				H[ row*EKF_N+col ] = X[col]/(pow(X[0],2.0) + pow(X[1],2.0) + pow(X[5],2.0));
+			if ((row == 0) && (col == 0 || col == 1 || col == 6 )) {
+				H[ row*EKF_N+col ] = X[col]/(pow(X[0],2.0) + pow(X[1],2.0) + pow(X[6],2.0));
 			}
 			
 			// All other values are 1
@@ -278,4 +281,4 @@ void linear_measure(float*X, float* Y, float *H)
 	}
 
 };
-#endif
+//#endif

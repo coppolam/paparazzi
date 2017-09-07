@@ -319,7 +319,19 @@
       <field name="power"   type="float" unit="W"/>
     </message>
 
-    <!-- 38 is free -->
+    <message name="RLFILTER" id="38">
+      <description>Relative localization data for other tracked MAVs in 
+terms of x y and z in the body axis</description>
+      <field name="trackedID"      type="int32"    unit=""/>
+      <field name="rangearray"           type="float" unit="dB"/>
+      <field name="ekf_x_tracked"  type="float"    unit="m/s"/>
+      <field name="ekf_y_tracked"  type="float"    unit="m/s"/>
+      <field name="ekf_vx_own"     type="float"    unit="m/s"/>
+      <field name="ekf_vy_own"     type="float"    unit="m/s"/>
+      <field name="ekf_vx_tracked" type="float"    unit="m/s"/>
+      <field name="ekf_vy_tracked" type="float"    unit="m/s"/>
+      <field name="ekf_z_pos"      type="float"    unit="m"/>
+    </message>
     <!-- 39 is free -->
     <!-- 40 is free -->
 

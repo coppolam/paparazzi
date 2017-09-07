@@ -42,11 +42,16 @@
 #define INS_INT_VEL_ID ABI_BROADCAST
 #endif
 
+#ifndef UWB_LOCALIZATION
+#define UWB_LOCALIZATION
+#endif
+
 int IDarray[NUAVS-1]; 		// Array of IDs of other MAVs
 uint32_t now_ts[NUAVS-1]; 	// Time of last received message from each MAV
 int nf;						// Number of filters registered
 ekf_filter ekf[NUAVS-1]; 	// EKF structure
-
+float rangearray[NUAVS-1];	// Recorded RSSI values (so they can all be sent)
+/*
 #ifdef RSSI_LOCALIZATION
 int8_t srcstrength[NUAVS-1];// Source strength
 float RSSIarray[NUAVS-1];	// Recorded RSSI values (so they can all be sent)
@@ -142,8 +147,8 @@ static void bluetoothmsg_cb(uint8_t sender_id __attribute__((unused)),
 
 	}
 };
-#elseif UWB_LOCALIZATION
-float rangearray[NUAVS-1];	// Recorded RSSI values (so they can all be sent)
+#else //if UWB_LOCALIZATION
+*/
 static abi_event uwb_ev;
 static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)), 
 	uint8_t ac_id, float range, float trackedVx, float trackedVy, float trackedh);
@@ -151,6 +156,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)), 
 	uint8_t ac_id, float range, float trackedVx, float trackedVy, float trackedh) 
 {
+
 	int i = -1; // Initialize the index of all tracked drones (-1 for null assumption of no drone found).
 
 	// Check if a new aircraft ID is present, if it's a new ID we start a new EKF for it.
@@ -167,26 +173,20 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		fmat_scal_mult(EKF_M, EKF_M, ekf[nf].R, pow(SPEEDNOISE,2.0), ekf[nf].R);
 		ekf[nf].Q[0]   	   = 0.01; // Reccomended 0.01 to give this process a high level of trust
 		ekf[nf].Q[EKF_N+1] = 0.01;
-		ekf[nf].R[0]   = pow(RSSINOISE,2.0);
+		ekf[nf].R[0]   = 0.1;
 			
 		// Initialize the states
 		// Initial position cannot be zero or the filter will divide by zero on initialization
-		ekf[i].X[0] = 1.0; // Relative position North
-		ekf[i].X[1] = 1.0; // Relative position East
-		// The other variables can be initialized at 0
-		ekf[i].X[2] = 0.0; // Own Velocity North
-		ekf[i].X[3] = 0.0; // Own Velocity East
-		ekf[i].X[4] = 0.0; // Relative velocity North
-		ekf[i].X[5] = 0.0; // Relative velocity East
-		ekf[i].X[6] = 0.0; // Height difference
+		ekf[nf].X[0] = 1.0; // Relative position North
+		ekf[nf].X[1] = 1.0; // Relative position East
 
-		ekf[nf].dt  = 0.1;  // Initial assumption for time difference between messages (STDMA code runs at 5Hz)
-		nf++; 					 // Number of filter is present is increased
+		ekf[nf].dt  = 0.2;  // Initial assumption for time difference between messages (STDMA code runs at 5Hz)
+		nf++; 			 	// Number of filter is present is increased
 	}
 	// Else, if we do recognize the ID, then we can update the measurement message data
 	else if ((i != -1) || (nf == (NUAVS-1)) )
 	{
-		RSSIarray[i] = (float)rssi; // Store RSSI in array (for logging purposes)
+		rangearray[i] = range; // Store RSSI in array (for logging purposes)
 
 		// Get own velocities
 		float ownVx = stateGetSpeedEnu_f()->y; // Velocity North in NED
@@ -195,13 +195,13 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		keepbounded(&ownVx,-2.0,2.0);
 		keepbounded(&ownVy,-2.0,2.0);
 
+		if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED)
+		{
 		// Make the filter only in Guided mode (flight).
 		// This is because it is best for the filter should only start once the drones are in motion, 
 		// otherwise it might diverge while drones are not moving.
-		if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED)
-		{
 			ekf[i].dt = (get_sys_time_usec() - now_ts[i])/pow(10,6); // Update the time between messages
-			
+
 			// As for own velocity, bind to realistic amounts to avoid occasional spikes/NaN/inf errors
 			keepbounded(&trackedVx,-2.0,2.0);
 			keepbounded(&trackedVy,-2.0,2.0);
@@ -209,7 +209,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			// Construct measurement vector Y for EKF using the latest data obtained.
 			// Y = [RSSI owvVx ownVy trackedVx trackedVy dh], EKF_M = 6 as defined in discreteekf.h
 			float Y[EKF_M];
-			Y[0] = range; 	//RSSI measurement
+			Y[0] = range; 	        //RSSI measurement
 			Y[1] = ownVx; 	   		// Own velocity North (NED frame)
 			Y[2] = ownVy;			// Own velocity East  (NED frame)
 			Y[3] = trackedVx;  		// Velocity of other drone Norht (NED frame)
@@ -217,15 +217,24 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			Y[5] = trackedh - stateGetPositionEnu_f()->z;  // Height difference
 			
 			// Run the steps of the EKF, but only if velocity difference is significant (to filter out minimal noise)
-			ekf_filter_predict(&ekf[i], &model[i]); // Prediction step of the EKF 
+			ekf_filter_predict(&ekf[i]); // Prediction step of the EKF
 			ekf_filter_update(&ekf[i], Y);	// Update step of the EKF
 		}
-
+		else{
+			ekf[i].X[0] = 1.0; // Relative position North
+			ekf[i].X[1] = 1.0; // Relative position East
+			// The other variables can be initialized at 0
+			ekf[i].X[2] = 0.0; // Own Velocity North
+			ekf[i].X[3] = 0.0; // Own Velocity East
+			ekf[i].X[4] = 0.0; // Relative velocity North
+			ekf[i].X[5] = 0.0; // Relative velocity East
+			ekf[i].X[6] = 0.0; // Height difference
+		}
 		now_ts[i] = get_sys_time_usec();  // Store latest time
 
 	}
 };
-#endif
+//#endif
 
 
 #ifdef PPRZ_MSG_ID_RLFILTER
@@ -234,20 +243,22 @@ static void send_rafilterdata(struct transport_tx *trans, struct link_device *de
 {
 	// To avoid overflowing, it is best to send the data of each tracked drone separately.
 	// To do so, we can cycle through the filters at each new timestep.
+
 	cnt++;
-	if (cnt == nf)
+	if (cnt >= nf)
 		cnt = 0;
+	//printf("rangearray[cnt] is: %f, cnt is: %i\n",rangearray[cnt],cnt);
 
 	pprz_msg_send_RLFILTER(
 		trans, dev, AC_ID,			 // Standard stuff
-		&id,			     		 // ID of the tracked UAV in question
-		&RSSIarray[i], 		    	 // Received ID and RSSI
-		&srcstrength[i],		     // Source strength
-		&ekf[i].X[0], &ekf[i].X[1],  // Relative position [North, East]
-		&ekf[i].X[2], &ekf[i].X[3],  // Own velocity [North, East]
-		&ekf[i].X[4], &ekf[i].X[5],  // Relative velocity of other drone [North, East]
-		&ekf[i].X[6]				 // Height separation [Down]
+		&IDarray[cnt],			     		 // ID of the tracked UAV in question
+		&rangearray[cnt], 		    	 // Received ID and RSSI
+		&ekf[cnt].X[0], &ekf[cnt].X[1],  // Relative position [North, East]
+		&ekf[cnt].X[2], &ekf[cnt].X[3],  // Own velocity [North, East]
+		&ekf[cnt].X[4], &ekf[cnt].X[5],  // Relative velocity of other drone [North, East]
+		&ekf[cnt].X[6]				 // Height separation [Down]
 		);
+
 			 
 };
 #endif
@@ -256,12 +267,13 @@ void relativelocalizationfilter_init(void)
 {
 	array_make_zeros_int(NUAVS-1, IDarray); // Clear out the known IDs
 	nf = 0; // Number of active filters upon initialization
-
+/*
 	#ifdef RSSI_LOCALIZATION
 	AbiBindMsgRSSI(ABI_BROADCAST, &rssi_ev, bluetoothmsg_cb); // Subscribe to the ABI RSSI messages
 	#elseif UWB_LOCALIZATION
-	AbiBindMsgUWB(ABI_BROADCAST, &uwb_ev, uwbmsg_cb); // Subscribe to the ABI RSSI messages
 	#endif
+	*/
+	AbiBindMsgUWB(ABI_BROADCAST, &uwb_ev, uwbmsg_cb); // Subscribe to the ABI RSSI messages
 
 	#ifdef PPRZ_MSG_ID_RLFILTER
 	cnt = 0;
