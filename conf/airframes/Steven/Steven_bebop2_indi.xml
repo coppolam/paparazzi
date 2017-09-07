@@ -6,6 +6,7 @@
     <target name="ap" board="bebop2">    
 	  <configure name="HOST" value="192.168.42.$(AC_ID)" />
 	  <configure name="MODEM_HOST" value="192.168.42.26" />
+	  <configure name="USE_BARO_BOARD" value="FALSE"/>
 	</target>
 
     <target name="nps" board="pc">
@@ -25,7 +26,7 @@
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
     </module>
-    <module name="ins" type="extended"/>
+    <module name="ins" type="gps_passthrough"/>
   </firmware>
 
   <modules main_freq="512">

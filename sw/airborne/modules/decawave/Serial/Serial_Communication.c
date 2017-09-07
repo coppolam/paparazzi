@@ -133,8 +133,9 @@ void decawave_serial_periodic(void)
 	current_speed = *stateGetSpeedNed_f();
 	current_pos = *stateGetPositionNed_f();
 
-	sendFloat(VX,current_speed.x);
-	sendFloat(VY,current_speed.y);
+	//sendFloat(VX,current_speed.x);
+	sendFloat(VX,stateGetSpeedEnu_f()->y);
+	sendFloat(VY,stateGetSpeedEnu_f()->x);
 	sendFloat(Z,current_pos.z);
 
 

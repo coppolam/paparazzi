@@ -45,7 +45,6 @@
 #ifndef UWB_LOCALIZATION
 #define UWB_LOCALIZATION
 #endif
-int blip = 0;
 int IDarray[NUAVS-1]; 		// Array of IDs of other MAVs
 uint32_t now_ts[NUAVS-1]; 	// Time of last received message from each MAV
 int nf;						// Number of filters registered
@@ -172,18 +171,29 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		// Set up the Q and R matrices and all the rest
 		// Weights are based on:
 		// Coppola et al, "On-board Communication-based Relative Localization for Collision Avoidance in Micro Air Vehicle teams", 2017
-		fmat_scal_mult(EKF_N, EKF_N, ekf[nf].Q, pow(0.5,2.0), ekf[nf].Q);
-		fmat_scal_mult(EKF_M, EKF_M, ekf[nf].R, pow(SPEEDNOISE,2.0), ekf[nf].R);
+		fmat_scal_mult(EKF_N, EKF_N, ekf[nf].Q, pow(0.3,2.0), ekf[nf].Q);
+		fmat_scal_mult(EKF_M, EKF_M, ekf[nf].R, pow(0.1,2.0), ekf[nf].R);
 		ekf[nf].Q[0]   	   = 0.01; // Reccomended 0.01 to give this process a high level of trust
 		ekf[nf].Q[EKF_N+1] = 0.01;
-		ekf[nf].R[0]   = 0.1;
-			
+		ekf[nf].R[0]   = 0.5;
+		ekf[nf].P[EKF_N*2+2] = 0.1;
+		ekf[nf].P[EKF_N*3+3] = 0.1;
+		ekf[nf].P[EKF_N*4+4] = 0.1;
+		ekf[nf].P[EKF_N*5+5] = 0.1;
+		ekf[nf].P[EKF_N*5+5] = 0.1;
+
 		// Initialize the states
 		// Initial position cannot be zero or the filter will divide by zero on initialization
-		ekf[nf].X[0] = 1.0; // Relative position North
-		ekf[nf].X[1] = 1.0; // Relative position East
+		ekf[nf].X[0] = 0.1; // Relative position North
+		ekf[nf].X[1] = 0.1; // Relative position East
+		// The other variables can be initialized at 0
+		ekf[nf].X[2] = 0.0; // Own Velocity North
+		ekf[nf].X[3] = 0.0; // Own Velocity East
+		ekf[nf].X[4] = 0.0; // Relative velocity North
+		ekf[nf].X[5] = 0.0; // Relative velocity East
+		ekf[nf].X[6] = 0.0; // Height difference
 
-		ekf[nf].dt  = 0.2;  // Initial assumption for time difference between messages (STDMA code runs at 5Hz)
+		ekf[nf].dt  = 0.1;  // Initial assumption for time difference between messages (STDMA code runs at 5Hz)
 		nf++; 			 	// Number of filter is present is increased
 	}
 	// Else, if we do recognize the ID, then we can update the measurement message data
@@ -199,7 +209,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		keepbounded(&ownVy,-2.0,2.0);
 
 		//if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED)
-		if(blip>2)
+		if(1)
 		{
 		// Make the filter only in Guided mode (flight).
 		// This is because it is best for the filter should only start once the drones are in motion, 
@@ -222,17 +232,6 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			// Run the steps of the EKF, but only if velocity difference is significant (to filter out minimal noise)
 			ekf_filter_predict(&ekf[i]); // Prediction step of the EKF
 			ekf_filter_update(&ekf[i], Y);	// Update step of the EKF
-		}
-		else{
-			blip = 3;
-			ekf[i].X[0] = 1.0; // Relative position North
-			ekf[i].X[1] = 1.0; // Relative position East
-			// The other variables can be initialized at 0
-			ekf[i].X[2] = 0.0; // Own Velocity North
-			ekf[i].X[3] = 0.0; // Own Velocity East
-			ekf[i].X[4] = 0.0; // Relative velocity North
-			ekf[i].X[5] = 0.0; // Relative velocity East
-			ekf[i].X[6] = 0.0; // Height difference
 		}
 		now_ts[i] = get_sys_time_usec();  // Store latest time
 
