@@ -45,7 +45,7 @@
 #ifndef UWB_LOCALIZATION
 #define UWB_LOCALIZATION
 #endif
-
+int blip = 0;
 int IDarray[NUAVS-1]; 		// Array of IDs of other MAVs
 uint32_t now_ts[NUAVS-1]; 	// Time of last received message from each MAV
 int nf;						// Number of filters registered
@@ -149,6 +149,9 @@ static void bluetoothmsg_cb(uint8_t sender_id __attribute__((unused)),
 };
 #else //if UWB_LOCALIZATION
 */
+
+int cnt;
+
 static abi_event uwb_ev;
 static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)), 
 	uint8_t ac_id, float range, float trackedVx, float trackedVy, float trackedh);
@@ -195,7 +198,8 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		keepbounded(&ownVx,-2.0,2.0);
 		keepbounded(&ownVy,-2.0,2.0);
 
-		if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED)
+		//if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED)
+		if(blip>2)
 		{
 		// Make the filter only in Guided mode (flight).
 		// This is because it is best for the filter should only start once the drones are in motion, 
@@ -215,12 +219,12 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			Y[3] = trackedVx;  		// Velocity of other drone Norht (NED frame)
 			Y[4] = trackedVy;		// Velocity of other drone East  (NED frame)
 			Y[5] = trackedh - stateGetPositionEnu_f()->z;  // Height difference
-			
 			// Run the steps of the EKF, but only if velocity difference is significant (to filter out minimal noise)
 			ekf_filter_predict(&ekf[i]); // Prediction step of the EKF
 			ekf_filter_update(&ekf[i], Y);	// Update step of the EKF
 		}
 		else{
+			blip = 3;
 			ekf[i].X[0] = 1.0; // Relative position North
 			ekf[i].X[1] = 1.0; // Relative position East
 			// The other variables can be initialized at 0
@@ -238,7 +242,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 
 
 #ifdef PPRZ_MSG_ID_RLFILTER
-int cnt;
+
 static void send_rafilterdata(struct transport_tx *trans, struct link_device *dev)
 {
 	// To avoid overflowing, it is best to send the data of each tracked drone separately.
