@@ -1,0 +1,121 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789"
+	max_dist_from_home="8" name="Test flight plan Steven" security_height="0.4">
+	<header>
+		#include "autopilot.h"
+		#include "subsystems/ahrs.h"
+		#include "subsystems/electrical.h"
+		#include "subsystems/datalink/datalink.h"
+	</header>
+	<waypoints>
+		<waypoint height="0" name="HOME" x="0.0" y="0.0" />
+		<waypoint height="2" name="CLIMB" x="1.2" y="-0.6" />
+		<waypoint name="GOAL" x="0.0" y="0.0" />
+		<waypoint height="1.5" name="STDBY" x="-1.5" y="-1.5" />
+		<waypoint name="TD" x="0.8" y="-1.7" />
+		<waypoint name="p1" x="2.0" y="2.0" />
+		<waypoint lat="51.9906213" lon="4.3768628" name="_CZ1" />
+		<waypoint lat="51.9905874" lon="4.3767766" name="_CZ2" />
+		<waypoint lat="51.9906409" lon="4.3767226" name="_CZ3" />
+		<waypoint lat="51.990667" lon="4.376806" name="_CZ4" />
+		<waypoint lat="51.9906873" lon="4.3768069" name="_DZ1" />
+		<waypoint lat="51.9906496" lon="4.3767068" name="_DZ2" />
+		<waypoint lat="51.9905876" lon="4.3767679" name="_DZ3" />
+		<waypoint lat="51.9906254" lon="4.3768677" name="_DZ4" />
+	</waypoints>
+	<sectors>
+		<!-- sector color="red" name="CyberZoo">
+			<corner name="_CZ1" />
+			<corner name="_CZ2" />
+			<corner name="_CZ3" />
+			<corner name="_CZ4" />
+		</sector-->
+		<sector color="orange" name="DangerZone">
+			<corner name="_DZ1" />
+			<corner name="_DZ2" />
+			<corner name="_DZ3" />
+			<corner name="_DZ4" />
+		</sector>
+	</sectors>
+	<variables>
+		<variable var="selfradius" min="-6" max="6" step="0.1" />
+	</variables>
+	<exceptions>
+		<!--exception cond="!InsideDangerZone(GetPosX(), GetPosY())" deroute="Standby" /-->
+		<!--exception cond="datalink_time > 2" deroute="land here" /-->
+		<!-- exception cond="electrical.bat_low && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('flare')) && !(nav_block == IndexOfBlock('landed'))"	deroute="land" />
+		<exception cond="electrical.bat_critical && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('flare')) && !(nav_block == IndexOfBlock('landed'))" deroute="land here" /-->
+	</exceptions>
+	<blocks>
+		<block name="Wait GPS">
+			<call_once fun="NavKillThrottle()" />
+			<while cond="!GpsFixValid()" />
+		</block>
+		<block name="Geo init">
+			<while cond="LessThan(NavBlockTime(), 5)" />
+			<call_once fun="NavSetAltitudeReferenceHere()" />
+			<!-- call_once fun="NavSetGroundReferenceHere()"/-->
+		</block>
+		<block name="Holding point">
+			<call_once fun="NavKillThrottle()" />
+			<attitude pitch="0" roll="0" throttle="0"
+				vmode="throttle" />
+		</block>
+		<block name="Start Engine">
+			<call_once fun="NavResurrect()" />
+			<attitude pitch="0" roll="0" throttle="0"
+				vmode="throttle" />
+		</block>
+		<block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+			<exception cond="stateGetPositionEnu_f()->z > 1.25" deroute="Standby" />
+			<call_once fun="NavSetWaypointHere(WP_CLIMB)" />
+			<stay wp="CLIMB" climb="0.5" vmode="climb"/>
+			<!--stay wp="CLIMB" throttle="0.5" vmode="throttle"/-->
+		</block>
+		<block name="Standby" strip_button="Standby" strip_icon="home.png">
+			<stay wp="STDBY" />
+		</block>
+		<block name="START" strip_button="Go" strip_icon="lookfore.png">
+			<call_once fun="NavSetWaypointHere(WP_GOAL)" />
+		</block>
+		<block name="StayGoal">
+			<stay wp="GOAL" />
+		</block>
+		<block name="stay_p1">
+			<stay wp="p1" />
+		</block>
+		<block name="Circle">
+			<while cond="TRUE">
+				<circle wp="GOAL" radius="selfradius" />
+			</while>
+		</block>
+		<block name="Spiral">
+			<while cond="LessThan(NavBlockTime(),300)">
+				<circle wp="GOAL" radius="1+NavBlockTime()*0.015" />
+			</while>
+		</block>
+		<block name="NegSpiral">
+			<while cond="LessThan(NavBlockTime(),300)">
+				<circle wp="GOAL" radius="-1-NavBlockTime()*0.015" />
+			</while>
+		</block>
+		<block name="land here" strip_button="land Here" strip_icon="land-right.png">
+			<call_once fun="NavSetWaypointHere(WP_TD)" />
+		</block>
+		<block name="land">
+			<go wp="TD" />
+		</block>
+		<block name="flare">
+			<exception cond="NavDetectGround()" deroute="Holding point" />
+			<exception cond="!nav_is_in_flight()" deroute="landed" />
+			<call_once fun="NavStartDetectGround()" />
+			<stay climb="nav_descend_vspeed" vmode="climb" wp="TD" />
+		</block>
+		<block name="landed">
+			<call_once fun="NavKillThrottle()" />
+			<attitude pitch="0" roll="0" throttle="0" until="FALSE"
+				vmode="throttle" />
+		</block>
+	</blocks>
+</flight_plan>
