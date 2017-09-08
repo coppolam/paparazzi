@@ -23,6 +23,7 @@
  * Relative Localization Filter for collision avoidance between drones
  */
 
+#include <time.h>
 #include "relativelocalizationfilter.h"
 #include "subsystems/datalink/telemetry.h"
 #include "modules/multi/traffic_info.h"
@@ -50,6 +51,17 @@ uint32_t now_ts[NUAVS-1]; 	// Time of last received message from each MAV
 int nf;						// Number of filters registered
 ekf_filter ekf[NUAVS-1]; 	// EKF structure
 float rangearray[NUAVS-1];	// Recorded RSSI values (so they can all be sent)
+struct EnuCoor_f current_pos;
+struct EnuCoor_f current_speed;
+int counter = 0;
+
+//char rlFileName[50] = "/data/ftp/internal_000/rlLogFile1.csv";
+
+/** The file pointer */
+static FILE *rlFileLogger = NULL;
+char* rlconcat(const char *s1, const char *s2);
+
+#define RLLOG 1
 /*
 #ifdef RSSI_LOCALIZATION
 int8_t srcstrength[NUAVS-1];// Source strength
@@ -189,9 +201,10 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		// The other variables can be initialized at 0
 		ekf[nf].X[2] = 0.0; // Own Velocity North
 		ekf[nf].X[3] = 0.0; // Own Velocity East
-		ekf[nf].X[4] = 0.0; // Relative velocity North
-		ekf[nf].X[5] = 0.0; // Relative velocity East
+		ekf[nf].X[4] = 0.0; // Velocity other North
+		ekf[nf].X[5] = 0.0; // Velocity other East
 		ekf[nf].X[6] = 0.0; // Height difference
+		ekf[nf].X[7] = 0.0; // Bias
 
 		ekf[nf].dt  = 0.1;  // Initial assumption for time difference between messages (STDMA code runs at 5Hz)
 		nf++; 			 	// Number of filter is present is increased
@@ -233,6 +246,37 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			ekf_filter_predict(&ekf[i]); // Prediction step of the EKF
 			ekf_filter_update(&ekf[i], Y);	// Update step of the EKF
 		}
+		if(RLLOG){
+			current_speed = *stateGetSpeedEnu_f();
+			current_pos = *stateGetPositionEnu_f();
+
+			if(rlFileLogger!=NULL){
+				fprintf(rlFileLogger,"%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+						counter,
+						i,
+						(float)(now_ts[i]/pow(10,6)),
+						ekf[i].dt,
+						current_pos.y,
+						current_pos.x,
+						-current_pos.z,
+						current_speed.y,
+						current_speed.x,
+						-current_speed.z,
+						range,
+						trackedVx,
+						trackedVy,
+						trackedh,
+						ekf[i].X[0],
+						ekf[i].X[1],
+						ekf[i].X[2],
+						ekf[i].X[3],
+						ekf[i].X[4],
+						ekf[i].X[5],
+						ekf[i].X[6],
+						ekf[i].X[7]);
+				counter++;
+			}
+		}
 		now_ts[i] = get_sys_time_usec();  // Store latest time
 
 	}
@@ -268,6 +312,29 @@ static void send_rafilterdata(struct transport_tx *trans, struct link_device *de
 
 void relativelocalizationfilter_init(void)
 {
+
+
+
+	time_t rawtime;
+	struct tm * timeinfo;
+
+
+	time ( &rawtime );
+	timeinfo = localtime ( &rawtime );
+	char time[30];
+	strftime(time,sizeof(time),"%Y-%m-%d-%X",timeinfo);
+
+	//printf ( "Current local time and date: %s", asctime (timeinfo) );
+	char* temp = rlconcat("/data/ftp/internal_000/rlLogFile_",time);
+	char* rlFileName=rlconcat(temp,".txt");
+
+
+	if(RLLOG){
+		rlFileLogger = fopen(rlFileName,"w");
+		if (rlFileLogger!=NULL){
+			fprintf(rlFileLogger,"msg_count,AC_ID,time,dt,own_x,own_y,own_z,own_vx,own_vy,own_vz,Range,track_vx_meas,track_vy_meas,track_z_meas,kal_x,kal_y,kal_vx,kal_vy,kal_oth_vx,kal_oth_vy,kal_rel_h,kal_bias\n");
+		}
+	}
 	array_make_zeros_int(NUAVS-1, IDarray); // Clear out the known IDs
 	nf = 0; // Number of active filters upon initialization
 /*
@@ -310,4 +377,13 @@ void relativelocalizationfilter_periodic(void)
 	// Message through USB bluetooth dongle to other drones
 	DOWNLINK_SEND_GPS_SMALL(stdma_trans, bluegiga_p, &multiplex_speed, &gps.lla_pos.lat, &gps.lla_pos.lon, &alt);
 	#endif
+}
+
+char* rlconcat(const char *s1, const char *s2)
+{
+    char *result = malloc(strlen(s1)+strlen(s2)+1);//+1 for the zero-terminator
+    //in real code you would check for errors in malloc here
+    strcpy(result, s1);
+    strcat(result, s2);
+    return result;
 }

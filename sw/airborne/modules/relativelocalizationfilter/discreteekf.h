@@ -33,7 +33,7 @@
 #include "string.h"
 #include "math.h"
 
-#define EKF_N 7
+#define EKF_N 8
 #define EKF_M 6
 
 typedef struct ekf_filter {

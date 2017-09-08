@@ -237,7 +237,7 @@ void linear_measure(float*X, float* Y, float *H)
 	int row, col;
 
 	// RSSI measurement
-	Y[0] = sqrt(pow(X[0],2.0) + pow(X[1],2.0) + pow(X[6],2.0));
+	Y[0] = sqrt(pow(X[0],2.0) + pow(X[1],2.0) + pow(X[6],2.0)) + X[7];
 
 	// x velocity of i (north)
 	Y[1] = X[2];
@@ -269,7 +269,8 @@ void linear_measure(float*X, float* Y, float *H)
 				((row == 2) && (col == 3)) ||
 				((row == 3) && (col == 4)) ||
 				((row == 4) && (col == 5)) ||
-				((row == 5) && (col == 6)))
+				((row == 5) && (col == 6)) ||
+				((row == 6) && (col == 7)))
 			{
 				H[ row*EKF_N+col ] = 1.0;
 			}
