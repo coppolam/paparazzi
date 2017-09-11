@@ -1,0 +1,18 @@
+ <!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="Steven_Guided_Control" dir="ctrl">
+	<doc>
+		<description>
+			Control module for guided flight.
+		</description>
+	</doc>
+	<header>
+		<file name="Steven_guided_ctrl.h" />
+	</header>
+	<init fun="guided_ctrl_init()" />
+	<periodic fun="guided_ctrl_per()" freq="1"
+		autorun="TRUE" />
+	<makefile target="ap">
+		<file name="Steven_guided_ctrl.c" />
+	</makefile>
+</module>

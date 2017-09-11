@@ -42,9 +42,19 @@
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
     <module name="relativelocalizationfilter"/>
-    <module name="logger_file">
+    <module name="Steven_Guided_Control"/>
+    
+    <!--module name="video_thread"/>
+    <module name="pose_history"/>
+    <module name="cv_opticflow">
+      <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
+      <define name="OPTICFLOW_METHOD" value="1"/>
+      <define name="OPTICFLOW_MEDIAN_FILTER" value="TRUE"/>
+      <define name="OPTICFLOW_KALMAN_FILTER" value="FALSE"/>
+    </module-->
+    <!--module name="logger_file">
       <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
-    </module>
+    </module-->
   </modules>
   
   <section name="RELATIVELOCALIZATIONFILTER" prefix="">

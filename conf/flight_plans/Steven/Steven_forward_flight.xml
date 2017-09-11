@@ -74,7 +74,7 @@
 			<!--stay wp="CLIMB" throttle="0.5" vmode="throttle"/-->
 		</block>
 		<block name="Standby_Set" strip_button="Standby" strip_icon="home.png">
-                        <call_once fun="NavSetWaypointHere(WP_GOAL)"/>
+            <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
 			<stay wp="STDBY" />
 		</block>
                 <block name="Standby" strip_button="Standby" strip_icon="home.png">
@@ -88,6 +88,20 @@
 		</block>
 		<block name="stay_p1">
 			<stay wp="p1" />
+		</block>
+		<block name="fly_forward">
+			<while cond="TRUE">
+				<call fun="setForwardVelocity(0.5)"/>
+			</while>
+                        <exception cond="block_time>2" deroute="stop_flying"/>
+		</block>
+                <block name="stop_flying">
+			<call fun="stopFlying()"/>
+			<deroute block="land_guided"/>
+		</block>
+		<block name="land_guided">
+			<call fun="goLand()"/>
+			<deroute block="Standby_Set"/>
 		</block>
 		<block name="Circle">
 			<while cond="TRUE">
