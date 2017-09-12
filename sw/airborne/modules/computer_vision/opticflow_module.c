@@ -158,6 +158,7 @@ void opticflow_module_run(void)
                            opticflow_state.agl);
     //TODO Find an appropiate quality measure for the noise model in the state filter, for now it is tracked_cnt
     if (opticflow_result.noise_measurement < 0.8) {
+      printf("Sending opticflow! %f %f \n",opticflow_result.vel_body_x,opticflow_result.vel_body_y);
       AbiSendMsgVELOCITY_ESTIMATE(OPTICFLOW_SEND_ABI_ID, now_ts,
                                   opticflow_result.vel_body_x,
                                   opticflow_result.vel_body_y,

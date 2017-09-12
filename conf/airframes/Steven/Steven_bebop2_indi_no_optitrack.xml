@@ -47,6 +47,10 @@
     <module name="cv_opticflow">
       <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
       <define name="MAX_HORIZON" value="10"/>
+      <define name="OPTICFLOW_METHOD" value="0"/>
+      <define name="OPTICFLOW_DEROTATION" value="FALSE"/>
+      <define name="OPTICFLOW_MEDIAN_FILTER" value="FALSE"/>
+      <define name="OPTICFLOW_KALMAN_FILTER" value="FALSE"/>
       <define name="OPTICFLOW_FX" value="347.22222222"/> <!-- 2.5 / (3.6 * 2.0) * 1000 -->
       <define name="OPTICFLOW_FY" value="347.22222222"/> <!-- 2.5 / (3.6 * 2.0) * 1000 -->
       <define name="OPTICFLOW_FOV_W" value="0.665499265"/> <!-- 2 * arctan(240 / (2*347.22222222)) -->
@@ -179,8 +183,8 @@
     <define name="REF_RATE_R" value="28.0"/>
 
     <!-- second order filter parameters -->
-    <!--define name="FILT_CUTOFF" value="3.2"/>
-    <define name="FILT_CUTOFF_R" value="3.2"/-->
+    <define name="FILT_CUTOFF" value="3.2"/>
+    <define name="FILT_CUTOFF_R" value="3.2"/>
 
     <!-- first order actuator dynamics -->
     <define name="ACT_DYN_P" value="0.06"/>
