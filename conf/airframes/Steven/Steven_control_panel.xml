@@ -81,5 +81,25 @@
         <arg flag="-ac"/>
       </program>          
     </session>
+    <session name="Steven_2_bebop_2s">
+      <program name="Server"/>
+      <program name="Messages"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Joystick">
+        <arg flag="-ac" constant="@AIRCRAFT"/>
+        <arg flag="hobbyking.xml"/>
+      </program>
+      <program name="NatNet">
+        <arg flag="-ac"/>
+      </program>
+      <program name="NatNet">
+        <arg flag="-ac"/>
+      </program>           
+    </session>
   </section>
 </control_panel>

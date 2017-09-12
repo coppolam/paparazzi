@@ -44,8 +44,21 @@ static float rec_velx = 0.0;
 static float rec_vely = 0.0;
 static float rec_range = 10.0;
 static float relxcom = 0.0;
-static float relycom = 3.0;
+static float relycom = 2.3;
+
+static float oldxerr = 0.0;
+static float oldyerr = 0.0;
+
+float relvxerr = 0.0;
+float relvyerr = 0.0;
+
+
+float oldtime = 0.0;
+float newtime = 0.0;
+float dt = 0.0;
+
 static float pgain = 0.5;
+static float dgain = 0.4;
 
 static pthread_mutex_t ekf_mutex;
 
@@ -64,6 +77,7 @@ static void uwb_cb(uint8_t sender_id __attribute__((unused)),
 
 void guided_ctrl_init(void){
 	AbiBindMsgUWB(ABI_BROADCAST, &uwb_ev, uwb_cb); // Subscribe to the ABI RSSI messages
+	oldtime = get_sys_time_usec()/pow(10,6);
 }
 
 void guided_ctrl_per(void){
@@ -75,6 +89,10 @@ bool checkVicinity(void){
 }
 
 bool trackRelPos(void){
+	newtime = get_sys_time_usec()/pow(10,6);
+	dt = newtime-oldtime;
+	oldtime = newtime;
+
 
 	bool temp = true;
 	temp &= guidance_v_set_guided_z(-1.0);
@@ -82,11 +100,22 @@ bool trackRelPos(void){
 	float relx = ekf[0].X[0];
 	float rely = ekf[0].X[1];
 	pthread_mutex_unlock(&ekf_mutex);
+
 	float relxerr = relx-relxcom; //positive error means VX must increase
 	float relyerr = rely-relycom; // positive error means VY must increase
-	float vxcommand = pgain*relxerr;
-	float vycommand = pgain*relyerr;
+
+
+	if(dt>0.0 && dt < 0.5 && oldxerr > 0.0 && oldyerr > 0.0){
+		relvxerr = (relxerr-oldxerr)/dt;
+		relvyerr = (relyerr-oldyerr)/dt;
+		oldxerr = relxerr;
+		oldyerr = relyerr;
+	}
+
+	float vxcommand = pgain*relxerr+dgain*relvxerr;
+	float vycommand = pgain*relyerr+dgain*relvyerr;
 	temp &= guidance_h_set_guided_vel(vxcommand,vycommand);
+	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 
 }
 
