@@ -5,8 +5,7 @@
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2">    
 	  <configure name="HOST" value="192.168.42.$(AC_ID)" />
-	  <configure name="MODEM_HOST" value="192.168.42.26" />
-	  <configure name="USE_BARO_BOARD" value="FALSE"/>
+	  <configure name="MODEM_HOST" value="192.168.42.42" />
 	</target>
 
     <target name="nps" board="pc">
@@ -15,7 +14,7 @@
     </target>
 
     
-    <define name="USE_SONAR" value="1"/>
+    <define name="USE_SONAR" value="TRUE"/>
 
 	  <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
@@ -26,9 +25,8 @@
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
     <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="0"/>
+      <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <configure name="AHRS_USE_GPS" value="FALSE"/>
-      <define name="AHRS_USE_GPS_HEADING" value="0"/>
     </module>
     <module name="ins" type="extended"/>
   </firmware>
@@ -44,14 +42,17 @@
     <module name="relativelocalizationfilter"/>
     <module name="Steven_Guided_Control"/>
     
-    <!--module name="video_thread"/>
+    <module name="video_thread"/>
     <module name="pose_history"/>
     <module name="cv_opticflow">
       <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
-      <define name="OPTICFLOW_METHOD" value="1"/>
-      <define name="OPTICFLOW_MEDIAN_FILTER" value="TRUE"/>
-      <define name="OPTICFLOW_KALMAN_FILTER" value="FALSE"/>
-    </module-->
+      <define name="MAX_HORIZON" value="10"/>
+      <define name="OPTICFLOW_FX" value="347.22222222"/> <!-- 2.5 / (3.6 * 2.0) * 1000 -->
+      <define name="OPTICFLOW_FY" value="347.22222222"/> <!-- 2.5 / (3.6 * 2.0) * 1000 -->
+      <define name="OPTICFLOW_FOV_W" value="0.665499265"/> <!-- 2 * arctan(240 / (2*347.22222222)) -->
+      <define name="OPTICFLOW_FOV_H" value="0.665499265"/> <!-- 2 * arctan(240 / (2*347.22222222)) -->
+      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="0.8"/> <!--Obtained from a linefit--> 
+      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.85"/> <!--Obtained from a linefit-->  </module>
     <!--module name="logger_file">
       <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
     </module-->
@@ -99,7 +100,7 @@
   <section name="AIR_DATA" prefix="AIR_DATA_">
     <define name="CALC_AIRSPEED" value="FALSE"/>
     <define name="CALC_TAS_FACTOR" value="FALSE"/>
-    <define name="CALC_AMSL_BARO" value="TRUE"/>
+    <define name="CALC_AMSL_BARO" value="FALSE"/>
   </section>
 
   <include href="conf/airframes/TUDELFT/calibrations/bebop2_22.xml" />
@@ -122,6 +123,7 @@
   <section name="INS" prefix="INS_">
     <define name="SONAR_MAX_RANGE" value="2.2"/>
     <define name="SONAR_UPDATE_ON_AGL" value="TRUE"/>
+    <define name="OPTITRACK_DONOTUSESPEED" value="TRUE"/>
     <!--define name="USE_GPS_ALT" value="1"/>
     <define name="USE_GPS_ALT_SPEED" value="1"/>
     <define name="VFF_R_GPS" value="0.01"/-->
@@ -164,21 +166,21 @@
     <define name="G2_R" value="0.20"/>
 
     <!-- For the bebop2 we need to filter the roll rate due to the dampers -->
-    <define name="FILTER_ROLL_RATE" value="TRUE"/>
+    <define name="FILTER_ROLL_RATE" value="FALSE"/>
     <define name="FILTER_PITCH_RATE" value="FALSE"/>
     <define name="FILTER_YAW_RATE" value="FALSE"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="170.0"/>
+    <define name="REF_ERR_P" value="600.0"/>
     <define name="REF_ERR_Q" value="600.0"/>
     <define name="REF_ERR_R" value="600.0"/>
-    <define name="REF_RATE_P" value="14.3"/>
+    <define name="REF_RATE_P" value="28.0"/>
     <define name="REF_RATE_Q" value="28.0"/>
     <define name="REF_RATE_R" value="28.0"/>
 
     <!-- second order filter parameters -->
-    <define name="FILT_CUTOFF" value="3.2"/>
-    <define name="FILT_CUTOFF_R" value="3.2"/>
+    <!--define name="FILT_CUTOFF" value="3.2"/>
+    <define name="FILT_CUTOFF_R" value="3.2"/-->
 
     <!-- first order actuator dynamics -->
     <define name="ACT_DYN_P" value="0.06"/>
@@ -216,8 +218,8 @@
   </section>
 
   <section name="NAVIGATION" prefix="NAV_">
-    <define name="CLIMB_VSPEED" value="4.5"/>
-    <define name="DESCEND_VSPEED" value="-1.0"/>
+    <define name="CLIMB_VSPEED" value="1.0"/>
+    <define name="DESCEND_VSPEED" value="-0.75"/>
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">
