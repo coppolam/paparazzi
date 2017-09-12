@@ -36,7 +36,6 @@ Remember to choose AP_MODE_GUIDED or else it won't work!!!
 -->
   <blocks>
     <block name="FPInit">
-      <while cond="!GpsFixValid()"/>
       <set var = "distance_obstacle_FP" value="10.0"/><!--Or else it will turn everytime if the abi message is not received-->
       <call_once fun="ins_reset_altitude_ref()"/>
       <while cond="1"/>

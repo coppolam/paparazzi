@@ -24,6 +24,7 @@
  */
 
 #include <time.h>
+#include <pthread.h>
 #include "relativelocalizationfilter.h"
 #include "subsystems/datalink/telemetry.h"
 #include "modules/multi/traffic_info.h"
@@ -61,7 +62,9 @@ int counter = 0;
 static FILE *rlFileLogger = NULL;
 char* rlconcat(const char *s1, const char *s2);
 
-#define RLLOG 1
+static pthread_mutex_t ekf_mutex;
+
+#define RLLOG 0
 /*
 #ifdef RSSI_LOCALIZATION
 int8_t srcstrength[NUAVS-1];// Source strength
@@ -171,12 +174,14 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 	uint8_t ac_id, float range, float trackedVx, float trackedVy, float trackedh) 
 {
 
+
 	int i = -1; // Initialize the index of all tracked drones (-1 for null assumption of no drone found).
 
 	// Check if a new aircraft ID is present, if it's a new ID we start a new EKF for it.
 	if (( !array_find_int(NUAVS-1, IDarray, ac_id, &i))  // If yes, a new drone is found.
 		   && (nf < NUAVS-1))  // If yes, the amount of drones does not exceed the maximum.
 	{
+		pthread_mutex_lock(&ekf_mutex);
 		IDarray[nf] = ac_id; 				// Store ID in an array (logging purposes)
 		ekf_filter_new(&ekf[nf]); 			// Initialize an EKF filter for the newfound drone
 
@@ -196,8 +201,8 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 
 		// Initialize the states
 		// Initial position cannot be zero or the filter will divide by zero on initialization
-		ekf[nf].X[0] = 0.1; // Relative position North
-		ekf[nf].X[1] = 0.1; // Relative position East
+		ekf[nf].X[0] = 0; // Relative position North
+		ekf[nf].X[1] = 3; // Relative position East
 		// The other variables can be initialized at 0
 		ekf[nf].X[2] = 0.0; // Own Velocity North
 		ekf[nf].X[3] = 0.0; // Own Velocity East
@@ -208,6 +213,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 
 		ekf[nf].dt  = 0.1;  // Initial assumption for time difference between messages (STDMA code runs at 5Hz)
 		nf++; 			 	// Number of filter is present is increased
+		pthread_mutex_unlock(&ekf_mutex);
 	}
 	// Else, if we do recognize the ID, then we can update the measurement message data
 	else if ((i != -1) || (nf == (NUAVS-1)) )
@@ -228,7 +234,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		// This is because it is best for the filter should only start once the drones are in motion, 
 		// otherwise it might diverge while drones are not moving.
 			ekf[i].dt = (get_sys_time_usec() - now_ts[i])/pow(10,6); // Update the time between messages
-
+			pthread_mutex_lock(&ekf_mutex);
 			// As for own velocity, bind to realistic amounts to avoid occasional spikes/NaN/inf errors
 			keepbounded(&trackedVx,-2.0,2.0);
 			keepbounded(&trackedVy,-2.0,2.0);
@@ -245,12 +251,14 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			// Run the steps of the EKF, but only if velocity difference is significant (to filter out minimal noise)
 			ekf_filter_predict(&ekf[i]); // Prediction step of the EKF
 			ekf_filter_update(&ekf[i], Y);	// Update step of the EKF
+			pthread_mutex_unlock(&ekf_mutex);
 		}
 		if(RLLOG){
 			current_speed = *stateGetSpeedEnu_f();
 			current_pos = *stateGetPositionEnu_f();
 
 			if(rlFileLogger!=NULL){
+				pthread_mutex_lock(&ekf_mutex);
 				fprintf(rlFileLogger,"%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
 						counter,
 						i,
@@ -275,6 +283,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 						ekf[i].X[6],
 						ekf[i].X[7]);
 				counter++;
+				pthread_mutex_unlock(&ekf_mutex);
 			}
 		}
 		now_ts[i] = get_sys_time_usec();  // Store latest time

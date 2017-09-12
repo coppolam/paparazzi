@@ -34,5 +34,9 @@ extern void guided_ctrl_per(void);
 extern bool setForwardVelocity(float velx);
 extern bool stopFlying(void);
 extern bool goLand(void);
+extern bool trackVelocity(void);
+extern bool hoverGuided(void);
+extern bool checkVicinity(void);
+extern bool trackRelPos(void);
 
 #endif /* STEVEN_GUIDED_CTRL_H_ */
