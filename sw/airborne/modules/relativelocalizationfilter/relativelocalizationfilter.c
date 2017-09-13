@@ -64,7 +64,7 @@ char* rlconcat(const char *s1, const char *s2);
 
 static pthread_mutex_t ekf_mutex;
 
-#define RLLOG 0
+#define RLLOG 1
 /*
 #ifdef RSSI_LOCALIZATION
 int8_t srcstrength[NUAVS-1];// Source strength
@@ -201,8 +201,8 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 
 		// Initialize the states
 		// Initial position cannot be zero or the filter will divide by zero on initialization
-		ekf[nf].X[0] = 0; // Relative position North
-		ekf[nf].X[1] = 3; // Relative position East
+		ekf[nf].X[0] = 0.0; // Relative position North
+		ekf[nf].X[1] = 3.0; // Relative position East
 		// The other variables can be initialized at 0
 		ekf[nf].X[2] = 0.0; // Own Velocity North
 		ekf[nf].X[3] = 0.0; // Own Velocity East

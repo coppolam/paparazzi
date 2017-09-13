@@ -57,8 +57,8 @@ float oldtime = 0.0;
 float newtime = 0.0;
 float dt = 0.0;
 
-static float pgain = 0.5;
-static float dgain = 0.4;
+static float pgain = 0.2;
+static float dgain = 0.0;
 
 static pthread_mutex_t ekf_mutex;
 
