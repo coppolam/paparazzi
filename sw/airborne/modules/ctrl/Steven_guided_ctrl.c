@@ -59,6 +59,7 @@ float dt = 0.0;
 
 static float pgain = 0.2;
 static float dgain = 0.0;
+static float vgain = 0.5;
 
 static pthread_mutex_t ekf_mutex;
 
@@ -86,6 +87,36 @@ void guided_ctrl_per(void){
 
 bool checkVicinity(void){
 	return rec_range<1;
+}
+
+bool trackOther(void){
+	newtime = get_sys_time_usec()/pow(10,6);
+	dt = newtime-oldtime;
+	oldtime = newtime;
+
+
+	bool temp = true;
+	temp &= guidance_v_set_guided_z(-1.0);
+	pthread_mutex_lock(&ekf_mutex);
+	float relx = ekf[0].X[0];
+	float rely = ekf[0].X[1];
+	pthread_mutex_unlock(&ekf_mutex);
+
+	float relxerr = relx-relxcom; //positive error means VX must increase
+	float relyerr = rely-relycom; // positive error means VY must increase
+
+
+	if(dt>0.0 && dt < 0.5 && oldxerr > 0.0 && oldyerr > 0.0){
+		relvxerr = (relxerr-oldxerr)/dt;
+		relvyerr = (relyerr-oldyerr)/dt;
+		oldxerr = relxerr;
+		oldyerr = relyerr;
+	}
+
+	float vxcommand = pgain*relxerr+dgain*relvxerr+vgain*rec_velx;
+	float vycommand = pgain*relyerr+dgain*relvyerr+vgain*rec_vely;
+	temp &= guidance_h_set_guided_vel(vxcommand,vycommand);
+	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 }
 
 bool trackRelPos(void){

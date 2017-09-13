@@ -38,5 +38,6 @@ extern bool trackVelocity(void);
 extern bool hoverGuided(void);
 extern bool checkVicinity(void);
 extern bool trackRelPos(void);
+extern bool trackOther(void);
 
 #endif /* STEVEN_GUIDED_CTRL_H_ */

@@ -51,7 +51,7 @@
 			<attitude pitch="0" roll="0" throttle="0"
 				vmode="throttle" />
 		</block>
-		<block name="Force start Engine">
+		<block key="t" name="Force start Engine">
          		<call_once fun="autopilot_set_motors_on(TRUE)"/>
           		<while cond="1"/>
       	        </block>
@@ -84,6 +84,12 @@
 				<call fun="setForwardVelocity(0.5)"/>
 			</while>
                         <exception cond="block_time>10" deroute="stop_flying"/>
+		</block>
+		<block name="track_other">
+			<while cond="TRUE">
+				<call fun="trackOther()"/>
+			</while>
+			<exception cond="checkVicinity()" deroute="stop_flying"/>
 		</block>
 		<block name="track_relative_position">
 			<while cond="TRUE">
