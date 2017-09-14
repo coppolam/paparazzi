@@ -47,7 +47,7 @@
     <module name="cv_opticflow">
       <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
       <define name="MAX_HORIZON" value="10"/>
-      <define name="OPTICFLOW_METHOD" value="1"/>
+      <define name="OPTICFLOW_METHOD" value="0"/>
       <define name="OPTICFLOW_DEROTATION" value="FALSE"/>
       <define name="OPTICFLOW_MEDIAN_FILTER" value="FALSE"/>
       <define name="OPTICFLOW_KALMAN_FILTER" value="FALSE"/>
@@ -198,7 +198,7 @@
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="HOVER_KP" value="350"/>
+    <define name="HOVER_KP" value="200"/>
     <define name="HOVER_KD" value="85"/>
     <define name="HOVER_KI" value="20"/>
     <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
@@ -212,8 +212,8 @@
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="0"/><!--120-->
-    <define name="DGAIN" value="500"/><!--100-->
-    <define name="IGAIN" value="30"/>
+    <define name="DGAIN" value="50"/><!--100-->
+    <define name="IGAIN" value="3"/>
   </section>
   
   <section name="IMU" prefix="IMU_">
