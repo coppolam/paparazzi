@@ -35,6 +35,7 @@ extern bool setForwardVelocity(float velx);
 extern bool stopFlying(void);
 extern bool goLand(void);
 extern bool trackVelocity(void);
+extern bool setForwardAndTrack(float velx);
 extern bool hoverGuided(void);
 extern bool checkVicinity(void);
 extern bool trackRelPos(void);

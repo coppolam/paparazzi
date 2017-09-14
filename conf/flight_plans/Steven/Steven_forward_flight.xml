@@ -79,21 +79,55 @@
 				<call fun="hoverGuided()"/>
 			</while>
 		</block>
+		<block name="fly_forward_delay">
+			<while cond="TRUE">
+				<call fun="hoverGuided()"/>
+			</while>
+                        <exception cond="block_time>2" deroute="fly_forward"/>
+		</block>
 		<block name="fly_forward">
 			<while cond="TRUE">
 				<call fun="setForwardVelocity(0.5)"/>
 			</while>
-                        <exception cond="block_time>10" deroute="stop_flying"/>
+                        <exception cond="block_time>5" deroute="hover_guided"/>
 		</block>
-		<block name="track_other">
+		<block name="fly_backward_delay">
 			<while cond="TRUE">
-				<call fun="trackOther()"/>
+				<call fun="hoverGuided()"/>
 			</while>
+                        <exception cond="block_time>2" deroute="fly_backward"/>
+		</block>
+		<block name="fly_backward">
+			<while cond="TRUE">
+				<call fun="setForwardVelocity(-0.5)"/>
+			</while>
+                        <exception cond="block_time>5" deroute="hover_guided"/>
 			<exception cond="checkVicinity()" deroute="stop_flying"/>
 		</block>
 		<block name="track_relative_position">
 			<while cond="TRUE">
 				<call fun="trackRelPos()"/>
+			</while>
+			<exception cond="checkVicinity()" deroute="stop_flying"/>
+		</block>
+		<block name="fly_forward_and_track">
+			<while cond="TRUE">
+				<call fun="setForwardAndTrack(0.5)"/>
+			</while>
+                        <exception cond="block_time>5" deroute="track_relative_position"/>
+			<exception cond="checkVicinity()" deroute="stop_flying"/>
+		</block>
+		
+		<block name="fly_backward_and_track">
+			<while cond="TRUE">
+				<call fun="setForwardAndTrack(-0.5)"/>
+			</while>
+                        <exception cond="block_time>5" deroute="track_relative_position"/>
+			<exception cond="checkVicinity()" deroute="stop_flying"/>
+		</block>
+		<block name="track_other">
+			<while cond="TRUE">
+				<call fun="trackOther()"/>
 			</while>
 			<exception cond="checkVicinity()" deroute="stop_flying"/>
 		</block>
@@ -111,22 +145,6 @@
 			<call fun="goLand()"/>
 			<deroute block="Standby_Set"/>
 		</block>
-		<block name="Circle">
-			<while cond="TRUE">
-				<circle wp="GOAL" radius="selfradius" />
-			</while>
-		</block>
-		<block name="Spiral">
-			<while cond="LessThan(NavBlockTime(),300)">
-				<circle wp="GOAL" radius="1+NavBlockTime()*0.015" />
-			</while>
-		</block>
-		<block name="NegSpiral">
-			<while cond="LessThan(NavBlockTime(),300)">
-				<circle wp="GOAL" radius="-1-NavBlockTime()*0.015" />
-			</while>
-		</block>
-
 		<block name="land here" strip_button="land Here" strip_icon="land-right.png">
 			<call_once fun="NavSetWaypointHere(WP_TD)" />
 		</block>

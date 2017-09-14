@@ -57,7 +57,8 @@ float oldtime = 0.0;
 float newtime = 0.0;
 float dt = 0.0;
 
-static float pgain = 0.2;
+static float pgainx = 0.2;
+static float pgainy = 0.2;
 static float dgain = 0.0;
 static float vgain = 0.5;
 
@@ -113,8 +114,8 @@ bool trackOther(void){
 		oldyerr = relyerr;
 	}
 
-	float vxcommand = pgain*relxerr+dgain*relvxerr+vgain*rec_velx;
-	float vycommand = pgain*relyerr+dgain*relvyerr+vgain*rec_vely;
+	float vxcommand = pgainx*relxerr+dgain*relvxerr+vgain*rec_velx;
+	float vycommand = pgainy*relyerr+dgain*relvyerr+vgain*rec_vely;
 	temp &= guidance_h_set_guided_vel(vxcommand,vycommand);
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 }
@@ -135,6 +136,19 @@ bool trackRelPos(void){
 	float relxerr = relx-relxcom; //positive error means VX must increase
 	float relyerr = rely-relycom; // positive error means VY must increase
 
+	/*
+	if(relyerr>0){
+		pgainy=0.2;
+	}
+	else{
+		pgainy = 0.5;
+	}*/
+
+	float Vmag = sqrt(rec_velx*rec_velx+rec_vely*rec_vely);
+
+	pgainx = 0.2+Vmag*0.5;
+	pgainy = 0.2+Vmag*0.5;
+
 
 	if(dt>0.0 && dt < 0.5 && oldxerr > 0.0 && oldyerr > 0.0){
 		relvxerr = (relxerr-oldxerr)/dt;
@@ -143,8 +157,8 @@ bool trackRelPos(void){
 		oldyerr = relyerr;
 	}
 
-	float vxcommand = pgain*relxerr+dgain*relvxerr;
-	float vycommand = pgain*relyerr+dgain*relvyerr;
+	float vxcommand = pgainx*relxerr+dgain*relvxerr;
+	float vycommand = pgainy*relyerr+dgain*relvyerr;
 	temp &= guidance_h_set_guided_vel(vxcommand,vycommand);
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 
@@ -172,6 +186,22 @@ bool setForwardVelocity(float velx){
 	temp &= guidance_v_set_guided_z(-1.0);
 	temp &= guidance_h_set_guided_vel(velx,0);
 	return !temp;
+}
+
+bool setForwardAndTrack(float velx){
+	bool temp = true;
+	temp &= guidance_v_set_guided_z(-1.0);
+	pthread_mutex_lock(&ekf_mutex);
+	float relx = ekf[0].X[0];
+	float rely = ekf[0].X[1];
+	pthread_mutex_unlock(&ekf_mutex);
+
+	float relxerr = relx-relxcom; //positive error means VX must increase
+	float relyerr = rely-relycom; // positive error means VY must increase
+	float vxcommand = pgainx*relxerr+velx;
+	float vycommand = pgainy*relyerr;
+	temp &= guidance_h_set_guided_vel(vxcommand,vycommand);
+	return !temp; //Returning FALSE means in the flight plan that the function executed successfully.
 }
 
 bool stopFlying(void){
