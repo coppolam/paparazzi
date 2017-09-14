@@ -11,7 +11,8 @@
 	<waypoints>
 		<waypoint height="0" name="HOME" x="0.0" y="0.0" />
 		<waypoint height="1" name="CLIMB" x="1.2" y="-0.6" />
-		<waypoint height = "3.0" name="GOAL" x="0.0" y="0.0" />
+		<waypoint height = "2.5" name="GOAL1" x="0.0" y="0.0" />
+		<waypoint height = "2.5" name="GOAL2" x="0.0" y="0.0" />
 		<waypoint name="TD" x="0.8" y="-1.7" />
 		<waypoint height="1.0" name="STDBY" x="-1.5" y="-1.5" />
 		<waypoint lat="51.9906873" lon="4.3768069" name="_DZ1" />
@@ -61,93 +62,39 @@
 				vmode="throttle" />
 		</block>
 		<block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-			<exception cond="stateGetPositionEnu_f()->z > 1.25" deroute="Standby" />
+			<exception cond="stateGetPositionEnu_f()->z > 1.25" deroute="Standby_Set" />
 			<call_once fun="NavSetWaypointHere(WP_CLIMB)" />
 			<stay wp="CLIMB" climb="0.5" vmode="climb"/>
 			<!--stay wp="CLIMB" throttle="0.5" vmode="throttle"/-->
-		</block>
-		<block name="staygoal">
-			<stay wp="GOAL"/>
 		</block>
 		<block name="Standby_Set" strip_button="Standby" strip_icon="home.png">
                         <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
 			<stay wp="STDBY" />
 		</block>
-                <block name="Standby" strip_button="Standby" strip_icon="home.png">
+		<block name="Standby" strip_button="Standby" strip_icon="home.png">
 			<stay wp="STDBY" />
 			<exception cond="checkVicinity()" deroute="Standby_Set"/>
 		</block>
-		<block name="hover_guided">
+		<block name="SetGoal1">
+			<call_once fun="NavSetWaypointHere(WP_GOAL1)" />
+			<deroute block="stay_goal1"/>
+		</block>
+		<block name="stay_goal1_delay">
 			<while cond="TRUE">
-				<call fun="hoverGuided()"/>
 			</while>
+			<exception cond="block_time>3" deroute="stay_goal1"/>
 		</block>
-		<block name="fly_forward_delay">
+		<block name="stay_goal1">
+			<stay wp="GOAL1"/>
+		</block>
+		<block name="stay_goal2_delay">
 			<while cond="TRUE">
-				<call fun="hoverGuided()"/>
 			</while>
-                        <exception cond="block_time>2" deroute="fly_forward"/>
+			<exception cond="block_time>3" deroute="stay_goal2"/>
 		</block>
-		<block name="fly_forward">
-			<while cond="TRUE">
-				<call fun="setForwardVelocity(0.5)"/>
-			</while>
-                        <exception cond="block_time>5" deroute="hover_guided"/>
-		</block>
-		<block name="fly_backward_delay">
-			<while cond="TRUE">
-				<call fun="hoverGuided()"/>
-			</while>
-                        <exception cond="block_time>2" deroute="fly_backward"/>
-		</block>
-		<block name="fly_backward">
-			<while cond="TRUE">
-				<call fun="setForwardVelocity(-0.5)"/>
-			</while>
-                        <exception cond="block_time>5" deroute="hover_guided"/>
-			<exception cond="checkVicinity()" deroute="stop_flying"/>
-		</block>
-		<block name="track_relative_position">
-			<while cond="TRUE">
-				<call fun="trackRelPos()"/>
-			</while>
-			<exception cond="checkVicinity()" deroute="stop_flying"/>
-		</block>
-		<block name="fly_forward_and_track">
-			<while cond="TRUE">
-				<call fun="setForwardAndTrack(0.5)"/>
-			</while>
-                        <exception cond="block_time>5" deroute="track_relative_position"/>
-			<exception cond="checkVicinity()" deroute="stop_flying"/>
-		</block>
-		
-		<block name="fly_backward_and_track">
-			<while cond="TRUE">
-				<call fun="setForwardAndTrack(-0.5)"/>
-			</while>
-                        <exception cond="block_time>5" deroute="track_relative_position"/>
-			<exception cond="checkVicinity()" deroute="stop_flying"/>
-		</block>
-		<block name="track_other">
-			<while cond="TRUE">
-				<call fun="trackOther()"/>
-			</while>
-			<exception cond="checkVicinity()" deroute="stop_flying"/>
-		</block>
-		<block name="track_velocity">
-			<while cond="TRUE">
-				<call fun="trackVelocity()"/>
-			</while>
-			<exception cond="checkVicinity()" deroute="stop_flying"/>
-		</block>
-                <block name="stop_flying">
-			<call fun="stopFlying()"/>
-			<deroute block="land_guided"/>
-		</block>
-		<block name="land_guided">
-			<call fun="goLand()"/>
-			<deroute block="Standby_Set"/>
-		</block>
+		<block name="stay_goal2">
+			<stay wp="GOAL2"/>
+		</block>         
 		<block name="land here" strip_button="land Here" strip_icon="land-right.png">
 			<call_once fun="NavSetWaypointHere(WP_TD)" />
 		</block>

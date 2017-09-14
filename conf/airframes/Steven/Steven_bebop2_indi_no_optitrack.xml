@@ -25,7 +25,7 @@
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
     <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="TRUE"/>
+      <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <configure name="AHRS_USE_GPS" value="FALSE"/>
     </module>
     <module name="ins" type="extended"/>
@@ -47,7 +47,7 @@
     <module name="cv_opticflow">
       <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
       <define name="MAX_HORIZON" value="10"/>
-      <define name="OPTICFLOW_METHOD" value="0"/>
+      <define name="OPTICFLOW_METHOD" value="1"/>
       <define name="OPTICFLOW_DEROTATION" value="FALSE"/>
       <define name="OPTICFLOW_MEDIAN_FILTER" value="FALSE"/>
       <define name="OPTICFLOW_KALMAN_FILTER" value="FALSE"/>
@@ -211,8 +211,8 @@
     <define name="REF_MAX_SPEED" value="0.7" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-    <define name="PGAIN" value="70"/><!--120-->
-    <define name="DGAIN" value="80"/><!--100-->
+    <define name="PGAIN" value="0"/><!--120-->
+    <define name="DGAIN" value="500"/><!--100-->
     <define name="IGAIN" value="30"/>
   </section>
   

@@ -137,10 +137,6 @@ void decawave_serial_periodic(void)
 	sendFloat(VX,stateGetSpeedEnu_f()->y);
 	sendFloat(VY,stateGetSpeedEnu_f()->x);
 	sendFloat(Z,current_pos.z);
-
-
-
-
 }
 
 /**
@@ -150,8 +146,6 @@ void decawave_serial_periodic(void)
 void decawave_serial_event(void){
 	getSerialData();
 	checkStatesUpdated();
-
-
 }
 
 /**
