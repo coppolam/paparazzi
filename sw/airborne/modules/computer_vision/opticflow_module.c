@@ -186,6 +186,7 @@ struct image_t *opticflow_module_calc(struct image_t *img)
   struct pose_t pose = get_rotation_at_timestamp(img->pprz_ts);
   temp_state = opticflow_state;
   temp_state.rates = pose.rates;
+  temp_state.euler = pose.eulers;
 
   // Do the optical flow calculation
   static struct opticflow_result_t temp_result = {}; // static so that the number of corners is kept between frames

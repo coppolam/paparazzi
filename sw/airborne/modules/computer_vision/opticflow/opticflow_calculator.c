@@ -448,15 +448,13 @@ void calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct opticflow_sta
   float diff_flow_x = 0;
   float diff_flow_y = 0;
 
-  /*// Flow Derotation TODO:
-  float diff_flow_x = (cam_state->phi - opticflow->prev_phi) * img->w / OPTICFLOW_FOV_W;
-  float diff_flow_y = (cam_state->theta - opticflow->prev_theta) * img->h / OPTICFLOW_FOV_H;*/
-
   if (opticflow->derotation && result->tracked_cnt > 5) {
-    diff_flow_x = (cam_state->rates.p)  / result->fps * img->w /
+    diff_flow_x = (cam_state->euler.phi - opticflow->prev_euler.phi) * img->w / OPTICFLOW_FOV_W;
+    diff_flow_y = (cam_state->euler.theta - opticflow->prev_euler.theta) * img->h / OPTICFLOW_FOV_H;
+    /*diff_flow_x = (cam_state->rates.p)  / result->fps * img->w /
                   OPTICFLOW_FOV_W;// * img->w / OPTICFLOW_FOV_W;
     diff_flow_y = (cam_state->rates.q) / result->fps * img->h /
-                  OPTICFLOW_FOV_H;// * img->h / OPTICFLOW_FOV_H;
+                  OPTICFLOW_FOV_H;// * img->h / OPTICFLOW_FOV_H;*/
   }
 
   result->flow_der_x = result->flow_x - diff_flow_x * opticflow->subpixel_factor *
@@ -464,6 +462,7 @@ void calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct opticflow_sta
   result->flow_der_y = result->flow_y - diff_flow_y * opticflow->subpixel_factor *
                        opticflow->derotation_correction_factor_y;
   opticflow->prev_rates = cam_state->rates;
+  opticflow->prev_euler = cam_state->euler;
 
   // Velocity calculation
   // Right now this formula is under assumption that the flow only exist in the center axis of the camera.
