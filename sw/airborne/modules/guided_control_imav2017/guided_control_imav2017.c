@@ -34,7 +34,7 @@
 #include "../../firmwares/rotorcraft/guidance/guidance_v.h"
 #include "generated/airframe.h"
 #include "std.h"
-#include "Steven_guided_ctrl.h"
+#include "guided_control_imav2017.h"
 // // ABI messages
 #include "subsystems/abi.h"
 
@@ -77,12 +77,12 @@ static void uwb_cb(uint8_t sender_id __attribute__((unused)),
 
 }
 
-void guided_ctrl_init(void){
+void guided_control_imav2017_init(void){
 	AbiBindMsgUWB(ABI_BROADCAST, &uwb_ev, uwb_cb); // Subscribe to the ABI RSSI messages
 	oldtime = get_sys_time_usec()/pow(10,6);
 }
 
-void guided_ctrl_per(void){
+void guided_control_imav2017_periodic(void){
 
 }
 
@@ -176,7 +176,7 @@ bool trackVelocity(void){
 
 bool hoverGuided(void){
 	bool temp = true;
-	temp &= guidance_v_set_guided_z(-2.0);
+	temp &= guidance_v_set_guided_z(-1.0);
 	temp &= guidance_h_set_guided_vel(0.0,0.0);
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 }

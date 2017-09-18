@@ -41,7 +41,7 @@
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
     <module name="relativelocalizationfilter"/>
-    <module name="Steven_Guided_Control"/>
+    <module name="guided_control_imav2017"/>
     <!--module name="logger_file">
       <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
     </module-->

@@ -64,7 +64,7 @@
   </section>
 
   <section name="sessions">
-    <session name="Steven_bebop_2">
+    <session name="Single_Bebop2">
       <program name="Server"/>
       <program name="Messages"/>
       <program name="GCS">
@@ -81,7 +81,7 @@
         <arg flag="-ac"/>
       </program>          
     </session>
-    <session name="Steven_2_bebop_2s">
+    <session name="Two_Bebob2s">
       <program name="Server"/>
       <program name="Messages"/>
       <program name="GCS">
@@ -89,6 +89,10 @@
       </program>
       <program name="Data Link">
         <arg flag="-udp"/>
+      </program>
+      <program name="Joystick">
+        <arg flag="-ac" constant="@AIRCRAFT"/>
+        <arg flag="hobbyking.xml"/>
       </program>
       <program name="Joystick">
         <arg flag="-ac" constant="@AIRCRAFT"/>

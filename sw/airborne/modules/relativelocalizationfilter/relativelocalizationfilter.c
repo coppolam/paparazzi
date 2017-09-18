@@ -64,7 +64,7 @@ char* rlconcat(const char *s1, const char *s2);
 
 static pthread_mutex_t ekf_mutex;
 
-#define RLLOG 1
+#define RLLOG 0
 /*
 #ifdef RSSI_LOCALIZATION
 int8_t srcstrength[NUAVS-1];// Source strength

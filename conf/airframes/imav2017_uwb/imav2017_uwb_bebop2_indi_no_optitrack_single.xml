@@ -38,7 +38,7 @@
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
     <module name="relativelocalizationfilter"/>
-    <module name="Steven_Guided_Control"/>
+    <module name="guided_control_imav2017"/>
     
     <module name="video_thread"/>
     <module name="pose_history"/>
@@ -53,8 +53,8 @@
       <define name="OPTICFLOW_FY" value="347.22222222"/> 
       <define name="OPTICFLOW_FOV_W" value="0.665499265"/> 
       <define name="OPTICFLOW_FOV_H" value="0.665499265"/> 
-      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="0"/>
-      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0"/>
+      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="1.0"/>
+      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.9"/>
 	</module>
     <!--module name="logger_file">
       <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>

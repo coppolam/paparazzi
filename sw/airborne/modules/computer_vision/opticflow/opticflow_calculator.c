@@ -457,10 +457,21 @@ void calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct opticflow_sta
                   OPTICFLOW_FOV_H;// * img->h / OPTICFLOW_FOV_H;*/
   }
 
-  result->flow_der_x = result->flow_x - diff_flow_x * opticflow->subpixel_factor *
-                       opticflow->derotation_correction_factor_x;
-  result->flow_der_y = result->flow_y - diff_flow_y * opticflow->subpixel_factor *
-                       opticflow->derotation_correction_factor_y;
+  
+  float rotation_threshold = M_PI / 180.0f; 
+  if(fabs(cam_state->euler.phi - opticflow->prev_euler.phi) > rotation_threshold)
+  {
+    result->flow_der_x = 0.0f;
+    result->flow_der_y = 0.0f;  
+  }
+  else
+  {
+    result->flow_der_x = result->flow_x - diff_flow_x * opticflow->subpixel_factor *
+                         opticflow->derotation_correction_factor_x;
+    result->flow_der_y = result->flow_y - diff_flow_y * opticflow->subpixel_factor *
+                         opticflow->derotation_correction_factor_y;   
+  }
+
   opticflow->prev_rates = cam_state->rates;
   opticflow->prev_euler = cam_state->euler;
 

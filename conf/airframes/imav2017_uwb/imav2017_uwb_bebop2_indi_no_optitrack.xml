@@ -40,7 +40,7 @@
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
     <module name="relativelocalizationfilter"/>
-    <module name="Steven_Guided_Control"/>
+    <module name="guided_control_imav2017"/>
     
     <module name="video_thread"/>
     <module name="pose_history"/>

@@ -28,8 +28,8 @@
 #ifndef STEVEN_GUIDED_CTRL_H_
 #define STEVEN_GUIDED_CTRL_H_
 
-extern void guided_ctrl_init(void);
-extern void guided_ctrl_per(void);
+extern void guided_control_imav2017_init(void);
+extern void guided_control_imav2017_periodic(void);
 
 extern bool setForwardVelocity(float velx);
 extern bool stopFlying(void);
