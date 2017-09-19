@@ -64,7 +64,7 @@
   </section>
 
   <section name="sessions">
-    <session name="Single_Bebop2">
+    <session name="Bebop2_single">
       <program name="Server"/>
       <program name="Messages"/>
       <program name="GCS">
@@ -77,33 +77,22 @@
         <arg flag="-ac" constant="@AIRCRAFT"/>
         <arg flag="hobbyking.xml"/>
       </program>
-      <program name="NatNet">
-        <arg flag="-ac"/>
-      </program>          
     </session>
-    <session name="Two_Bebob2s">
+    <session name="Bebop2_carry">
       <program name="Server"/>
       <program name="Messages"/>
-      <program name="GCS">
-        <arg flag="-speech"/>
-      </program>
+      <program name="GCS"/>
       <program name="Data Link">
         <arg flag="-udp"/>
       </program>
       <program name="Joystick">
-        <arg flag="-ac" constant="@AIRCRAFT"/>
+        <arg flag="-ac" constant="imav2017_uwb_bebop2_22"/>
         <arg flag="hobbyking.xml"/>
       </program>
       <program name="Joystick">
-        <arg flag="-ac" constant="@AIRCRAFT"/>
+        <arg flag="-ac" constant="imav2017_uwb_bebop2_44"/>
         <arg flag="hobbyking.xml"/>
       </program>
-      <program name="NatNet">
-        <arg flag="-ac"/>
-      </program>
-      <program name="NatNet">
-        <arg flag="-ac"/>
-      </program>           
     </session>
   </section>
 </control_panel>
