@@ -1,9 +1,10 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
 <flight_plan alt="1" ground_alt="0" lat0="51.990634" lon0="4.376789"
-	max_dist_from_home="8" name="Test flight plan Steven" security_height="0.4">
+	max_dist_from_home="8" name="imav2017_cooperativecarry" security_height="0.4">
 	<header>
 		#include "autopilot.h"
+		#include "subsystems/radio_control.h"
 		#include "subsystems/ahrs.h"
 		#include "subsystems/electrical.h"
 		#include "subsystems/datalink/datalink.h"
@@ -31,141 +32,62 @@
 		<variable var="selfradius" min="-6" max="6" step="0.1" />
 	</variables>
 	<exceptions>
-		<!--exception cond="!InsideDangerZone(GetPosX(), GetPosY())" deroute="Standby" /-->
-		<!--exception cond="datalink_time > 2" deroute="land here" /-->
-		<!-- exception cond="electrical.bat_low && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('flare')) && !(nav_block == IndexOfBlock('landed'))"	deroute="land" />
-		<exception cond="electrical.bat_critical && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('flare')) && !(nav_block == IndexOfBlock('landed'))" deroute="land here" /-->
+		<exception cond="datalink_time>=2" deroute="Force kill engines"/>
+		<exception cond="radio_control.status == RC_REALLY_LOST" deroute="Force kill engines"/>
 	</exceptions>
 	<blocks>
-		<block name="Wait GPS">
-			<call_once fun="NavKillThrottle()" />
-			<while cond="!GpsFixValid()" />
-		</block>
-		<block name="Geo init">
-			<while cond="LessThan(NavBlockTime(), 5)" />
-			<call_once fun="NavSetAltitudeReferenceHere()" />
-			<!-- call_once fun="NavSetGroundReferenceHere()"/-->
-		</block>
-		<block name="Holding point">
-			<call_once fun="NavKillThrottle()" />
-			<attitude pitch="0" roll="0" throttle="0"
-				vmode="throttle" />
-		</block>
-		<block key="t" name="Force start Engine">
+		    <block name="FPInit">
+      <while cond="!GpsFixValid()"/>
+      <while cond="1"/>
+    </block>
+		<block name="Force start engines">
+				<call_once fun="guidance_v_set_guided_th(0.2)"/>
          		<call_once fun="autopilot_set_motors_on(TRUE)"/>
           		<while cond="1"/>
       	        </block>
-		<block name="Start Engine">
-			<call_once fun="NavResurrect()" />
-			<attitude pitch="0" roll="0" throttle="0"
-				vmode="throttle" />
-		</block>
-		<block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-			<exception cond="stateGetPositionEnu_f()->z > 1.25" deroute="Standby" />
-			<call_once fun="NavSetWaypointHere(WP_CLIMB)" />
-			<stay wp="CLIMB" climb="0.5" vmode="climb"/>
-			<!--stay wp="CLIMB" throttle="0.5" vmode="throttle"/-->
-		</block>
-		<block name="staygoal">
-			<stay wp="GOAL"/>
-		</block>
-		<block name="Standby_Set" strip_button="Standby" strip_icon="home.png">
-                        <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
-			<stay wp="STDBY" />
-		</block>
-                <block name="Standby" strip_button="Standby" strip_icon="home.png">
-			<stay wp="STDBY" />
-			<exception cond="checkVicinity()" deroute="Standby_Set"/>
-		</block>
 		<block name="hover_guided">
 			<while cond="TRUE">
-				<call fun="hoverGuided()"/>
+				<call fun="hoverGuided(1.5)"/>
 			</while>
-		</block>
-		<block name="fly_forward_delay">
-			<while cond="TRUE">
-				<call fun="hoverGuided()"/>
-			</while>
-                        <exception cond="block_time>2" deroute="fly_forward"/>
-		</block>
-		<block name="fly_forward">
-			<while cond="TRUE">
-				<call fun="setForwardVelocity(0.5)"/>
-			</while>
-                        <exception cond="block_time>5" deroute="hover_guided"/>
-		</block>
-		<block name="fly_backward_delay">
-			<while cond="TRUE">
-				<call fun="hoverGuided()"/>
-			</while>
-                        <exception cond="block_time>2" deroute="fly_backward"/>
-		</block>
-		<block name="fly_backward">
-			<while cond="TRUE">
-				<call fun="setForwardVelocity(-0.5)"/>
-			</while>
-                        <exception cond="block_time>5" deroute="hover_guided"/>
-			<exception cond="checkVicinity()" deroute="stop_flying"/>
 		</block>
 		<block name="track_relative_position">
 			<while cond="TRUE">
-				<call fun="trackRelPos()"/>
+				<call fun="trackRelPos(1.5)"/>
 			</while>
-			<exception cond="checkVicinity()" deroute="stop_flying"/>
+		</block>
+		<block name="fly_forward">
+			<while cond="TRUE">
+				<call fun="setForwardVelocity(0.3, 1.5)"/>
+			</while>
+                        <exception cond="block_time>5" deroute="hover_guided"/>
+		</block>
+		<block name="fly_forward_delay">
+			<while cond="TRUE">
+				<call fun="hoverGuided(1.5)"/>
+			</while>
+                        <exception cond="block_time>2" deroute="fly_forward"/>
 		</block>
 		<block name="fly_forward_and_track">
 			<while cond="TRUE">
-				<call fun="setForwardAndTrack(0.5)"/>
+				<call fun="setForwardAndTrack(0.3, 1.5)"/>
 			</while>
                         <exception cond="block_time>5" deroute="track_relative_position"/>
-			<exception cond="checkVicinity()" deroute="stop_flying"/>
-		</block>
-		
-		<block name="fly_backward_and_track">
-			<while cond="TRUE">
-				<call fun="setForwardAndTrack(-0.5)"/>
-			</while>
-                        <exception cond="block_time>5" deroute="track_relative_position"/>
-			<exception cond="checkVicinity()" deroute="stop_flying"/>
 		</block>
 		<block name="track_other">
 			<while cond="TRUE">
-				<call fun="trackOther()"/>
+				<call fun="trackOther(1.5)"/>
 			</while>
-			<exception cond="checkVicinity()" deroute="stop_flying"/>
 		</block>
 		<block name="track_velocity">
 			<while cond="TRUE">
-				<call fun="trackVelocity()"/>
+				<call fun="trackVelocity(1.5)"/>
 			</while>
-			<exception cond="checkVicinity()" deroute="stop_flying"/>
-		</block>
-                <block name="stop_flying">
-			<call fun="stopFlying()"/>
-			<deroute block="land_guided"/>
 		</block>
 		<block name="land_guided">
 			<call fun="goLand()"/>
-			<deroute block="Standby_Set"/>
+			<deroute block="FPInit"/>
 		</block>
-		<block name="land here" strip_button="land Here" strip_icon="land-right.png">
-			<call_once fun="NavSetWaypointHere(WP_TD)" />
-		</block>
-		<block name="land">
-			<go wp="TD" />
-		</block>
-		<block name="flare">
-			<exception cond="NavDetectGround()" deroute="Holding point" />
-			<exception cond="!nav_is_in_flight()" deroute="landed" />
-			<call_once fun="NavStartDetectGround()" />
-			<stay climb="nav_descend_vspeed" vmode="climb" wp="TD" />
-		</block>
-		<block name="landed">
-			<call_once fun="NavKillThrottle()" />
-			<attitude pitch="0" roll="0" throttle="0" until="FALSE"
-				vmode="throttle" />
-		</block>
-		<block name="Force kill Engine">
+		<block name="Force kill engines">
          		<call_once fun="autopilot_set_motors_on(FALSE)"/>
           		<while cond="1"/>
       	        </block>

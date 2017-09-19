@@ -31,14 +31,12 @@
 extern void guided_control_imav2017_init(void);
 extern void guided_control_imav2017_periodic(void);
 
-extern bool setForwardVelocity(float velx);
-extern bool stopFlying(void);
+extern bool hoverGuided(float cmd_height);
+extern bool trackOther(float cmd_height);
+extern bool trackRelPos(float cmd_height);
+extern bool trackVelocity(float cmd_height);
+extern bool setForwardVelocity(float velx, float cmd_height);
+extern bool setForwardAndTrack(float velx, float cmd_height);
 extern bool goLand(void);
-extern bool trackVelocity(void);
-extern bool setForwardAndTrack(float velx);
-extern bool hoverGuided(void);
-extern bool checkVicinity(void);
-extern bool trackRelPos(void);
-extern bool trackOther(void);
 
 #endif /* STEVEN_GUIDED_CTRL_H_ */

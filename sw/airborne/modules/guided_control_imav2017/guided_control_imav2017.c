@@ -43,15 +43,15 @@ static abi_event uwb_ev;
 static float rec_velx = 0.0;
 static float rec_vely = 0.0;
 static float rec_range = 10.0;
+static float rec_height = 1.0;
 static float relxcom = 0.0;
-static float relycom = 2.3;
+static float relycom = 2.0;
 
 static float oldxerr = 0.0;
 static float oldyerr = 0.0;
 
 float relvxerr = 0.0;
 float relvyerr = 0.0;
-
 
 float oldtime = 0.0;
 float newtime = 0.0;
@@ -67,13 +67,12 @@ static pthread_mutex_t ekf_mutex;
 static void keepBounded(float bound);
 static void uwb_cb(uint8_t sender_id __attribute__((unused)),
 		uint8_t ac_id, float range, float trackedVx, float trackedVy, float trackedh);
-
-
 static void uwb_cb(uint8_t sender_id __attribute__((unused)),
 		uint8_t ac_id, float range, float trackedVx, float trackedVy, float trackedh){
 	rec_velx = trackedVx;
 	rec_vely = trackedVy;
 	rec_range = range;
+	rec_height = trackedh;
 
 }
 
@@ -83,21 +82,24 @@ void guided_control_imav2017_init(void){
 }
 
 void guided_control_imav2017_periodic(void){
-
+	
 }
 
-bool checkVicinity(void){
-	return rec_range<1;
+// First put both here.
+bool hoverGuided(float cmd_height){
+	bool temp = true;
+	temp &= guidance_v_set_guided_z(-cmd_height);
+	temp &= guidance_h_set_guided_vel(0.0,0.0);
+	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 }
 
-bool trackOther(void){
+bool trackOther(float cmd_height){
 	newtime = get_sys_time_usec()/pow(10,6);
 	dt = newtime-oldtime;
 	oldtime = newtime;
 
-
 	bool temp = true;
-	temp &= guidance_v_set_guided_z(-1.0);
+	temp &= guidance_v_set_guided_z(-cmd_height);
 	pthread_mutex_lock(&ekf_mutex);
 	float relx = ekf[0].X[0];
 	float rely = ekf[0].X[1];
@@ -105,7 +107,6 @@ bool trackOther(void){
 
 	float relxerr = relx-relxcom; //positive error means VX must increase
 	float relyerr = rely-relycom; // positive error means VY must increase
-
 
 	if(dt>0.0 && dt < 0.5 && oldxerr > 0.0 && oldyerr > 0.0){
 		relvxerr = (relxerr-oldxerr)/dt;
@@ -120,14 +121,13 @@ bool trackOther(void){
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 }
 
-bool trackRelPos(void){
+bool trackRelPos(float cmd_height){
 	newtime = get_sys_time_usec()/pow(10,6);
 	dt = newtime-oldtime;
 	oldtime = newtime;
 
-
 	bool temp = true;
-	temp &= guidance_v_set_guided_z(-1.0);
+	temp &= guidance_v_set_guided_z(-cmd_height);
 	pthread_mutex_lock(&ekf_mutex);
 	float relx = ekf[0].X[0];
 	float rely = ekf[0].X[1];
@@ -164,34 +164,24 @@ bool trackRelPos(void){
 
 }
 
-
-
-bool trackVelocity(void){
+bool trackVelocity(float cmd_height){
 	keepBounded(2.0);
 	bool temp = true;
-	temp &= guidance_v_set_guided_z(-1.0);
+	temp &= guidance_v_set_guided_z(-cmd_height);
 	temp &= guidance_h_set_guided_vel(rec_velx,rec_vely);
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 }
 
-bool hoverGuided(void){
+bool setForwardVelocity(float velx, float cmd_height){
 	bool temp = true;
-	temp &= guidance_v_set_guided_z(-1.0);
-	temp &= guidance_h_set_guided_vel(0.0,0.0);
-	// temp &= guidance_h_set_guided_pos(stateGetPositionNed_f()->x, stateGetPositionNed_f()->y);
-	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
-}
-
-bool setForwardVelocity(float velx){
-	bool temp = true;
-	temp &= guidance_v_set_guided_z(-1.0);
+	temp &= guidance_v_set_guided_z(-cmd_height);
 	temp &= guidance_h_set_guided_vel(velx,0);
 	return !temp;
 }
 
-bool setForwardAndTrack(float velx){
+bool setForwardAndTrack(float velx, float cmd_height){
 	bool temp = true;
-	temp &= guidance_v_set_guided_z(-1.0);
+	temp &= guidance_v_set_guided_z(-cmd_height);
 	pthread_mutex_lock(&ekf_mutex);
 	float relx = ekf[0].X[0];
 	float rely = ekf[0].X[1];
@@ -205,16 +195,9 @@ bool setForwardAndTrack(float velx){
 	return !temp; //Returning FALSE means in the flight plan that the function executed successfully.
 }
 
-bool stopFlying(void){
-	bool temp = true;
-	temp &= guidance_v_set_guided_z(-2.0);
-	temp &= guidance_h_set_guided_vel(0.0,0.0);
-	return !temp;
-}
-
 bool goLand(void){
 	bool temp = true;
-	temp &= guidance_v_set_guided_vz(0.05);
+	temp &= guidance_v_set_guided_vz(0.1);
 	temp &= guidance_v_set_guided_z(0.0);
 	temp &= guidance_h_set_guided_vel(0.0,0.0);
 	return !temp;
