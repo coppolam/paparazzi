@@ -11,8 +11,8 @@
    gui_color="#ffff00000000"
   />
   <aircraft
-   name="imav2017_uwb_bebop2_44"
-   ac_id="44"
+   name="imav2017_uwb_bebop2_33"
+   ac_id="33"
    airframe="airframes/imav2017_uwb/imav2017_uwb_bebop2_indi_no_optitrack.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"

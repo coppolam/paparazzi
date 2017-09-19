@@ -192,7 +192,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		fmat_scal_mult(EKF_M, EKF_M, ekf[nf].R, pow(0.1,2.0), ekf[nf].R);
 		ekf[nf].Q[0]   	   = 0.01; // Reccomended 0.01 to give this process a high level of trust
 		ekf[nf].Q[EKF_N+1] = 0.01;
-		ekf[nf].R[0]   = 0.5;
+		ekf[nf].R[0]   = 0.2;
 		ekf[nf].P[EKF_N*2+2] = 0.1;
 		ekf[nf].P[EKF_N*3+3] = 0.1;
 		ekf[nf].P[EKF_N*4+4] = 0.1;
@@ -202,7 +202,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		// Initialize the states
 		// Initial position cannot be zero or the filter will divide by zero on initialization
 		ekf[nf].X[0] = 0.0; // Relative position North
-		ekf[nf].X[1] = 2.0; // Relative position East
+		ekf[nf].X[1] = 1.5; // Relative position East
 		// The other variables can be initialized at 0
 		ekf[nf].X[2] = 0.0; // Own Velocity North
 		ekf[nf].X[3] = 0.0; // Own Velocity East
