@@ -52,7 +52,7 @@
 #ifndef HFF_ACCEL_NOISE
 #define HFF_ACCEL_NOISE 0.5
 #endif
-#define Q       HFF_ACCEL_NOISE
+#define Qf      HFF_ACCEL_NOISE
 #define Qdotdot HFF_ACCEL_NOISE
 
 //TODO: proper measurement noise
@@ -64,7 +64,7 @@
 #endif
 
 #ifndef HFF_R_SPEED
-#define HFF_R_SPEED 2.
+#define HFF_R_SPEED 0.5
 #endif
 #ifndef HFF_R_SPEED_MIN
 #define HFF_R_SPEED_MIN 0.25
@@ -589,7 +589,7 @@ static void hff_propagate_x(struct HfilterFloat *filt, float dt)
   const float FPF21 = filt->xP[2][1] + dt * (-filt->xP[2][2]);
   const float FPF22 = filt->xP[2][2];
 
-  filt->xP[0][0] = FPF00 + Q * dt * dt / 2.;
+  filt->xP[0][0] = FPF00 + Qf * dt * dt / 2.;
   filt->xP[0][1] = FPF01;
   filt->xP[0][2] = FPF02;
   filt->xP[1][0] = FPF10;
@@ -617,7 +617,7 @@ static void hff_propagate_y(struct HfilterFloat *filt, float dt)
   const float FPF21 = filt->yP[2][1] + dt * (-filt->yP[2][2]);
   const float FPF22 = filt->yP[2][2];
 
-  filt->yP[0][0] = FPF00 + Q * dt * dt / 2.;
+  filt->yP[0][0] = FPF00 + Qf * dt * dt / 2.;
   filt->yP[0][1] = FPF01;
   filt->yP[0][2] = FPF02;
   filt->yP[1][0] = FPF10;

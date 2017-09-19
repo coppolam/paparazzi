@@ -178,12 +178,13 @@ bool hoverGuided(void){
 	bool temp = true;
 	temp &= guidance_v_set_guided_z(-1.0);
 	temp &= guidance_h_set_guided_vel(0.0,0.0);
+	// temp &= guidance_h_set_guided_pos(stateGetPositionNed_f()->x, stateGetPositionNed_f()->y);
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 }
 
 bool setForwardVelocity(float velx){
 	bool temp = true;
-	temp &= guidance_v_set_guided_z(-2.0);
+	temp &= guidance_v_set_guided_z(-1.0);
 	temp &= guidance_h_set_guided_vel(velx,0);
 	return !temp;
 }

@@ -26,7 +26,7 @@
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <configure name="AHRS_USE_GPS" value="FALSE"/>
     </module>
-    <module name="ins" type="extended"/>
+    <module name="ins" type="hff_extended"/>
   </firmware>
 
   <modules main_freq="512">
@@ -196,7 +196,7 @@
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="HOVER_KP" value="200"/>
+    <define name="HOVER_KP" value="300"/>
     <define name="HOVER_KD" value="85"/>
     <define name="HOVER_KI" value="20"/>
     <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
