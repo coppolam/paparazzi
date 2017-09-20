@@ -228,17 +228,18 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		keepbounded(&ownVy,-2.0,2.0);
 
 		//if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED)
-		if(1)
+		if(stateGetPositionEnu_f()->z > 1.0)
 		{
 		// Make the filter only in Guided mode (flight).
 		// This is because it is best for the filter should only start once the drones are in motion, 
 		// otherwise it might diverge while drones are not moving.
+			
 			ekf[i].dt = (get_sys_time_usec() - now_ts[i])/pow(10,6); // Update the time between messages
 			pthread_mutex_lock(&ekf_mutex);
 			// As for own velocity, bind to realistic amounts to avoid occasional spikes/NaN/inf errors
 			keepbounded(&trackedVx,-2.0,2.0);
 			keepbounded(&trackedVy,-2.0,2.0);
-
+			
 			// Construct measurement vector Y for EKF using the latest data obtained.
 			// Y = [RSSI owvVx ownVy trackedVx trackedVy dh], EKF_M = 6 as defined in discreteekf.h
 			float Y[EKF_M];
@@ -248,47 +249,58 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			Y[3] = trackedVx;  		// Velocity of other drone Norht (NED frame)
 			Y[4] = trackedVy;		// Velocity of other drone East  (NED frame)
 			Y[5] = trackedh - stateGetPositionEnu_f()->z;  // Height difference
-			// Run the steps of the EKF, but only if velocity difference is significant (to filter out minimal noise)
+			// Run the steps of the EKF, but only if velocity difference is significant (to filter out minimal noise)		
 			ekf_filter_predict(&ekf[i]); // Prediction step of the EKF
 			ekf_filter_update(&ekf[i], Y);	// Update step of the EKF
+		}
+		else
+		{
+			ekf[i].X[0] = 0.0; // Relative position North
+			ekf[i].X[1] = 1.5; // Relative position East
+			// The other variables can be initialized at 0
+			ekf[i].X[2] = 0.0; // Own Velocity North
+			ekf[i].X[3] = 0.0; // Own Velocity East
+			ekf[i].X[4] = 0.0; // Velocity other North
+			ekf[i].X[5] = 0.0; // Velocity other East
+			ekf[i].X[6] = 0.0; // Height difference
+			ekf[i].X[7] = 0.0; // Bias
+		}
+	}
+	pthread_mutex_unlock(&ekf_mutex);
+	if(RLLOG){
+		current_speed = *stateGetSpeedEnu_f();
+		current_pos = *stateGetPositionEnu_f();
+
+		if(rlFileLogger!=NULL){
+			pthread_mutex_lock(&ekf_mutex);
+			fprintf(rlFileLogger,"%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+					counter,
+					i,
+					(float)(now_ts[i]/pow(10,6)),
+					ekf[i].dt,
+					current_pos.y,
+					current_pos.x,
+					-current_pos.z,
+					current_speed.y,
+					current_speed.x,
+					-current_speed.z,
+					range,
+					trackedVx,
+					trackedVy,
+					trackedh,
+					ekf[i].X[0],
+					ekf[i].X[1],
+					ekf[i].X[2],
+					ekf[i].X[3],
+					ekf[i].X[4],
+					ekf[i].X[5],
+					ekf[i].X[6],
+					ekf[i].X[7]);
+			counter++;
 			pthread_mutex_unlock(&ekf_mutex);
 		}
-		if(RLLOG){
-			current_speed = *stateGetSpeedEnu_f();
-			current_pos = *stateGetPositionEnu_f();
-
-			if(rlFileLogger!=NULL){
-				pthread_mutex_lock(&ekf_mutex);
-				fprintf(rlFileLogger,"%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
-						counter,
-						i,
-						(float)(now_ts[i]/pow(10,6)),
-						ekf[i].dt,
-						current_pos.y,
-						current_pos.x,
-						-current_pos.z,
-						current_speed.y,
-						current_speed.x,
-						-current_speed.z,
-						range,
-						trackedVx,
-						trackedVy,
-						trackedh,
-						ekf[i].X[0],
-						ekf[i].X[1],
-						ekf[i].X[2],
-						ekf[i].X[3],
-						ekf[i].X[4],
-						ekf[i].X[5],
-						ekf[i].X[6],
-						ekf[i].X[7]);
-				counter++;
-				pthread_mutex_unlock(&ekf_mutex);
-			}
-		}
-		now_ts[i] = get_sys_time_usec();  // Store latest time
-
 	}
+	now_ts[i] = get_sys_time_usec();  // Store latest time
 };
 //#endif
 

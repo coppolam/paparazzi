@@ -45,7 +45,7 @@ static float rec_vely = 0.0;
 static float rec_range = 10.0;
 static float rec_height = 1.0;
 static float relxcom = 0.0;
-static float relycom = 2.0;
+static float relycom = 0.8;
 
 static float oldxerr = 0.0;
 static float oldyerr = 0.0;
@@ -90,6 +90,7 @@ bool hoverGuided(float cmd_height){
 	bool temp = true;
 	temp &= guidance_v_set_guided_z(-cmd_height);
 	temp &= guidance_h_set_guided_vel(0.0,0.0);
+	temp &= guidance_h_set_guided_heading(0.0); // not reccommended if without a good heading estimate
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 }
 
@@ -129,8 +130,18 @@ bool trackRelPos(float cmd_height){
 	bool temp = true;
 	temp &= guidance_v_set_guided_z(-cmd_height);
 	pthread_mutex_lock(&ekf_mutex);
-	float relx = ekf[0].X[0];
-	float rely = ekf[0].X[1];
+	float relx, rely;
+
+	if(stateGetPositionEnu_f()->z > 1.0)
+	{
+		relx = ekf[0].X[0];
+		rely = ekf[0].X[1];
+	}
+	else
+	{
+		relx = relxcom;
+		rely = relycom;
+	}
 	pthread_mutex_unlock(&ekf_mutex);
 
 	float relxerr = relx-relxcom; //positive error means VX must increase
@@ -146,8 +157,8 @@ bool trackRelPos(float cmd_height){
 
 	float Vmag = sqrt(rec_velx*rec_velx+rec_vely*rec_vely);
 
-	pgainx = 0.2+Vmag*0.5;
-	pgainy = 0.2+Vmag*0.5;
+	pgainx = 0.5;//+Vmag*0.5;
+	pgainy = 0.1;//+Vmag*0.5;
 
 
 	if(dt>0.0 && dt < 0.5 && oldxerr > 0.0 && oldyerr > 0.0){
@@ -160,6 +171,7 @@ bool trackRelPos(float cmd_height){
 	float vxcommand = pgainx*relxerr+dgain*relvxerr;
 	float vycommand = pgainy*relyerr+dgain*relvyerr;
 	temp &= guidance_h_set_guided_vel(vxcommand,vycommand);
+	temp &= guidance_h_set_guided_heading(0.0); // not reccommended if without a good heading estimate
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 
 }
@@ -182,6 +194,7 @@ bool setForwardVelocity(float velx, float cmd_height){
 bool setForwardAndTrack(float velx, float cmd_height){
 	bool temp = true;
 	temp &= guidance_v_set_guided_z(-cmd_height);
+
 	pthread_mutex_lock(&ekf_mutex);
 	float relx = ekf[0].X[0];
 	float rely = ekf[0].X[1];

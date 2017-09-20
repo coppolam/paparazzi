@@ -46,7 +46,6 @@
           		<while cond="1"/>
       	        </block>
 		<block name="hover_guided">
-	        <call_once fun="guidance_v_set_guided_th(0.75)"/>
 			<while cond="TRUE">
 				<call fun="hoverGuided(1.5)"/>
 			</while>
@@ -60,19 +59,19 @@
 			<while cond="TRUE">
 				<call fun="setForwardVelocity(0.3, 1.5)"/>
 			</while>
-            <exception cond="block_time>5" deroute="hover_guided"/>
+            		<exception cond="block_time>30" deroute="hover_guided"/>
 		</block>
 		<block name="fly_forward_delay">
 			<while cond="TRUE">
 				<call fun="hoverGuided(1.5)"/>
 			</while>
-            <exception cond="block_time>2" deroute="fly_forward"/>
+           		<exception cond="block_time>2" deroute="fly_forward"/>
 		</block>
 		<block name="fly_forward_and_track">
 			<while cond="TRUE">
 				<call fun="setForwardAndTrack(0.3, 1.5)"/>
 			</while>
-            <exception cond="block_time>5" deroute="track_relative_position"/>
+            		<exception cond="block_time>30" deroute="track_relative_position"/>
 		</block>
 		<block name="track_other">
 			<while cond="TRUE">
