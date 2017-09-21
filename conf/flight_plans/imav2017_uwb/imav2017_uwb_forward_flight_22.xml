@@ -42,7 +42,6 @@
 		</block>
 		<block name="Land" strip_button="Land Here" strip_icon="land-right.png">
 			<call fun="goLand()"/>
-			<deroute block="FPInit"/>
       		<while cond="1"/>
 		</block>
 		<block name="Force Kill Engines">

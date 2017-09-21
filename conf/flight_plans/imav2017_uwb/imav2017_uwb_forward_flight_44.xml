@@ -34,6 +34,12 @@
 				<call fun="hoverGuided(1.5)"/>
 			</while>
 		</block>
+		<block name="Fly Forward Delay">
+			<while cond="TRUE">
+				<call fun="hoverGuided(1.5)"/>
+			</while>
+           		<exception cond="block_time>2" deroute="Fly Forward"/>
+		</block>
 		<block name="Fly Forward">
 			<while cond="TRUE">
 				<call fun="setForwardVelocity(0.3, 1.5)"/>
@@ -41,8 +47,9 @@
     		<exception cond="block_time>30" deroute="Hover"/>
 		</block>
 		<block name="Land" strip_button="Land Here" strip_icon="land-right.png">
-			<call fun="goLand()"/>
-			<deroute block="FPInit"/>
+			<while cond="TRUE">
+				<call fun="goLand()"/>
+			</while>
       		<while cond="1"/>
 		</block>
 		<block name="Force Kill Engines">
