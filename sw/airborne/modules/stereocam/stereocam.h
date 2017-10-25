@@ -34,15 +34,12 @@
 struct stereocam_t {
   struct link_device *device;           ///< The device which is uses for communication
   struct pprz_transport transport;      ///< The transport layer (PPRZ)
-  struct FloatRMat body_to_cam;         ///< IMU to stereocam translation
+  struct FloatRMat body_to_cam;         ///< IMU to stereocam rotation
   bool msg_available;                   ///< If we received a message
 };
 
 extern void stereocam_init(void);
 extern void stereocam_event(void);
 extern void state2stereocam(void);
-
-extern void stereocam_parse_vel(struct FloatVect3 camera_vel, float R2, struct FloatVect3 camera_dist, float distance_R2);
-
 
 #endif /* STEREOCAM_H_ */

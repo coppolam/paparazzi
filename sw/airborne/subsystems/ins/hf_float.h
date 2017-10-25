@@ -55,7 +55,7 @@ struct HfilterFloat {
 extern struct HfilterFloat hff;
 
 extern void hff_init(float init_x, float init_xdot, float init_y, float init_ydot);
-extern void hff_propagate(struct Int32Vect2 accel_ltp, float dt);
+extern void hff_propagate(void);
 extern void hff_update_gps(struct FloatVect2 *pos_ned, struct FloatVect2 *speed_ned);
 extern void hff_update_pos(struct FloatVect2 pos, struct FloatVect2 Rpos);
 extern void hff_update_vel(struct FloatVect2 vel, struct FloatVect2 Rvel);

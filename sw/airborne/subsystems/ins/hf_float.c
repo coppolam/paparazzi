@@ -46,58 +46,93 @@
 #define PRINT_DBG(_l, _p) {}
 #endif
 
+
+#ifndef AHRS_PROPAGATE_FREQUENCY
+#define AHRS_PROPAGATE_FREQUENCY PERIODIC_FREQUENCY
+#endif
+
+#ifndef HFF_PRESCALER
+#if AHRS_PROPAGATE_FREQUENCY == 512
+#define HFF_PRESCALER 16
+#elif AHRS_PROPAGATE_FREQUENCY == 500
+#define HFF_PRESCALER 10
+#elif AHRS_PROPAGATE_FREQUENCY == 200
+#define HFF_PRESCALER 6
+#else
+#error "HFF_PRESCALER not set, needs to be a divisor of AHRS_PROPAGATE_FREQUENCY"
+#endif
+#endif
+
+/** horizontal filter propagation frequency */
+#define HFF_FREQ (AHRS_PROPAGATE_FREQUENCY / HFF_PRESCALER)
+#define DT_HFILTER (1./HFF_FREQ)
+
 /** initial covariance diagonal */
 #define INIT_PXX 1.
 /** process noise (is the same for x and y)*/
 #ifndef HFF_ACCEL_NOISE
 #define HFF_ACCEL_NOISE 0.5
 #endif
-#define Qf      HFF_ACCEL_NOISE
+#define Q       HFF_ACCEL_NOISE
 #define Qdotdot HFF_ACCEL_NOISE
 
 //TODO: proper measurement noise
 #ifndef HFF_R_POS
-#define HFF_R_POS   4.
+#define HFF_R_POS   8.
 #endif
 #ifndef HFF_R_POS_MIN
-#define HFF_R_POS_MIN 0.5
+#define HFF_R_POS_MIN 3.
 #endif
 
-#ifndef HFF_R_SPEED
-#define HFF_R_SPEED 0.5
+#ifndef HFF_R_GPS_SPEED
+#define HFF_R_GPS_SPEED 2.
 #endif
-#ifndef HFF_R_SPEED_MIN
-#define HFF_R_SPEED_MIN 0.25
+#ifndef HFF_R_GPS_SPEED_MIN
+#define HFF_R_GPS_SPEED_MIN 0.25
 #endif
 
 #ifndef HFF_UPDATE_GPS_SPEED
 #define HFF_UPDATE_GPS_SPEED TRUE
 #endif
 
+#ifndef HFF_LOWPASS_CUTOFF_FREQUENCY
+#define HFF_LOWPASS_CUTOFF_FREQUENCY 14
+#endif
+
+#if HFF_LOWPASS_CUTOFF_FREQUENCY < 8
+#error "It is not allowed to use a cutoff frequency lower than 8Hz due to overflow issues."
+#endif
+
+/* low pass filter variables */
+Butterworth2LowPass_int filter_x;
+Butterworth2LowPass_int filter_y;
+Butterworth2LowPass_int filter_z;
+
 /* gps measurement noise */
 float Rgps_pos, Rgps_vel;
 
 /*
-
   X_x = [ x xdot xbias ]
   X_y = [ y ydot ybias ]
-
-
 */
+
 /* output filter states */
 struct HfilterFloat hff;
 
 /* last acceleration measurement */
-static float hff_xdd_meas;
-static float hff_ydd_meas;
+static float hff_xdd_meas = 0;
+static float hff_ydd_meas = 0;
 
 /* last velocity measurement */
-static float hff_xd_meas;
-static float hff_yd_meas;
+static float hff_xd_meas = 0;
+static float hff_yd_meas = 0;
 
 /* last position measurement */
-static float hff_x_meas;
-static float hff_y_meas;
+static float hff_x_meas = 0;
+static float hff_y_meas = 0;
+
+/** counter for hff propagation*/
+static int hff_ps_counter;
 
 /* default parameters */
 #define Qbiasbias 1e-7
@@ -169,7 +204,7 @@ static int past_save_counter;
 
 #define HFF_LOST_LIMIT 1000
 static uint16_t hff_lost_limit;
-static uint16_t hff_lost_counter;
+static uint16_t hff_lost_counter, hff_speed_lost_counter;
 
 #ifdef GPS_LAG
 static void hff_get_past_accel(unsigned int back_n);
@@ -236,7 +271,7 @@ static void send_hff_gps(struct transport_tx *trans, struct link_device *dev)
 void hff_init(float init_x, float init_xdot, float init_y, float init_ydot)
 {
   Rgps_pos = HFF_R_POS;
-  Rgps_vel = HFF_R_SPEED;
+  Rgps_vel = HFF_R_GPS_SPEED;
   hff_init_x(init_x, init_xdot, 0.f);
   hff_init_y(init_y, init_ydot, 0.f);
 #ifdef GPS_LAG
@@ -253,6 +288,7 @@ void hff_init(float init_x, float init_xdot, float init_y, float init_ydot)
   printf("GPS_LAG: %f\n", GPS_LAG);
   printf("GPS_LAG_N: %d\n", GPS_LAG_N);
   printf("GPS_DT_N: %d\n", GPS_DT_N);
+  printf("DT_HFILTER: %f\n", DT_HFILTER);
   printf("GPS_LAG_TOL_N: %i\n", GPS_LAG_TOL_N);
 #endif
 #else
@@ -265,7 +301,9 @@ void hff_init(float init_x, float init_xdot, float init_y, float init_ydot)
   save_counter = -1;
   past_save_counter = SAVE_DONE;
   hff_lost_counter = 0;
+  hff_speed_lost_counter = 0;
   hff_lost_limit = HFF_LOST_LIMIT;
+  hff_ps_counter = 0;
 
 #if PERIODIC_TELEMETRY
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HFF, send_hff);
@@ -274,6 +312,10 @@ void hff_init(float init_x, float init_xdot, float init_y, float init_ydot)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HFF_GPS, send_hff_gps);
 #endif
 #endif
+
+  init_butterworth_2_low_pass_int(&filter_x, HFF_LOWPASS_CUTOFF_FREQUENCY, (1. / AHRS_PROPAGATE_FREQUENCY), 0);
+  init_butterworth_2_low_pass_int(&filter_y, HFF_LOWPASS_CUTOFF_FREQUENCY, (1. / AHRS_PROPAGATE_FREQUENCY), 0);
+  init_butterworth_2_low_pass_int(&filter_z, HFF_LOWPASS_CUTOFF_FREQUENCY, (1. / AHRS_PROPAGATE_FREQUENCY), 0);
 }
 
 static void hff_init_x(float init_x, float init_xdot, float init_xbias)
@@ -431,10 +473,14 @@ static void hff_propagate_past(struct HfilterFloat *filt_past)
 #endif /* GPS_LAG */
 
 
-void hff_propagate(struct Int32Vect2 accel_ltp, float dt)
+void hff_propagate(void)
 {
-  if (hff_lost_counter && hff_lost_counter < hff_lost_limit) {
+  if (hff_lost_counter < hff_lost_limit) {
     hff_lost_counter++;
+  }
+
+  if (hff_speed_lost_counter < hff_lost_limit) {
+    hff_speed_lost_counter++;
   }
 
 #ifdef GPS_LAG
@@ -444,39 +490,54 @@ void hff_propagate(struct Int32Vect2 accel_ltp, float dt)
   }
 #endif
 
-  if (hff_lost_counter < hff_lost_limit) {
-    hff_xdd_meas = ACCEL_FLOAT_OF_BFP(accel_ltp.x);
-    hff_ydd_meas = ACCEL_FLOAT_OF_BFP(accel_ltp.y);
+  /* rotate imu accel measurement to body frame and filter */
+  struct Int32Vect3 acc_body_filtered;
+  acc_body_filtered.x = update_butterworth_2_low_pass_int(&filter_x, stateGetAccelBody_i()->x);
+  acc_body_filtered.y = update_butterworth_2_low_pass_int(&filter_y, stateGetAccelBody_i()->y);
+  acc_body_filtered.z = update_butterworth_2_low_pass_int(&filter_z, stateGetAccelBody_i()->z);
+
+  /* propagate current state if it is time */
+  if (hff_ps_counter >= HFF_PRESCALER) {
+    hff_ps_counter = 0;
+    struct Int32Vect3 filtered_accel_ltp;
+    struct Int32RMat *ltp_to_body_rmat = stateGetNedToBodyRMat_i();
+    int32_rmat_transp_vmult(&filtered_accel_ltp, ltp_to_body_rmat, &acc_body_filtered);
+    hff_xdd_meas = ACCEL_FLOAT_OF_BFP(filtered_accel_ltp.x);
+    hff_ydd_meas = ACCEL_FLOAT_OF_BFP(filtered_accel_ltp.y);
+
 #ifdef GPS_LAG
     hff_store_accel_ltp(hff_xdd_meas, hff_ydd_meas);
 #endif
-    /*
-     * propagate current state
-     */
-    hff_propagate_x(&hff, dt);
-    hff_propagate_y(&hff, dt);
+    if (hff_lost_counter < hff_lost_limit || hff_speed_lost_counter < hff_lost_limit) {
+      /*
+       * propagate current state
+       */
+      hff_propagate_x(&hff, DT_HFILTER);
+      hff_propagate_y(&hff, DT_HFILTER);
 
 #ifdef GPS_LAG
-    /* increase lag counter on last saved state */
-    if (hff_rb_n > 0) {
-      hff_rb_last->lag_counter++;
-    }
+      /* increase lag counter on last saved state */
+      if (hff_rb_n > 0) {
+        hff_rb_last->lag_counter++;
+      }
 
-    /* save filter state if needed */
-    if (save_counter == 0) {
-      PRINT_DBG(1, ("save current state\n"));
-      hff_rb_put_state(&hff);
-      save_counter = -1;
-    } else if (save_counter > 0) {
-      save_counter--;
-    }
+      /* save filter state if needed */
+      if (save_counter == 0) {
+        PRINT_DBG(1, ("save current state\n"));
+        hff_rb_put_state(&hff);
+        save_counter = -1;
+      } else if (save_counter > 0) {
+        save_counter--;
+      }
 #endif
+    }
   }
+  hff_ps_counter++;
 }
 
-void hff_update_gps(struct FloatVect2 *pos_ned, struct FloatVect2 *speed_ned)
+void hff_update_gps(struct FloatVect2 *pos_ned, struct FloatVect2 *speed_ned __attribute__((unused)))
 {
-  hff_lost_counter = 1;
+  hff_lost_counter = 0;
 
 #if USE_GPS_ACC4R
   Rgps_pos = (float) gps.pacc / 100.;
@@ -485,8 +546,8 @@ void hff_update_gps(struct FloatVect2 *pos_ned, struct FloatVect2 *speed_ned)
   }
 
   Rgps_vel = (float) gps.sacc / 100.;
-  if (Rgps_vel < HFF_R_SPEED_MIN) {
-    Rgps_vel = HFF_R_SPEED_MIN;
+  if (Rgps_vel < HFF_R_GPS_SPEED_MIN) {
+    Rgps_vel = HFF_R_GPS_SPEED_MIN;
   }
 #endif
 
@@ -531,7 +592,6 @@ void hff_update_gps(struct FloatVect2 *pos_ned, struct FloatVect2 *speed_ned)
     save_counter = GPS_DT_N - 1 - (GPS_LAG_N % GPS_DT_N);
     PRINT_DBG(2, ("rb empty, save counter set: %d\n", save_counter));
   }
-
 #endif /* GPS_LAG */
 }
 
@@ -589,7 +649,7 @@ static void hff_propagate_x(struct HfilterFloat *filt, float dt)
   const float FPF21 = filt->xP[2][1] + dt * (-filt->xP[2][2]);
   const float FPF22 = filt->xP[2][2];
 
-  filt->xP[0][0] = FPF00 + Qf * dt * dt / 2.;
+  filt->xP[0][0] = FPF00 + Q * dt * dt / 2.;
   filt->xP[0][1] = FPF01;
   filt->xP[0][2] = FPF02;
   filt->xP[1][0] = FPF10;
@@ -617,7 +677,7 @@ static void hff_propagate_y(struct HfilterFloat *filt, float dt)
   const float FPF21 = filt->yP[2][1] + dt * (-filt->yP[2][2]);
   const float FPF22 = filt->yP[2][2];
 
-  filt->yP[0][0] = FPF00 + Qf * dt * dt / 2.;
+  filt->yP[0][0] = FPF00 + Q * dt * dt / 2.;
   filt->yP[0][1] = FPF01;
   filt->yP[0][2] = FPF02;
   filt->yP[1][0] = FPF10;
@@ -647,6 +707,7 @@ static void hff_propagate_y(struct HfilterFloat *filt, float dt)
  */
 void hff_update_pos(struct FloatVect2 pos, struct FloatVect2 Rpos)
 {
+  hff_lost_counter = 0;
   hff_update_x(&hff, pos.x, Rpos.x);
   hff_update_y(&hff, pos.y, Rpos.y);
 }
@@ -741,6 +802,7 @@ static void hff_update_y(struct HfilterFloat *filt, float y_meas, float Rpos)
 */
 void hff_update_vel(struct FloatVect2 vel, struct FloatVect2 Rvel)
 {
+  hff_speed_lost_counter = 0;
   hff_update_xdot(&hff, vel.x, Rvel.x);
   hff_update_ydot(&hff, vel.y, Rvel.y);
 }
