@@ -410,25 +410,28 @@ bool calc_fast9_lukas_kanade(struct opticflow_t *opticflow, struct image_t *img,
   // TODO scale flow to rad/s here
 
   // Flow Derotation
-  float diff_flow_x = 0;
-  float diff_flow_y = 0;
-
-  /*// Flow Derotation TODO:
-  float diff_flow_x = (cam_state->phi - opticflow->prev_phi) * img->w / OPTICFLOW_FOV_W;
-  float diff_flow_y = (cam_state->theta - opticflow->prev_theta) * img->h / OPTICFLOW_FOV_H;*/
+  float diff_flow_x = 0.f;
+  float diff_flow_y = 0.f;
 
   if (opticflow->derotation && result->tracked_cnt > 5) {
-    diff_flow_x = (cam_state->rates.p)  / result->fps * img->w /
+    diff_flow_x = (opticflow->img_gray.eulers.phi - opticflow->prev_img_gray.eulers.phi) * OPTICFLOW_FX;
+    diff_flow_y = (opticflow->img_gray.eulers.theta - opticflow->prev_img_gray.eulers.theta) * OPTICFLOW_FY;
+    /*diff_flow_x = (cam_state->rates.p)  / result->fps * img->w /
                   OPTICFLOW_FOV_W;// * img->w / OPTICFLOW_FOV_W;
     diff_flow_y = (cam_state->rates.q) / result->fps * img->h /
                   OPTICFLOW_FOV_H;// * img->h / OPTICFLOW_FOV_H;*/
   }
 
-  result->flow_der_x = result->flow_x - diff_flow_x * opticflow->subpixel_factor *
-                       opticflow->derotation_correction_factor_x;
-  result->flow_der_y = result->flow_y - diff_flow_y * opticflow->subpixel_factor *
-                       opticflow->derotation_correction_factor_y;
-  opticflow->prev_rates = cam_state->rates;
+  float rotation_threshold = M_PI / 180.0f;
+  if (fabs(opticflow->img_gray.eulers.phi - opticflow->prev_img_gray.eulers.phi) > rotation_threshold) {
+    result->flow_der_x = 0.0f;
+    result->flow_der_y = 0.0f;
+  } else {
+    result->flow_der_x = result->flow_x - diff_flow_x * opticflow->subpixel_factor *
+                         opticflow->derotation_correction_factor_x;
+    result->flow_der_y = result->flow_y - diff_flow_y * opticflow->subpixel_factor *
+                         opticflow->derotation_correction_factor_y;
+  }
 
   // Velocity calculation
   // Right now this formula is under assumption that the flow only exist in the center axis of the camera.

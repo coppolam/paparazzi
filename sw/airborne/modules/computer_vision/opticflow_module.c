@@ -81,9 +81,9 @@ static void opticflow_telem_send(struct transport_tx *trans, struct link_device 
                                  &opticflow_result.tracked_cnt, &opticflow_result.flow_x,
                                  &opticflow_result.flow_y, &opticflow_result.flow_der_x,
                                  &opticflow_result.flow_der_y, &opticflow_result.vel_body.x,
-                                 &opticflow_result.vel_body.y, &opticflow_result.vel_body.z,
-                                 &opticflow_result.div_size, &opticflow_result.surface_roughness,
-                                 &opticflow_result.divergence); // TODO: no noise measurement here...
+                                 &opticflow_result.vel_body.y,
+                                 &opticflow_result.div_size, 
+                                 &opticflow_result.surface_roughness, &opticflow_result.divergence); // TODO: no noise measurement here...
   }
   pthread_mutex_unlock(&opticflow_mutex);
 }
