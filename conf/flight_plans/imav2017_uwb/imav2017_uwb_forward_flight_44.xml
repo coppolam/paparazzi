@@ -44,7 +44,19 @@
 			<while cond="TRUE">
 				<call fun="setForwardVelocity(0.3, 1.5)"/>
 			</while>
-    		<exception cond="block_time>30" deroute="Hover"/>
+    		<exception cond="block_time>5" deroute="Fly Backwards Delay"/>
+		</block>
+		<block name="Fly Backwards Delay">
+			<while cond="TRUE">
+				<call fun="hoverGuided(1.5)"/>
+			</while>
+           		<exception cond="block_time>2" deroute="Fly Backwards"/>
+		</block>
+		<block name="Fly Backwards">
+			<while cond="TRUE">
+				<call fun="setForwardVelocity(-0.3, 1.5)"/>
+			</while>
+    		<exception cond="block_time>5" deroute="Fly Forward Delay"/>
 		</block>
 		<block name="Land" strip_button="Land Here" strip_icon="land-right.png">
 			<while cond="TRUE">

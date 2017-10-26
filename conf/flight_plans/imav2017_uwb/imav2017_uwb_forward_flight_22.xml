@@ -38,7 +38,25 @@
 			<while cond="TRUE">
 				<call fun="setForwardAndTrack(0.3, 1.5)"/>
 			</while>
-            <exception cond="block_time>30" deroute="Track Relative Position"/>
+            <exception cond="block_time>5" deroute="Track Relative Position Backwards"/>
+		</block>
+		<block name="Track Relative Position Backwards">
+			<while cond="TRUE">
+				<call fun="trackRelPos(1.5)"/>
+			</while>
+            <exception cond="block_time>2" deroute="Fly Backwards and Track"/>
+		</block>
+		<block name="Fly Backwards and Track">
+			<while cond="TRUE">
+				<call fun="setForwardAndTrack(-0.3, 1.5)"/>
+			</while>
+            <exception cond="block_time>5" deroute="Track Relative Position Forward"/>
+		</block>
+		<block name="Track Relative Position Forward">
+			<while cond="TRUE">
+				<call fun="trackRelPos(1.5)"/>
+			</while>
+            <exception cond="block_time>2" deroute="Fly Forward and Track"/>
 		</block>
 		<block name="Land" strip_button="Land Here" strip_icon="land-right.png">
 			<call fun="goLand()"/>

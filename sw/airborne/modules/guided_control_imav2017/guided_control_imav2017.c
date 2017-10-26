@@ -45,7 +45,7 @@ static float rec_vely = 0.0;
 static float rec_range = 10.0;
 static float rec_height = 1.0;
 static float relxcom = 0.0;
-static float relycom = 0.8;
+static float relycom = 1.5;
 
 static float oldxerr = 0.0;
 static float oldyerr = 0.0;
@@ -59,7 +59,7 @@ float dt = 0.0;
 
 static float pgainx = 0.2;
 static float pgainy = 0.2;
-static float dgain = 0.0;
+static float dgain = 0.2;
 static float vgain = 0.5;
 
 static pthread_mutex_t ekf_mutex;
@@ -157,11 +157,11 @@ bool trackRelPos(float cmd_height){
 
 	float Vmag = sqrt(rec_velx*rec_velx+rec_vely*rec_vely);
 
-	pgainx = 0.5;//+Vmag*0.5;
-	pgainy = 0.1;//+Vmag*0.5;
+	pgainx = 0.6;//+Vmag*0.5;
+	pgainy = 0.2;//+Vmag*0.5;
 
 
-	if(dt>0.0 && dt < 0.5 && oldxerr > 0.0 && oldyerr > 0.0){
+	if(dt>0.0 && dt < 0.5 && abs(oldxerr) > 0.0 && abs(oldyerr) > 0.0){
 		relvxerr = (relxerr-oldxerr)/dt;
 		relvyerr = (relyerr-oldyerr)/dt;
 		oldxerr = relxerr;
@@ -171,7 +171,7 @@ bool trackRelPos(float cmd_height){
 	float vxcommand = pgainx*relxerr+dgain*relvxerr;
 	float vycommand = pgainy*relyerr+dgain*relvyerr;
 	temp &= guidance_h_set_guided_vel(vxcommand,vycommand);
-	temp &= guidance_h_set_guided_heading(0.0); // not reccommended if without a good heading estimate
+	//temp &= guidance_h_set_guided_heading(0.0); // not reccommended if without a good heading estimate
 	return !temp; // Returning FALSE means in the flight plan that the function executed successfully.
 
 }

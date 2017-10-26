@@ -202,7 +202,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		// Initialize the states
 		// Initial position cannot be zero or the filter will divide by zero on initialization
 		ekf[nf].X[0] = 0.0; // Relative position North
-		ekf[nf].X[1] = 1.5; // Relative position East
+		ekf[nf].X[1] = 2.5; // Relative position East
 		// The other variables can be initialized at 0
 		ekf[nf].X[2] = 0.0; // Own Velocity North
 		ekf[nf].X[3] = 0.0; // Own Velocity East
@@ -256,7 +256,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		else
 		{
 			ekf[i].X[0] = 0.0; // Relative position North
-			ekf[i].X[1] = 1.5; // Relative position East
+			ekf[i].X[1] = 2.5; // Relative position East
 			// The other variables can be initialized at 0
 			ekf[i].X[2] = 0.0; // Own Velocity North
 			ekf[i].X[3] = 0.0; // Own Velocity East
