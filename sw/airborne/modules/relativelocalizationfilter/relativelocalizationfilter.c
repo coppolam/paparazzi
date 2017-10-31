@@ -209,7 +209,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		ekf[nf].X[4] = 0.0; // Velocity other North
 		ekf[nf].X[5] = 0.0; // Velocity other East
 		ekf[nf].X[6] = 0.0; // Height difference
-		ekf[nf].X[7] = 0.0; // Bias
+		//ekf[nf].X[7] = 0.0; // Bias
 
 		ekf[nf].dt  = 0.1;  // Initial assumption for time difference between messages (STDMA code runs at 5Hz)
 		nf++; 			 	// Number of filter is present is increased
@@ -263,7 +263,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			ekf[i].X[4] = 0.0; // Velocity other North
 			ekf[i].X[5] = 0.0; // Velocity other East
 			ekf[i].X[6] = 0.0; // Height difference
-			ekf[i].X[7] = 0.0; // Bias
+			//ekf[i].X[7] = 0.0; // Bias
 		}
 	}
 	pthread_mutex_unlock(&ekf_mutex);
