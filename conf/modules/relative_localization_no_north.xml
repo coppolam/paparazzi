@@ -1,0 +1,32 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="relative_localization_no_north" dir="relativelocalizationfilter">
+	<doc>
+		<description>
+			Range based Relative Localization Filter without North dependency based on UWB Communication between drones
+		</description>
+	</doc>
+	<header>
+		<!-- Main file -->
+		<file name="relative_localization_no_north.h"/>
+		<!-- Functions files -->
+		<file name="arrayfunctions.h"/>
+		<file name="coordinateconversions.h"/>
+		<file name="discreteekf_no_north.h"/>
+		<file name="fmatrix.h"/>
+	</header>
+	<init fun="relativelocalizationfilter_init()"/>
+	<makefile>
+		<!-- Main file -->
+		<file name="relative_localization_no_north.c"/>
+		<!-- Functions files -->
+		<file name="arrayfunctions.c"/>
+		<file name="coordinateconversions.c"/>
+		<file name="discreteekf_no_north.c"/>
+		<file name="fmatrix.c"/>
+		<configure name="EKF_XZERO" default="1"/>
+		<configure name="EKF_YZERO" default="1"/>
+		<define name="EKF_XZERO" value="$(EKF_XZERO)"/>
+		<define name="EKF_YZERO" value="$(EKF_YZERO)"/>
+	</makefile>
+</module>

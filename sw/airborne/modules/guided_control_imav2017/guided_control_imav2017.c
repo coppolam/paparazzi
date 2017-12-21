@@ -26,6 +26,7 @@
  */
 
 #include <math.h>
+#include <pthread.h>
 #include "modules/relativelocalizationfilter/relativelocalizationfilter.h"
 #include "math/pprz_algebra_int.h"
 #include "navigation.h"
@@ -155,7 +156,7 @@ bool trackRelPos(float cmd_height){
 		pgainy = 0.5;
 	}*/
 
-	float Vmag = sqrt(rec_velx*rec_velx+rec_vely*rec_vely);
+	//float Vmag = sqrt(rec_velx*rec_velx+rec_vely*rec_vely);
 
 	pgainx = 0.6;//+Vmag*0.5;
 	pgainy = 0.2;//+Vmag*0.5;

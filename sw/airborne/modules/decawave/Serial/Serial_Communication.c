@@ -171,6 +171,7 @@ static void setAllNodeStatesFalse(void){
  * If all the states are updated, then do something with it! AKA CALLBACK TO MARIO
  */
 static void checkStatesUpdated(void){
+	static float oldtime = 0.0;
 	bool checkbool;
 	for (uint8_t i = 0; i < DIST_NUM_NODES; i++){
 		checkbool = true;
@@ -180,10 +181,16 @@ static void checkStatesUpdated(void){
 		if (checkbool){
 			// Send out data with an ABI message
 			AbiSendMsgUWB(UWB_COMM_ID, AC_ID, _states[i].r, _states[i].vx, _states[i].vy, _states[i].z);
-			printf("States for drone %i: r = %f, vx = %f, vy = %f, z = %f \n",i,_states[i].r,_states[i].vx,_states[i].vy,_states[i].z);
 			setNodeStatesFalse(i);
+			if(((get_sys_time_usec()/pow(10,6))-oldtime)>1){
+				oldtime = get_sys_time_usec()/pow(10,6);
+				printf("States for drone %i: r = %f, vx = %f, vy = %f, z = %f \n",i,_states[i].r,_states[i].vx,_states[i].vy,_states[i].z);
+
+			}
 		}
+
 	}
+
 
 }
 
