@@ -82,6 +82,27 @@
         <arg flag="22"/>
       </program>
     </session>
+    <session name="Bebop2_double_optitrack">
+      <program name="Server"/>
+      <program name="GCS">
+        <arg flag="-speech"/>
+      </program>
+      <program name="Data Link">
+        <arg flag="-udp"/>
+      </program>
+      <program name="Joystick">
+        <arg flag="-ac bebop2_22 bebop2_44"/>
+        <arg flag="hobbyking.xml"/>
+      </program>
+      <program name="NatNet">
+        <arg flag="-ac" constant="28"/>
+        <arg flag="22"/>
+      </program>
+      <program name="NatNet">
+        <arg flag="-ac" constant="29"/>
+        <arg flag="44"/>
+      </program>
+    </session>
     <session name="Bebop2_single">
       <program name="Server"/>
       <program name="Messages"/>
