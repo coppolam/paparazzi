@@ -39,17 +39,15 @@
       <configure name="SERIAL_UART" value="UART2" />
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
-    <module name="relative_localization_no_north"/>
+    <module name="relative_localization_no_north">
+      <configure name="EKF_XZERO" value="0"/>
+      <configure name="EKF_YZERO" value="1"/>
+    </module>
     <module name="guided_control_imav2017"/>
     </modules>
   
   <section name="RELATIVELOCALIZATIONFILTER" prefix="">
-   <define name="RSSINOISE" value="5.0"/>  <!-- (Expected) Noise on RSSI -->
-   <define name="SPEEDNOISE" value="0.2"/> <!-- (Expected) Noise on 
-      other measurements -->
-   <define name="NUAVS" value="5"/>        <!-- Maximum number of UAVs 
-      to track -->
-      <!-- define name="UWB_LOCALIZATION" value="1" /-->
+    <define name="NUAVS" value="5"/>
   </section>
 
   <commands>

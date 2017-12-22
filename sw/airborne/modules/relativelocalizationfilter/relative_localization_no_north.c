@@ -55,6 +55,9 @@ ekf_filter ekf[NUAVS-1]; 	// EKF structure
 float rangearray[NUAVS-1];	// Recorded RSSI values (so they can all be sent)
 struct EnuCoor_f current_pos;
 struct EnuCoor_f current_speed;
+struct NedCoor_f current_accel;
+struct FloatRates current_rates;
+struct FloatEulers current_eulers;
 int counter = 0;
 
 //char rlFileName[50] = "/data/ftp/internal_000/rlLogFile1.csv";
@@ -65,17 +68,21 @@ char* rlconcat(const char *s1, const char *s2);
 
 static pthread_mutex_t ekf_mutex;
 
-#define RLLOG 0
+#define RLLOG 1
 
 PRINT_CONFIG_VAR(EKF_XZERO)
 
 void initNewEkfFilter(ekf_filter *filter){
 	float Pval[EKF_N] = {16,16,16,16,16,16,16,16,16};
-	float Qval[EKF_L] = {pow(0.8,2),pow(0.8,2),pow(0.8,2),pow(0.8,2),pow(0.05,2),pow(0.05,2)};
-	float Rval[EKF_M] = {pow(0.1,2),pow(0.01,2),pow(0.01,2),pow(0.2,2),pow(0.2,2),pow(0.2,2),pow(0.2,2)};
+	// inputs: a1x, a1y, a2x, a2y, r1, r2
+	float Qval[EKF_L] = {pow(2,2),pow(2,2),pow(2,2),pow(2,2),pow(0.05,2),pow(0.05,2)};
+	// measurements: range, h1, h2, u1, v1, u2, v2
+	float Rval[EKF_M] = {pow(0.1,2),pow(0.1,2),pow(0.1,2),pow(0.2,2),pow(0.2,2),pow(0.2,2),pow(0.2,2)};
 	fmat_make_zeros(filter->X,EKF_N,1);
 	filter->X[0]=EKF_XZERO;
 	filter->X[1]=EKF_YZERO;
+	filter->X[2]=-1;
+	filter->X[3]=-1;
 	fmat_make_diagonal(EKF_N,filter->P,Pval);
 	fmat_make_diagonal(EKF_L,filter->Q,Qval);
 	fmat_make_diagonal(EKF_M,filter->R,Rval);
@@ -134,7 +141,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		// This is because it is best for the filter should only start once the drones are in motion, 
 		// otherwise it might diverge while drones are not moving.
 			float input[EKF_L] = {0,0,0,0,0,0};
-			float measurements[EKF_M] = {range,ownh,trackedh,ownVx,ownVy,trackedVx,trackedVy};
+			float measurements[EKF_M] = {range,-ownh,trackedh,ownVx,ownVy,trackedVx,trackedVy};
 			float dt = (get_sys_time_usec() - now_ts[i])/pow(10,6); // Update the time between messages
 			updateEkfFilter(&ekf[i],input,measurements,dt);
 		}
@@ -157,10 +164,13 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 	if(RLLOG){
 		current_speed = *stateGetSpeedEnu_f();
 		current_pos = *stateGetPositionEnu_f();
+		current_accel = *stateGetAccelNed_f();
+		current_rates = *stateGetBodyRates_f();
+		current_eulers = *stateGetNedToBodyEulers_f();
 
 		if(rlFileLogger!=NULL){
 			pthread_mutex_lock(&ekf_mutex);
-			fprintf(rlFileLogger,"%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+			fprintf(rlFileLogger,"%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
 					counter,
 					i,
 					(float)(now_ts[i]/pow(10,6)),
@@ -171,6 +181,15 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 					current_speed.y,
 					current_speed.x,
 					-current_speed.z,
+					current_accel.x,
+					current_accel.y,
+					current_accel.z,
+					current_eulers.phi,
+					current_eulers.theta,
+					current_eulers.psi,
+					current_rates.p,
+					current_rates.q,
+					current_rates.r,
 					range,
 					trackedVx,
 					trackedVy,
@@ -182,7 +201,9 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 					ekf[i].X[4],
 					ekf[i].X[5],
 					ekf[i].X[6],
-					ekf[i].X[7]);
+					ekf[i].X[7],
+					ekf[i].X[8],
+					ekf[i].X[9]);
 			counter++;
 			pthread_mutex_unlock(&ekf_mutex);
 		}
@@ -254,7 +275,7 @@ void relativelocalizationfilter_init(void)
 	if(RLLOG){
 		rlFileLogger = fopen(rlFileName,"w");
 		if (rlFileLogger!=NULL){
-			fprintf(rlFileLogger,"msg_count,AC_ID,time,dt,own_x,own_y,own_z,own_vx,own_vy,own_vz,Range,track_vx_meas,track_vy_meas,track_z_meas,kal_x,kal_y,kal_vx,kal_vy,kal_oth_vx,kal_oth_vy,kal_rel_h,kal_bias\n");
+			fprintf(rlFileLogger,"msg_count,AC_ID,time,dt,own_x,own_y,own_z,own_vx,own_vy,own_vz,own_ax,own_ay,own_az,own_phi,own_theta,own_psi,own_p,own_q,own_r,Range,track_vx_meas,track_vy_meas,track_z_meas,kal_x,kal_y,kal_h1,kal_h2,kal_u1,kal_v1,kal_u2,kal_v2,kal_gamma\n");
 		}
 	}
 	array_make_zeros_int(NUAVS-1, IDarray); // Clear out the known IDs

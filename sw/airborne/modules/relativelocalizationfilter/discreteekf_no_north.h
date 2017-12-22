@@ -41,6 +41,10 @@
 enum ekf_statein{x12,y12,z1,z2,u1,v1,u2,v2,gam};
 enum ekf_input{u1dm,v1dm,u2dm,v2dm,r1m,r2m};
 
+/*
+ * Continuous time state transition equation
+ * state is: {x_rel,y_rel,h1,h2,u1,v1,u2,v2,gamma}
+ */
 static inline void ekf_fsym(float *statein,float *input,float *output){
 	output[0] =  input[r1m]*statein[y12] - statein[u1] + statein[u2] * cos(statein[gam]) - statein[v2] * sin(statein[gam]);
 	output[1] = -input[r1m]*statein[x12] - statein[v1] + statein[u2] * sin(statein[gam]) + statein[v2] * cos(statein[gam]);

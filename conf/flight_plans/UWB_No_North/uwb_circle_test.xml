@@ -40,6 +40,7 @@
 	</sectors>
 	<variables>
 		<variable var="selfradius" min="-6" max="6" step="0.1" />
+		<variable var="selfheading" min="0" max="360" step="10" />
 	</variables>
 	<exceptions>
 		<!--exception cond="!InsideDangerZone(GetPosX(), GetPosY())" deroute="Standby" /-->
@@ -76,6 +77,11 @@
 		<block name="Standby" strip_button="Standby" strip_icon="home.png">
 			<stay wp="STDBY" />
 		</block>
+		<block name="Set_Heading">
+		  <call_once fun="nav_set_heading_deg(selfheading)" />
+		  <call_once fun="NavSetWaypointHere(WP_STDBY)" />
+		  <deroute block="Standby"/>
+		</block>
 		<block name="START" strip_button="Go" strip_icon="lookfore.png">
 			<call_once fun="NavSetWaypointHere(WP_GOAL)" />
 		</block>
@@ -86,6 +92,7 @@
 			<stay wp="p1" />
 		</block>
 		<block name="Circle">
+			<call_once fun="nav_set_heading_deg(selfheading)" />
 			<while cond="TRUE">
 				<circle wp="GOAL" radius="selfradius" />
 			</while>
