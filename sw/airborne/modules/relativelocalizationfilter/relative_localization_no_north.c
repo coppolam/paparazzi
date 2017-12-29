@@ -68,7 +68,9 @@ char* rlconcat(const char *s1, const char *s2);
 
 static pthread_mutex_t ekf_mutex;
 
-#define RLLOG 1
+#define RLLOG 0
+
+#define UWB_NDI_SENDER_ID 1
 
 PRINT_CONFIG_VAR(EKF_XZERO)
 
@@ -77,7 +79,8 @@ void initNewEkfFilter(ekf_filter *filter){
 	// inputs: a1x, a1y, a2x, a2y, r1, r2
 	float Qval[EKF_L] = {pow(2,2),pow(2,2),pow(2,2),pow(2,2),pow(0.05,2),pow(0.05,2)};
 	// measurements: range, h1, h2, u1, v1, u2, v2
-	float Rval[EKF_M] = {pow(0.1,2),pow(0.1,2),pow(0.1,2),pow(0.2,2),pow(0.2,2),pow(0.2,2),pow(0.2,2)};
+	//float Rval[EKF_M] = {pow(0.1,2),pow(0.1,2),pow(0.1,2),pow(0.2,2),pow(0.2,2),pow(0.2,2),pow(0.2,2)};
+	float Rval[EKF_M] = {pow(0.25,2),pow(0.2,2),pow(0.2,2),pow(0.25,2),pow(0.25,2),pow(0.25,2),pow(0.25,2)};
 	fmat_make_zeros(filter->X,EKF_N,1);
 	filter->X[0]=EKF_XZERO;
 	filter->X[1]=EKF_YZERO;
@@ -131,8 +134,8 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		float ownVy = stateGetSpeedEnu_f()->x; // Velocity East in NED
 		float ownh = stateGetPositionEnu_f()->z;
 		// Bind to realistic amounts to avoid occasional spikes/NaN/inf errors
-		keepbounded(&ownVx,-2.0,2.0);
-		keepbounded(&ownVy,-2.0,2.0);
+		keepbounded(&ownVx,-3.0,3.0);
+		keepbounded(&ownVy,-3.0,3.0);
 
 		//if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED)
 		if(ownh > 0.5)
@@ -144,6 +147,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			float measurements[EKF_M] = {range,-ownh,trackedh,ownVx,ownVy,trackedVx,trackedVy};
 			float dt = (get_sys_time_usec() - now_ts[i])/pow(10,6); // Update the time between messages
 			updateEkfFilter(&ekf[i],input,measurements,dt);
+			AbiSendMsgUWB_NDI(UWB_NDI_SENDER_ID, ekf[i].X[0],ekf[i].X[1],ekf[i].X[4],ekf[i].X[5],ekf[i].X[6],ekf[i].X[7]);
 		}
 		else
 		{
@@ -170,7 +174,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 
 		if(rlFileLogger!=NULL){
 			pthread_mutex_lock(&ekf_mutex);
-			fprintf(rlFileLogger,"%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+			fprintf(rlFileLogger,"%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
 					counter,
 					i,
 					(float)(now_ts[i]/pow(10,6)),
@@ -202,8 +206,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 					ekf[i].X[5],
 					ekf[i].X[6],
 					ekf[i].X[7],
-					ekf[i].X[8],
-					ekf[i].X[9]);
+					ekf[i].X[8]);
 			counter++;
 			pthread_mutex_unlock(&ekf_mutex);
 		}
@@ -220,8 +223,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 				ekf[i].X[5],
 				ekf[i].X[6],
 				ekf[i].X[7],
-				ekf[i].X[8],
-				ekf[i].X[9]);
+				ekf[i].X[8]);
 	}
 };
 //#endif

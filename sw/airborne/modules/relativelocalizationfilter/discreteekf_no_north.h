@@ -77,7 +77,7 @@ static inline void ekf_Fx(float *statein,float *input,float *output){
 	fmat_assign(7,6,EKF_N,output,-input[r2m]);
 }
 
-static inline void ekf_G(float *statein,float *input,float *output){
+static inline void ekf_G(float *statein,float *input __attribute__((unused)),float *output){
 	fmat_make_zeros(output,EKF_N,EKF_L);
 	fmat_assign(0,4,EKF_L,output,statein[y12]);
 	fmat_assign(1,4,EKF_L,output,-statein[x12]);

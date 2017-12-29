@@ -112,6 +112,15 @@
       <field name="vy" type="float" unit="m/s^2"/>
       <field name="h" type="float" unit="m"/>
     </message>
+    
+    <message name="UWB_NDI" id="24">
+      <field name="xe" type="float" unit="m"/>
+      <field name="ye" type="float" unit="m"/>
+      <field name="u1" type="float" unit="m/s"/>
+      <field name="v1" type="float" unit="m/s"/>
+      <field name="u2" type="float" unit="m/s"/>
+      <field name="v2" type="float" unit="m/s"/>
+    </message>
 
   </msg_class>
 
