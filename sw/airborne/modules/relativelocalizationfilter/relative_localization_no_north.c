@@ -37,6 +37,9 @@
 #include "subsystems/datalink/datalink.h"
 #include "subsystems/datalink/downlink.h"
 
+
+#define RL_PRINT_EKF 0
+
 #ifndef NUAVS
 #define NUAVS 5				// Maximum expected number of drones
 #endif
@@ -68,7 +71,7 @@ char* rlconcat(const char *s1, const char *s2);
 
 static pthread_mutex_t ekf_mutex;
 
-#define RLLOG 0
+#define RLLOG 1
 
 #define UWB_NDI_SENDER_ID 1
 
@@ -147,7 +150,52 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			float measurements[EKF_M] = {range,-ownh,trackedh,ownVx,ownVy,trackedVx,trackedVy};
 			float dt = (get_sys_time_usec() - now_ts[i])/pow(10,6); // Update the time between messages
 			updateEkfFilter(&ekf[i],input,measurements,dt);
-			AbiSendMsgUWB_NDI(UWB_NDI_SENDER_ID, ekf[i].X[0],ekf[i].X[1],ekf[i].X[4],ekf[i].X[5],ekf[i].X[6],ekf[i].X[7]);
+			AbiSendMsgUWB_NDI(UWB_NDI_SENDER_ID,now_ts[i]/pow(10,6),dt,range,trackedVx,trackedVy,trackedh ,ekf[i].X[0],ekf[i].X[1],ekf[i].X[2],ekf[i].X[3],ekf[i].X[4],ekf[i].X[5],ekf[i].X[6],ekf[i].X[7],ekf[i].X[8]);
+			if(RLLOG){
+				current_speed = *stateGetSpeedEnu_f();
+				current_pos = *stateGetPositionEnu_f();
+				current_accel = *stateGetAccelNed_f();
+				current_rates = *stateGetBodyRates_f();
+				current_eulers = *stateGetNedToBodyEulers_f();
+
+				if(rlFileLogger!=NULL){
+					pthread_mutex_lock(&ekf_mutex);
+					fprintf(rlFileLogger,"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+							counter,
+							(float)(now_ts[i]/pow(10,6)),
+							ekf[i].dt,
+							current_pos.y,
+							current_pos.x,
+							-current_pos.z,
+							current_speed.y,
+							current_speed.x,
+							-current_speed.z,
+							current_accel.x,
+							current_accel.y,
+							current_accel.z,
+							current_eulers.phi,
+							current_eulers.theta,
+							current_eulers.psi,
+							current_rates.p,
+							current_rates.q,
+							current_rates.r,
+							range,
+							trackedVx,
+							trackedVy,
+							trackedh,
+							ekf[i].X[0],
+							ekf[i].X[1],
+							ekf[i].X[2],
+							ekf[i].X[3],
+							ekf[i].X[4],
+							ekf[i].X[5],
+							ekf[i].X[6],
+							ekf[i].X[7],
+							ekf[i].X[8]);
+					counter++;
+					pthread_mutex_unlock(&ekf_mutex);
+				}
+			}
 		}
 		else
 		{
@@ -165,54 +213,9 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		}
 	}
 	pthread_mutex_unlock(&ekf_mutex);
-	if(RLLOG){
-		current_speed = *stateGetSpeedEnu_f();
-		current_pos = *stateGetPositionEnu_f();
-		current_accel = *stateGetAccelNed_f();
-		current_rates = *stateGetBodyRates_f();
-		current_eulers = *stateGetNedToBodyEulers_f();
 
-		if(rlFileLogger!=NULL){
-			pthread_mutex_lock(&ekf_mutex);
-			fprintf(rlFileLogger,"%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
-					counter,
-					i,
-					(float)(now_ts[i]/pow(10,6)),
-					ekf[i].dt,
-					current_pos.y,
-					current_pos.x,
-					-current_pos.z,
-					current_speed.y,
-					current_speed.x,
-					-current_speed.z,
-					current_accel.x,
-					current_accel.y,
-					current_accel.z,
-					current_eulers.phi,
-					current_eulers.theta,
-					current_eulers.psi,
-					current_rates.p,
-					current_rates.q,
-					current_rates.r,
-					range,
-					trackedVx,
-					trackedVy,
-					trackedh,
-					ekf[i].X[0],
-					ekf[i].X[1],
-					ekf[i].X[2],
-					ekf[i].X[3],
-					ekf[i].X[4],
-					ekf[i].X[5],
-					ekf[i].X[6],
-					ekf[i].X[7],
-					ekf[i].X[8]);
-			counter++;
-			pthread_mutex_unlock(&ekf_mutex);
-		}
-	}
 	now_ts[i] = get_sys_time_usec();  // Store latest time
-	if(((get_sys_time_usec()/pow(10,6))-oldtime)>1){
+	if(((get_sys_time_usec()/pow(10,6))-oldtime)>1 && RL_PRINT_EKF){
 		oldtime = get_sys_time_usec()/pow(10,6);
 		printf("Current estimate of EKF is x,y,z1,z2,u1,v1,u2,v2,gam: %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
 				ekf[i].X[0],
@@ -277,7 +280,7 @@ void relativelocalizationfilter_init(void)
 	if(RLLOG){
 		rlFileLogger = fopen(rlFileName,"w");
 		if (rlFileLogger!=NULL){
-			fprintf(rlFileLogger,"msg_count,AC_ID,time,dt,own_x,own_y,own_z,own_vx,own_vy,own_vz,own_ax,own_ay,own_az,own_phi,own_theta,own_psi,own_p,own_q,own_r,Range,track_vx_meas,track_vy_meas,track_z_meas,kal_x,kal_y,kal_h1,kal_h2,kal_u1,kal_v1,kal_u2,kal_v2,kal_gamma\n");
+			fprintf(rlFileLogger,"msg_count,time,dt,own_x,own_y,own_z,own_vx,own_vy,own_vz,own_ax,own_ay,own_az,own_phi,own_theta,own_psi,own_p,own_q,own_r,Range,track_vx_meas,track_vy_meas,track_z_meas,kal_x,kal_y,kal_h1,kal_h2,kal_u1,kal_v1,kal_u2,kal_v2,kal_gamma\n");
 		}
 	}
 	array_make_zeros_int(NUAVS-1, IDarray); // Clear out the known IDs

@@ -40,8 +40,8 @@
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
     <module name="relative_localization_no_north">
-      <configure name="EKF_XZERO" value="0"/>
-      <configure name="EKF_YZERO" value="1"/>
+      <configure name="EKF_XZERO" value="-3"/>
+      <configure name="EKF_YZERO" value="0"/>
     </module>
     <module name="uwb_follower_control"/>
     </modules>
@@ -185,7 +185,7 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="20" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="0.5" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="2.0" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="70"/><!--120-->
@@ -211,10 +211,11 @@
   </section>
 
   <section name="AUTOPILOT">
-    <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
+    <define name="MODE_STARTUP" value="AP_MODE_GUIDED"/>
+    <!-- define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/-->
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
-    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+    <define name="MODE_AUTO2" value="AP_MODE_GUIDED"/>
   </section>
 
   <section name="BAT">

@@ -40,8 +40,8 @@
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
     <module name="relative_localization_no_north">
-      <configure name="EKF_XZERO" value="0"/>
-      <configure name="EKF_YZERO" value="1"/>
+      <configure name="EKF_XZERO" value="3"/>
+      <configure name="EKF_YZERO" value="0"/>
     </module>
     <module name="uwb_leader_control"/>
     </modules>
@@ -215,6 +215,7 @@
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+    <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
 
   <section name="BAT">

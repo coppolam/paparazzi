@@ -6,7 +6,8 @@
 #include "subsystems/abi.h"
 
 
-#define NDI_PAST_VALS 20
+#define NDI_FLIGHT_HEIGHT 1.5
+#define NDI_PAST_VALS 200
 
 typedef struct ndihandler{
 	float delay;
@@ -26,6 +27,7 @@ typedef struct ndihandler{
 	int data_end;
 	int data_entries;
 	float commands[2];
+	float commandscap[2];
 	float maxcommand;
 } ndihandler;
 
@@ -33,8 +35,9 @@ extern ndihandler ndihandle;
 
 extern bool startNdiTracking(void);
 extern bool stopNdiTracking(void);
+extern bool ndi_follow_leader(void);
 
-extern void addNdiValues(uint8_t sender_id __attribute__((unused)), float x, float y, float u1, float v1, float u2, float v2);
+extern void addNdiValues(uint8_t sender_id __attribute__((unused)),float time, float dt,float range, float trackedVx, float trackedVy, float trackedh, float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain);
 
 extern void uwb_ndi_follower_init(void);
 
@@ -44,6 +47,9 @@ extern void printCircularFloatArr(float* arr);
 
 extern void printNdiVars(void);
 
+extern bool initialiseTrajectory(void);
+extern bool flyTrajectory(void);
+extern bool flyToCentre(void);
 
 
 

@@ -11,7 +11,7 @@
 	</header>
 	<init fun="uwb_ndi_follower_init()" />
 	<periodic fun="calcNdiCommands()" freq="20" autorun="TRUE" />
-	<periodic fun="printNdiVars()" freq="1" autorun="TRUE"/>
+	<!--periodic fun="printNdiVars()" freq="1" autorun="TRUE"/-->
 	<makefile target="ap">
 		<file name="uwb_follower_control.c" />
 	</makefile>

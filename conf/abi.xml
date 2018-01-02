@@ -114,12 +114,21 @@
     </message>
     
     <message name="UWB_NDI" id="24">
+      <field name="time" type="float" unit="s"/>
+      <field name="dt" type="float" unit="s"/>
+      <field name="range" type="float" unit="m"/>
+      <field name="trackedVx" type="float" unit="m/s"/>
+      <field name="trackedVy" type="float" unit="m/s"/>
+      <field name="trackedh" type="float" unit="m"/>
       <field name="xe" type="float" unit="m"/>
       <field name="ye" type="float" unit="m"/>
+      <field name="h1" type="float" unit="m"/>
+      <field name="h2" type="float" unit="m"/>
       <field name="u1" type="float" unit="m/s"/>
       <field name="v1" type="float" unit="m/s"/>
       <field name="u2" type="float" unit="m/s"/>
       <field name="v2" type="float" unit="m/s"/>
+      <field name="gamma" type="float" unit="rad"/>
     </message>
 
   </msg_class>

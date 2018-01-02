@@ -10,9 +10,18 @@
 	</header>
 	<waypoints>
 		<waypoint height="0" name="HOME" x="0.0" y="0.0" />
+		<waypoint name="CIRCLEWP" x="0.0" y="0.0"/>
 		<waypoint height="2" name="CLIMB" x="1.2" y="-0.6" />
-		<waypoint height="1.5" name="STDBY" x="-2" y="-2" />
+		<waypoint height="1.5" name="STDBY" x="0.5" y="0.5" />
 		<waypoint name="TD" x="0.8" y="-1.7" />
+		<!-- waypoint name="t0" lat="51.9906258" lon="4.3767972"/>
+		<waypoint name="t1" lat="51.9906370" lon="4.3768014"/>
+		<waypoint name="t2" lat="51.9906412" lon="4.3767794"/>
+		<waypoint name="t3" lat="51.9906294" lon="4.3767780"/-->
+		<waypoint name="t0" x="0.9" y="0.0"/>
+		<waypoint name="t1" x="0.0" y="0.9"/>
+		<waypoint name="t2" x="-0.9" y="0.0"/>
+		<waypoint name="t3" x="0.0" y="-0.9"/>
 		<waypoint lat="51.9906213" lon="4.3768628" name="_CZ1" />
 		<waypoint lat="51.9905874" lon="4.3767766" name="_CZ2" />
 		<waypoint lat="51.9906409" lon="4.3767226" name="_CZ3" />
@@ -37,8 +46,8 @@
 		</sector>
 	</sectors>
 	<variables>
-		<variable var="selfradius" min="-6" max="6" step="0.1" />
-		<variable var="selfheading" min="0" max="360" step="10" />
+		<variable var="selfradius" min="-6" max="6" step="0.1" init="-1.0" />
+		<variable var="selfheading" min="0" max="360" step="10" init="0.0"/>
 	</variables>
 	<exceptions>
 		<!--exception cond="!InsideDangerZone(GetPosX(), GetPosY())" deroute="Standby" /-->
@@ -61,57 +70,21 @@
 			<attitude pitch="0" roll="0" throttle="0"
 				vmode="throttle" />
 		</block>
-		<block name="Start Engine">
-			<call_once fun="NavResurrect()" />
-			<attitude pitch="0" roll="0" throttle="0"
-				vmode="throttle" />
-		</block>
-		<block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-			<exception cond="stateGetPositionEnu_f()->z > 1.25" deroute="Standby" />
-			<call_once fun="NavSetWaypointHere(WP_CLIMB)" />
-			<stay wp="CLIMB" climb="1" vmode="climb"/>
-			<!--stay wp="CLIMB" throttle="0.5" vmode="throttle"/-->
-		</block>
-		<block name="Standby" strip_button="Standby" strip_icon="home.png">
-			<stay wp="STDBY" />
-		</block>
-		<block name="Set_Heading">
-		  <call_once fun="nav_set_heading_deg(selfheading)" />
-		  <call_once fun="NavSetWaypointHere(WP_STDBY)" />
-		  <deroute block="Standby"/>
-		</block>
-		<block name="Circle">
-			<call_once fun="nav_set_heading_deg(selfheading)" />
+		<block name="FlyCentre">
 			<while cond="TRUE">
-				<circle wp="HOME" radius="selfradius" />
+				<call_once fun="flyToCentre()"/>
 			</while>
 		</block>
-		<block name="Spiral">
-			<while cond="LessThan(NavBlockTime(),300)">
-				<circle wp="HOME" radius="1+NavBlockTime()*0.015" />
+		<block name="Fly_Trajectory">
+			<call_once fun="initialiseTrajectory()"/>
+			<while cond="TRUE">
+				<call_once fun="flyTrajectory()"/>
+			</while>			
+		</block>
+		<block name="Follow_leader">
+			<while cond="TRUE">
+				<call_once fun="ndi_follow_leader()"/>
 			</while>
-		</block>
-		<block name="NegSpiral">
-			<while cond="LessThan(NavBlockTime(),300)">
-				<circle wp="HOME" radius="-1-NavBlockTime()*0.015" />
-			</while>
-		</block>
-		<block name="land here" strip_button="land Here" strip_icon="land-right.png">
-			<call_once fun="NavSetWaypointHere(WP_TD)" />
-		</block>
-		<block name="land">
-			<go wp="TD" />
-		</block>
-		<block name="flare">
-			<exception cond="NavDetectGround()" deroute="Holding point" />
-			<exception cond="!nav_is_in_flight()" deroute="landed" />
-			<call_once fun="NavStartDetectGround()" />
-			<stay climb="nav_descend_vspeed" vmode="climb" wp="TD" />
-		</block>
-		<block name="landed">
-			<call_once fun="NavKillThrottle()" />
-			<attitude pitch="0" roll="0" throttle="0" until="FALSE"
-				vmode="throttle" />
 		</block>
 	</blocks>
 </flight_plan>
