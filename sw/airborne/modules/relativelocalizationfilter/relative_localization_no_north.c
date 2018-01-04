@@ -75,7 +75,7 @@ static pthread_mutex_t ekf_mutex;
 
 #define UWB_NDI_SENDER_ID 1
 
-PRINT_CONFIG_VAR(EKF_XZERO)
+
 
 void initNewEkfFilter(ekf_filter *filter){
 	float Pval[EKF_N] = {16,16,16,16,16,16,16,16,16};
@@ -83,7 +83,7 @@ void initNewEkfFilter(ekf_filter *filter){
 	float Qval[EKF_L] = {pow(2,2),pow(2,2),pow(2,2),pow(2,2),pow(0.05,2),pow(0.05,2)};
 	// measurements: range, h1, h2, u1, v1, u2, v2
 	//float Rval[EKF_M] = {pow(0.1,2),pow(0.1,2),pow(0.1,2),pow(0.2,2),pow(0.2,2),pow(0.2,2),pow(0.2,2)};
-	float Rval[EKF_M] = {pow(0.25,2),pow(0.2,2),pow(0.2,2),pow(0.25,2),pow(0.25,2),pow(0.25,2),pow(0.25,2)};
+	float Rval[EKF_M] = {pow(0.25,2),pow(0.15,2),pow(0.15,2),pow(0.15,2),pow(0.15,2),pow(0.25,2),pow(0.25,2)};
 	fmat_make_zeros(filter->X,EKF_N,1);
 	filter->X[0]=EKF_XZERO;
 	filter->X[1]=EKF_YZERO;
@@ -139,6 +139,8 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		// Bind to realistic amounts to avoid occasional spikes/NaN/inf errors
 		keepbounded(&ownVx,-3.0,3.0);
 		keepbounded(&ownVy,-3.0,3.0);
+		keepbounded(&trackedVx,-3.0,3.0);
+		keepbounded(&trackedVy,-3.0,3.0);
 
 		//if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED)
 		if(ownh > 0.5)

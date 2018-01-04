@@ -28,12 +28,12 @@ float computeNdiFloatIntegral(float* ndiarr, float curtime);
 void bindNorm(void);
 char* strconcat(const char *s1, const char *s2);
 
-ndihandler ndihandle = {.delay = 5,
-		.tau_x=7,
-		.tau_y = 7,
-		.Kp = -2,
+ndihandler ndihandle = {.delay = 4,
+		.tau_x=2,
+		.tau_y = 2,
+		.Kp = -1,
 		.Ki = 0,
-		.Kd = -5,
+		.Kd = -2,
 		.data_start = 0,
 		.data_end = 0,
 		.data_entries = 0,
@@ -80,10 +80,10 @@ void addNdiValues(uint8_t sender_id __attribute__((unused)),float time, float dt
 	}
 	ndihandle.xarr[ndihandle.data_end] = xin;
 	ndihandle.yarr[ndihandle.data_end] = yin;
-	ndihandle.u1arr[ndihandle.data_end] = current_speed.y;
-	ndihandle.v1arr[ndihandle.data_end] = current_speed.x;
-	ndihandle.u2arr[ndihandle.data_end] = trackedVx;
-	ndihandle.v2arr[ndihandle.data_end] = trackedVy;
+	ndihandle.u1arr[ndihandle.data_end] = u1in;
+	ndihandle.v1arr[ndihandle.data_end] = v1in;
+	ndihandle.u2arr[ndihandle.data_end] = u2in;
+	ndihandle.v2arr[ndihandle.data_end] = v2in;
 	ndihandle.tarr[ndihandle.data_end] = t;
 	ndihandle.data_end = (ndihandle.data_end+1)%NDI_PAST_VALS;
 	ndihandle.data_entries++;
@@ -185,8 +185,13 @@ void calcNdiCommands(void){
 			float oldx = accessCircularFloatArrElement(ndihandle.xarr,0);
 			float oldy = accessCircularFloatArrElement(ndihandle.yarr,0);
 
-			float oldu1 = accessCircularFloatArrElement(ndihandle.u1arr,0);
-			float oldv1 = accessCircularFloatArrElement(ndihandle.v1arr,0);
+			//float oldu1 = accessCircularFloatArrElement(ndihandle.u1arr,0);
+			//float oldv1 = accessCircularFloatArrElement(ndihandle.v1arr,0);
+			//struct EnuCoor_f current_speed = *stateGetSpeedEnu_f();
+			//float newu1 = current_speed.y;
+			//float newv1 = current_speed.x;
+			float newu1 = accessCircularFloatArrElement(ndihandle.u1arr,NDI_MOST_RECENT);
+			float newv1 = accessCircularFloatArrElement(ndihandle.v1arr,NDI_MOST_RECENT);
 			float oldu2 = accessCircularFloatArrElement(ndihandle.u2arr,0);
 			float oldv2 = accessCircularFloatArrElement(ndihandle.v2arr,0);
 			oldx = oldx - computeNdiFloatIntegral(ndihandle.u1arr,curtime);
@@ -199,11 +204,11 @@ void calcNdiCommands(void){
 
 			float l[2];
 			fmat_make_zeros(l,2,1);
-			fmat_assign(0,0,1,l,oldu1/ndihandle.tau_x);
-			fmat_assign(1,0,1,l,oldv1/ndihandle.tau_y);
+			fmat_assign(0,0,1,l,newu1/ndihandle.tau_x);
+			fmat_assign(1,0,1,l,newv1/ndihandle.tau_y);
 
-			float oldxed = oldu2 - oldu1;
-			float oldyed = oldv2 - oldv1;
+			float oldxed = oldu2 - newu1;
+			float oldyed = oldv2 - newv1;
 
 			float v[2];
 			v[0] = ndihandle.Kp * oldx + ndihandle.Kd * oldxed;
@@ -290,7 +295,8 @@ bool ndi_follow_leader(void){
 
 uint8_t traj_targetindex = 0;
 
-static uint8_t trajectory[TRAJ_LENGTH] = {WP_t0,WP_t1,WP_t2,WP_t3};
+//static uint8_t trajectory[TRAJ_LENGTH] = {WP_t0,WP_t1,WP_t2,WP_t3};
+static uint8_t trajectory[TRAJ_LENGTH] = {WP_t3,WP_t2,WP_t1,WP_t0};
 
 void findNearestWaypoint(void);
 void getNextTargetWaypoint(void);
