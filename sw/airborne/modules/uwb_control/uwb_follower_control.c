@@ -203,9 +203,11 @@ void calcNdiCommands(void){
 			fmat_assign(1,1,2,Minv,-ndihandle.tau_y);
 
 			float l[2];
-			fmat_make_zeros(l,2,1);
+			/*fmat_make_zeros(l,2,1);
 			fmat_assign(0,0,1,l,newu1/ndihandle.tau_x);
-			fmat_assign(1,0,1,l,newv1/ndihandle.tau_y);
+			fmat_assign(1,0,1,l,newv1/ndihandle.tau_y);*/
+			l[0]=newu1/ndihandle.tau_x;
+			l[1]=newv1/ndihandle.tau_y;
 
 			float oldxed = oldu2 - newu1;
 			float oldyed = oldv2 - newv1;

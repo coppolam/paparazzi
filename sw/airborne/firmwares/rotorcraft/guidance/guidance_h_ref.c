@@ -59,6 +59,7 @@ static void gh_compute_ref_max_speed(struct Int32Vect2 *ref_vector);
 static void gh_saturate_ref_accel(void);
 static void gh_saturate_ref_speed(void);
 
+
 void gh_ref_init(void)
 {
   gh_ref.omega = GUIDANCE_H_REF_OMEGA;
