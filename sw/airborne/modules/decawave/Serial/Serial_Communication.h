@@ -13,9 +13,9 @@
 
 
 // Some meta data for serial communication
-#define MAX_MESSAGE 10
-#define IN_MESSAGE_SIZE 4
-#define OUT_MESSAGE_SIZE 7
+#define MAX_MESSAGE 20
+//#define IN_MESSAGE_SIZE 4
+//#define OUT_MESSAGE_SIZE 7
 #define END_MARKER 255
 #define SPECIAL_BYTE 253
 #define START_MARKER 254
@@ -28,7 +28,7 @@
 #define MAX_NODES 5
 
 // How many nodes actually are in the network
-#define NUM_NODES 3
+#define NUM_NODES 2
 
 // How many distant nodes are in the network (one less than the toal number of nodes)
 #define DIST_NUM_NODES NUM_NODES-1

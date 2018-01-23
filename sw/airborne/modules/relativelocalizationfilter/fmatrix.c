@@ -436,6 +436,19 @@ void fmat_make_zeros(float *matrix, int row, int col)
 	}
 };
 
+/* Make a matrix of zeros */
+void fmat_make_zeroes(float *matrix, int row, int col)
+{
+	int i,j;
+	for(i = 0 ; i < row; i++)
+	{
+		for(j = 0 ; j < col; j++)
+		{
+			matrix[i*col+j] = 0.0;
+		}
+	}
+};
+
 /* Make an identity matrix */
 void fmat_make_identity(float *matrix, int n)
 {

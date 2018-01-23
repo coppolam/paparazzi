@@ -41,6 +41,7 @@ extern void fmat_mult_cop(int n_rowa, int n_cola, int n_colb, float* r, float* a
 extern void fmat_invmult(int n1, int n2, float *a, float *b, float *outmat);
 extern void fmat_inverse(int n, float* inv, float* a);
 extern void fmat_make_zeros(float *matrix, int row, int col);
+extern void fmat_make_zeroes(float *matrix, int row, int col);
 extern void fmat_make_ones(float *matrix, int row, int col);
 extern void fmat_make_identity(float *matrix, int n);
 extern void fmat_copy(int m, int n, float *inmat, float *outmat);

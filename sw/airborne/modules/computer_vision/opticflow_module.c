@@ -125,6 +125,10 @@ void opticflow_module_run(void)
                            opticflow_result.div_size);
     //TODO Find an appropriate quality measure for the noise model in the state filter, for now it is tracked_cnt
     if (opticflow_result.noise_measurement < 0.8) {
+    	/*printf("optic vx, vy, vz,noise: %f,%f,%f,%f\n",opticflow_result.vel_body.x,
+                opticflow_result.vel_body.y,
+                opticflow_result.vel_body.z,
+                opticflow_result.noise_measurement);*/
       AbiSendMsgVELOCITY_ESTIMATE(OPTICFLOW_SEND_ABI_ID, now_ts,
                                   opticflow_result.vel_body.x,
                                   opticflow_result.vel_body.y,

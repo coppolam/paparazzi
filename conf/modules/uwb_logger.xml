@@ -1,0 +1,18 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="uwb_logger" dir="loggers">
+  <doc>
+	<description>
+      Logs to a csv file.
+      (only for linux)
+    </description>
+    <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000" description="path where csv file is saved."/>
+  </doc>
+  <header>
+	<file name="uwb_logger.h" />
+  </header>
+  <init fun="uwb_logger_init()" />
+  <makefile>
+	<file name="uwb_logger.c"/>
+  </makefile>
+</module>

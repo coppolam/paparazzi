@@ -4,18 +4,19 @@
 
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2">
-    <configure name="HOST" value="192.168.42.22" />
-    <configure name="MODEM_HOST" value="192.168.42.26" />
-  </target>
+  	  <configure name="HOST" value="192.168.42.$(AC_ID)" />
+  	  <configure name="MODEM_HOST" value="192.168.42.26" />
+ 	</target>
 
     <target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
       <module name="udp"/>
     </target>
 
-    <define name="USE_SONAR" value="1"/>
+    
+    <define name="USE_SONAR" value="0"/>
 
-    <!-- Subsystem section -->
+	  <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
     <module name="radio_control" type="datalink"/>
     <module name="motor_mixing"/>
@@ -24,9 +25,10 @@
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
     <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="FALSE"/>
-      <configure name="AHRS_USE_GPS" value="TRUE"/>
+      <configure name="USE_MAGNETOMETER" value="0"/>
+      <define name="AHRS_USE_GPS_HEADING" value="1"/>
     </module>
+    <!--module name="ins" type="hff_no_optic_flow"/-->
     <module name="ins" type="hff_extended"/>
   </firmware>
 
@@ -38,10 +40,13 @@
       <configure name="SERIAL_UART" value="UART2" />
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
-    <module name="relativelocalizationfilter"/>
-    <module name="guided_control_imav2017"/>
-    
-    <module name="video_thread"/>
+    <!--module name="relative_localization_no_north">
+      <configure name="EKF_XZERO" value="3"/>
+      <configure name="EKF_YZERO" value="0"/>
+    </module-->
+    <module name="uwb_leader_control"/>
+    <!-- module name="uwb_logger.xml"/-->
+    <!-- module name="video_thread"/>
     <module name="pose_history"/>
     <module name="cv_opticflow">
       <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
@@ -56,19 +61,11 @@
       <define name="OPTICFLOW_FOV_H" value="0.665499265"/> 
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="1.0"/>
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.9"/>
-  </module>
-    <!--module name="logger_file">
-      <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000"/>
-    </module-->
-  </modules>
+	</module-->
+    </modules>
   
   <section name="RELATIVELOCALIZATIONFILTER" prefix="">
-   <define name="RSSINOISE" value="5.0"/>  <!-- (Expected) Noise on RSSI -->
-   <define name="SPEEDNOISE" value="0.2"/> <!-- (Expected) Noise on 
-      other measurements -->
-   <define name="NUAVS" value="5"/>        <!-- Maximum number of UAVs 
-      to track -->
-      <!-- define name="UWB_LOCALIZATION" value="1" /-->
+    <define name="NUAVS" value="5"/>
   </section>
 
   <commands>
@@ -104,7 +101,7 @@
   <section name="AIR_DATA" prefix="AIR_DATA_">
     <define name="CALC_AIRSPEED" value="FALSE"/>
     <define name="CALC_TAS_FACTOR" value="FALSE"/>
-    <define name="CALC_AMSL_BARO" value="FALSE"/>
+    <define name="CALC_AMSL_BARO" value="TRUE"/>
   </section>
 
   <include href="conf/airframes/TUDELFT/calibrations/bebop2_22.xml" />
@@ -123,7 +120,7 @@
     <define name="H_Z" value="0.9211303"/>
     <define name="HEADING_UPDATE_GPS_MIN_SPEED" value="0"/>
   </section>
-  
+
   <section name="INS" prefix="INS_">
     <define name="SONAR_MAX_RANGE" value="2.2"/>
     <define name="SONAR_UPDATE_ON_AGL" value="TRUE"/>
@@ -131,15 +128,6 @@
     <define name="USE_GPS_ALT_SPEED" value="1"/>
     <define name="VFF_R_GPS" value="0.01"/>
   </section>
-
-  <!-- section name="INS" prefix="INS_">
-    <define name="SONAR_MAX_RANGE" value="2.2"/>
-    <define name="SONAR_UPDATE_ON_AGL" value="TRUE"/>
-    <define name="OPTITRACK_DONOTUSESPEED" value="TRUE"/-->
-    <!--define name="USE_GPS_ALT" value="1"/>
-    <define name="USE_GPS_ALT_SPEED" value="1"/>
-    <define name="VFF_R_GPS" value="0.01"/-->
-  <!-- /section-->
 
 
   <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
@@ -178,15 +166,15 @@
     <define name="G2_R" value="0.20"/>
 
     <!-- For the bebop2 we need to filter the roll rate due to the dampers -->
-    <define name="FILTER_ROLL_RATE" value="FALSE"/>
+    <define name="FILTER_ROLL_RATE" value="TRUE"/>
     <define name="FILTER_PITCH_RATE" value="FALSE"/>
     <define name="FILTER_YAW_RATE" value="FALSE"/>
 
     <!-- reference acceleration for attitude control -->
-    <define name="REF_ERR_P" value="600.0"/>
+    <define name="REF_ERR_P" value="170.0"/>
     <define name="REF_ERR_Q" value="600.0"/>
     <define name="REF_ERR_R" value="600.0"/>
-    <define name="REF_RATE_P" value="28.0"/>
+    <define name="REF_RATE_P" value="14.3"/>
     <define name="REF_RATE_Q" value="28.0"/>
     <define name="REF_RATE_R" value="28.0"/>
 
@@ -205,7 +193,7 @@
   </section>
 
   <section name="GUIDANCE_V" prefix="GUIDANCE_V_">
-    <define name="HOVER_KP" value="300"/>
+    <define name="HOVER_KP" value="350"/>
     <define name="HOVER_KD" value="85"/>
     <define name="HOVER_KI" value="20"/>
     <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
@@ -215,12 +203,12 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="20" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="0.7" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="1" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-    <define name="PGAIN" value="120"/>
-    <define name="DGAIN" value="370"/>
-    <define name="IGAIN" value="0"/>
+    <define name="PGAIN" value="70"/><!--120-->
+    <define name="DGAIN" value="80"/><!--100-->
+    <define name="IGAIN" value="30"/>
   </section>
   
   <section name="IMU" prefix="IMU_">
@@ -230,8 +218,8 @@
   </section>
 
   <section name="NAVIGATION" prefix="NAV_">
-    <define name="CLIMB_VSPEED" value="1.0"/>
-    <define name="DESCEND_VSPEED" value="-0.75"/>
+    <define name="CLIMB_VSPEED" value="4.5"/>
+    <define name="DESCEND_VSPEED" value="-1.0"/>
   </section>
 
   <section name="SIMULATOR" prefix="NPS_">
@@ -239,12 +227,13 @@
     <define name="JSBSIM_MODEL" value="simple_x_quad_ccw" type="string"/>
     <define name="SENSORS_PARAMS" value="nps_sensors_params_default.h" type="string"/>
   </section>
-  
+
   <section name="AUTOPILOT">
-    <define name="MODE_STARTUP" value="AP_MODE_GUIDED"/>
+    <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
     <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
-    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/> <!-- not used -->
-    <define name="MODE_AUTO2" value="AP_MODE_GUIDED"/>
+    <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
+    <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
+    <define name="NO_RC_THRUST_LIMIT" value="TRUE"/>
   </section>
 
   <section name="BAT">
@@ -254,5 +243,4 @@
     <define name="LOW_BAT_LEVEL" value="11.1" unit="V"/>
     <define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
   </section>
-  
 </airframe>

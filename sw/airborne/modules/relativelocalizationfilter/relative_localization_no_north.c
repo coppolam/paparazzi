@@ -71,7 +71,7 @@ char* rlconcat(const char *s1, const char *s2);
 
 static pthread_mutex_t ekf_mutex;
 
-#define RLLOG 1
+#define RLLOG 0
 
 #define UWB_NDI_SENDER_ID 1
 
@@ -130,6 +130,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 	// Else, if we do recognize the ID, then we can update the measurement message data
 	else if ((i != -1) || (nf == (NUAVS-1)) )
 	{
+		float dt = (get_sys_time_usec() - now_ts[i])/pow(10,6); // Update the time between messages
 		rangearray[i] = range; // Store RSSI in array (for logging purposes)
 
 		// Get own velocities
@@ -150,9 +151,9 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		// otherwise it might diverge while drones are not moving.
 			float input[EKF_L] = {0,0,0,0,0,0};
 			float measurements[EKF_M] = {range,-ownh,trackedh,ownVx,ownVy,trackedVx,trackedVy};
-			float dt = (get_sys_time_usec() - now_ts[i])/pow(10,6); // Update the time between messages
+
 			updateEkfFilter(&ekf[i],input,measurements,dt);
-			AbiSendMsgUWB_NDI(UWB_NDI_SENDER_ID,now_ts[i]/pow(10,6),dt,range,trackedVx,trackedVy,trackedh ,ekf[i].X[0],ekf[i].X[1],ekf[i].X[2],ekf[i].X[3],ekf[i].X[4],ekf[i].X[5],ekf[i].X[6],ekf[i].X[7],ekf[i].X[8]);
+
 			if(RLLOG){
 				current_speed = *stateGetSpeedEnu_f();
 				current_pos = *stateGetPositionEnu_f();
@@ -198,6 +199,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 					pthread_mutex_unlock(&ekf_mutex);
 				}
 			}
+
 		}
 		else
 		{
@@ -213,8 +215,11 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			//ekf[i].X[7] = 0.0; // Bias
 			*/
 		}
+		AbiSendMsgUWB_NDI(UWB_NDI_SENDER_ID,now_ts[i]/pow(10,6),dt,range,trackedVx,trackedVy,trackedh ,ekf[i].X[0],ekf[i].X[1],ekf[i].X[2],ekf[i].X[3],ekf[i].X[4],ekf[i].X[5],ekf[i].X[6],ekf[i].X[7],ekf[i].X[8]);
 	}
-	pthread_mutex_unlock(&ekf_mutex);
+
+	//pthread_mutex_unlock(&ekf_mutex);
+
 
 	now_ts[i] = get_sys_time_usec();  // Store latest time
 	if(((get_sys_time_usec()/pow(10,6))-oldtime)>1 && RL_PRINT_EKF){

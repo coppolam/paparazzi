@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789"
+<flight_plan alt="1" ground_alt="0" lat0="51.990634" lon0="4.376789"
 	max_dist_from_home="8" name="Test flight plan Steven" security_height="0.4">
 	<header>
 		#include "autopilot.h"
@@ -14,14 +14,22 @@
 		<waypoint height="2" name="CLIMB" x="1.2" y="-0.6" />
 		<waypoint height="1.5" name="STDBY" x="-2" y="-2" />
 		<waypoint name="TD" x="0.8" y="-1.7" />
-		<waypoint name="t0" lat="51.9906022" lon="4.3767737" />
+		<!-- waypoint name="t0" lat="51.9906022" lon="4.3767737" />
 		<waypoint name="t1" lat="51.9906234" lon="4.3767863" />
 		<waypoint name="t2" lat="51.9906198" lon="4.3768233" />
 		<waypoint name="t3" lat="51.9906412" lon="4.3768331" />
 		<waypoint name="t4" lat="51.9906685" lon="4.3768056" />
 		<waypoint name="t5" lat="51.9906424" lon="4.3767968" />
 		<waypoint name="t6" lat="51.9906506" lon="4.3767540" />
-		<waypoint name="t7" lat="51.9906254" lon="4.3767463" />
+		<waypoint name="t7" lat="51.9906254" lon="4.3767463" /-->
+		<waypoint name="t0" lat="51.9906059" lon="4.3767772" />
+		<waypoint name="t1" lat="51.9906269" lon="4.3767829" />
+		<waypoint name="t2" lat="51.9906216" lon="4.3768187" />
+		<waypoint name="t3" lat="51.9906388" lon="4.3768251" />
+		<waypoint name="t4" lat="51.9906637" lon="4.3768005" />
+		<waypoint name="t5" lat="51.9906425" lon="4.3767879" />
+		<waypoint name="t6" lat="51.9906470" lon="4.3767547" />
+		<waypoint name="t7" lat="51.9906290" lon="4.3767502" />
 		<waypoint lat="51.9906213" lon="4.3768628" name="_CZ1" />
 		<waypoint lat="51.9905874" lon="4.3767766" name="_CZ2" />
 		<waypoint lat="51.9906409" lon="4.3767226" name="_CZ3" />

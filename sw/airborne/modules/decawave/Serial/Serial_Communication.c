@@ -55,7 +55,7 @@ struct link_device *xdev = SERIAL_PORT;
 #define SerialChAvailable()(xdev->char_available(xdev->periph))
 #define SerialSendNow() uart_send_message(SERIAL_PORT->periph,0)
 
-#define LOG_UWB_VARS false
+#define LOG_UWB_VARS true
 
 struct nodeState{
 	uint8_t nodeAddress;
@@ -221,16 +221,25 @@ void getSerialData(void){
 		}
 
 		if (_inProgress){
-			_tempBuffer[_bytesRecvd] = _varByte;
-			_bytesRecvd++;
+			if(_bytesRecvd<MAX_MESSAGE-1){
+				_tempBuffer[_bytesRecvd] = _varByte;
+				_bytesRecvd++;
+			}
+			else{
+				printf("Exceeded max UWB Message size\n");
+				_inProgress = false;
+			}
+
+			if (_varByte == END_MARKER){
+				_inProgress = false;
+				_allReceived = true;
+
+				decodeHighBytes();
+			}
+
 		}
 
-		if (_varByte == END_MARKER){
-			_inProgress = false;
-			_allReceived = true;
 
-			decodeHighBytes();
-		}
 	}
 
 }
