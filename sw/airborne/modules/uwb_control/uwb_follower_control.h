@@ -6,7 +6,7 @@
 #include "subsystems/abi.h"
 
 
-#define NDI_FLIGHT_HEIGHT 1.5
+#define NDI_FLIGHT_HEIGHT 1
 #define NDI_PAST_VALS 200
 
 typedef struct ndihandler{
@@ -37,7 +37,7 @@ extern bool startNdiTracking(void);
 extern bool stopNdiTracking(void);
 extern bool ndi_follow_leader(void);
 
-extern void addNdiValues(uint8_t sender_id __attribute__((unused)),float time, float dt,float range, float trackedVx, float trackedVy, float trackedh, float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain);
+extern void addNdiValues(uint8_t sender_id __attribute__((unused)),float time, float dt,float range, float trackedVx, float trackedVy, float trackedh, float trackedAx, float trackedAy, float trackedYawr, float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain);
 
 extern void uwb_ndi_follower_init(void);
 

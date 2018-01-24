@@ -39,6 +39,7 @@
 #include "mcu_periph/uart.h"
 #include <stdio.h>
 #include "subsystems/abi.h"
+#include "../../loggers/uwb_logger.h"
 
 PRINT_CONFIG_VAR(SERIAL_UART)
 PRINT_CONFIG_VAR(SERIAL_BAUD)
@@ -55,13 +56,17 @@ struct link_device *xdev = SERIAL_PORT;
 #define SerialChAvailable()(xdev->char_available(xdev->periph))
 #define SerialSendNow() uart_send_message(SERIAL_PORT->periph,0)
 
-#define LOG_UWB_VARS true
+#define LOG_UWB_VARS false
+#define UWB_ONBOARD false
 
 struct nodeState{
 	uint8_t nodeAddress;
 	float vx;
 	float vy;
 	float z;
+	float ax;
+	float ay;
+	float yawr;
 	float r;
 	bool stateUpdated[NODE_STATE_SIZE];
 };
@@ -132,13 +137,31 @@ void decawave_serial_init(void)
 void decawave_serial_periodic(void)
 {
 
-	current_speed = *stateGetSpeedNed_f();
-	current_pos = *stateGetPositionNed_f();
+	float vxsend; float vysend; float zsend; float axsend; float aysend; float yawrsend;
+#if UWB_ONBOARD
+	vxsend = uwb_optic_vel_m_s_f.x;
+	vysend = uwb_optic_vel_m_s_f.y;
+	zsend = uwb_sonarheight;
+	axsend = uwb_smooth_ax;
+	aysend = uwb_smooth_ay;
+	yawrsend = uwb_smooth_yawr;
+#else
+	vxsend = uwb_gps_ned_vel_cm_s_f.x/100.f;
+	vysend = uwb_gps_ned_vel_cm_s_f.y/100.f;
+	zsend = uwb_gps_ned_pos_cm_f.z/100.f;
+	axsend = uwb_smooth_ax;
+	aysend = uwb_smooth_ay;
+	yawrsend = uwb_smooth_yawr;
+#endif
 
 	//sendFloat(VX,current_speed.x);
-	sendFloat(VX,stateGetSpeedEnu_f()->y);
-	sendFloat(VY,stateGetSpeedEnu_f()->x);
-	sendFloat(Z,current_pos.z);
+	sendFloat(VX,vxsend);
+	sendFloat(VY,vysend);
+	sendFloat(Z,zsend);
+	sendFloat(AX,axsend);
+	sendFloat(AY,aysend);
+	sendFloat(YAWR,yawrsend);
+
 }
 
 /**
@@ -182,7 +205,7 @@ static void checkStatesUpdated(void){
 		}
 		if (checkbool){
 			// Send out data with an ABI message
-			AbiSendMsgUWB(UWB_COMM_ID, AC_ID, _states[i].r, _states[i].vx, _states[i].vy, _states[i].z);
+			AbiSendMsgUWB(UWB_COMM_ID, AC_ID, _states[i].r, _states[i].vx, _states[i].vy, _states[i].z,_states[i].ax,_states[i].ay,_states[i].yawr);
 			setNodeStatesFalse(i);
 			if(((get_sys_time_usec()/pow(10,6))-oldtime)>1 && LOG_UWB_VARS){
 				oldtime = get_sys_time_usec()/pow(10,6);
@@ -284,7 +307,11 @@ static void handleNewStateValue(uint8_t nodeIndex, uint8_t msgType, float value)
 	case VX : node->vx=value; node->stateUpdated[VX] = true; break;
 	case VY : node->vy=value; node->stateUpdated[VY] = true; break;
 	case Z  : node->z=value ; node->stateUpdated[Z]  = true; break;
+	case AX : node->ax=value; node->stateUpdated[AX] = true; break;
+	case AY : node->ay=value; node->stateUpdated[AY] = true; break;
+	case YAWR  : node->yawr=value ; node->stateUpdated[YAWR]  = true; break;
 	case RANGE : node->r=value ; node->stateUpdated[RANGE]  = true; break;
+	default: break;
 	}
 
 }

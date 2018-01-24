@@ -12,6 +12,7 @@
 	<file name="uwb_logger.h" />
   </header>
   <init fun="uwb_logger_init()" />
+  <event fun="uwb_logger_event()"/>
   <makefile>
 	<file name="uwb_logger.c"/>
   </makefile>

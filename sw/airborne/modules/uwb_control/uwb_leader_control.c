@@ -5,7 +5,7 @@
 #include "uwb_leader_control.h"
 #include "generated/flight_plan.h"
 
-#define TRAJ_EPS 0.6
+#define TRAJ_EPS 0.8
 #define TRAJ_LENGTH 8
 
 uint8_t traj_targetindex = 0;

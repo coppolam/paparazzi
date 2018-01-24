@@ -354,6 +354,7 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
       // The VFF will update in the NED frame
       ins_int.baro_z = -(baro_up - height_correction);
 
+
 #if USE_VFF_EXTENDED
       vff_update_baro(ins_int.baro_z);
 #else

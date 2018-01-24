@@ -12,7 +12,7 @@
 		<waypoint height="0" name="HOME" x="0.0" y="0.0" />
 		<waypoint name="CIRCLEWP" x="0.0" y="0.0"/>
 		<waypoint height="2" name="CLIMB" x="1.2" y="-0.6" />
-		<waypoint height="1.5" name="STDBY" x="-2" y="-2" />
+		<waypoint height="1" name="STDBY" x="-2" y="-2" />
 		<waypoint name="TD" x="0.8" y="-1.7" />
 		<!-- waypoint name="t0" lat="51.9906022" lon="4.3767737" />
 		<waypoint name="t1" lat="51.9906234" lon="4.3767863" />
@@ -54,7 +54,7 @@
 		</sector>
 	</sectors>
 	<variables>
-		<variable var="selfradius" min="-6" max="6" step="0.1" init="-3"/>
+		<variable var="selfradius" min="-6" max="6" step="0.1" init="-4"/>
 		<variable var="selfheading" min="0" max="360" step="10" init="0.0" />
 	</variables>
 	<exceptions>

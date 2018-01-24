@@ -14,6 +14,8 @@
 //Fixed point conversions
 #include "../../math/pprz_algebra.h"
 #include "../../math/pprz_algebra_int.h"
+// Butterworth filter
+#include "filters/low_pass_filter.h"
 
 #ifndef UWB_LOGGER_GPS_ID
 #define UWB_LOGGER_GPS_ID GPS_MULTI_ID
@@ -21,6 +23,15 @@
 #ifndef UWB_LOGGER_OPTICFLOW_ID
 #define UWB_LOGGER_OPTICFLOW_ID 1
 #endif
+
+#define UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR 8
+#define UWB_LOWPASS_CUTOFF_FREQUENCY_AX 8
+#define UWB_LOWPASS_CUTOFF_FREQUENCY_AY 8
+
+
+Butterworth2LowPass uwb_butter_yawr;
+Butterworth2LowPass uwb_butter_ax;
+Butterworth2LowPass uwb_butter_ay;
 
 
 char* uwbstrconcat(const char *s1, const char *s2);
@@ -32,19 +43,30 @@ static FILE *UWBFileLogger = NULL;
 static abi_event uwb_log_ev;
 static abi_event uwb_gps_ev;
 static abi_event uwb_opticflow_ev;
+static abi_event uwb_sonar_ev;
 
 //static pthread_mutex_t uwb_logger_mutex;
 
 static struct LtpDef_i ltp_def;
 
-static struct NedCoor_i gps_ned_vel_cm_s;      ///< speed NED in cm/s
-static struct NedCoor_f gps_ned_vel_cm_s_f;      ///< speed NED in cm/s
-static struct NedCoor_i gps_ned_pos_cm;
-static struct NedCoor_i gps_ned_pos_cm_f;
+struct NedCoor_i uwb_gps_ned_vel_cm_s;      ///< speed NED in cm/s
+struct NedCoor_f uwb_gps_ned_vel_cm_s_f;      ///< speed NED in cm/s
+struct NedCoor_i uwb_gps_ned_pos_cm;
+struct NedCoor_i uwb_gps_ned_pos_cm_f;
 
-static struct FloatVect3 optic_vel_m_s_f;
+struct FloatVect3 uwb_optic_vel_m_s_f;
+
+float uwb_sonarheight = 0.0;
+
+float uwb_smooth_yawr = 0.0;
+float uwb_smooth_ax = 0.0;
+float uwb_smooth_ay = 0.0;
+
 
 void uwb_logger_init(void){
+	init_butterworth_2_low_pass(&uwb_butter_yawr, UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR, 1./PERIODIC_FREQUENCY, 0.0);
+	init_butterworth_2_low_pass(&uwb_butter_ax, UWB_LOWPASS_CUTOFF_FREQUENCY_AX, 1./PERIODIC_FREQUENCY, 0.0);
+	init_butterworth_2_low_pass(&uwb_butter_ay, UWB_LOWPASS_CUTOFF_FREQUENCY_AY, 1./PERIODIC_FREQUENCY, 0.0);
 	struct LlaCoor_i llh_nav0; /* Height above the ellipsoid */
 	llh_nav0.lat = NAV_LAT0;
 	llh_nav0.lon = NAV_LON0;
@@ -56,6 +78,7 @@ void uwb_logger_init(void){
 	AbiBindMsgUWB_NDI(ABI_BROADCAST, &uwb_log_ev, logEvent);
 	AbiBindMsgGPS(UWB_LOGGER_GPS_ID, &uwb_gps_ev, uwb_gps_cb);
 	AbiBindMsgVELOCITY_ESTIMATE(UWB_LOGGER_OPTICFLOW_ID, &uwb_opticflow_ev, uwb_optic_vel_cb);
+	AbiBindMsgAGL(ABI_BROADCAST, &uwb_sonar_ev,uwb_sonar_height_cb);
 	if(UWB_LOGGER){
 		time_t rawtime;
 		struct tm * timeinfo;
@@ -75,19 +98,22 @@ void uwb_logger_init(void){
 					"state_x,state_y,state_z,"
 					"state_vx,state_vy,state_vz,"
 					"state_ax,state_ay,state_az,"
+					"smooth_ax,smooth_ay,"
 					"state_phi,state_theta,state_psi,"
 					"state_p,state_q,state_r,"
+					"smooth_r,"
 					"gps_x,gps_y,gps_z,"
 					"gps_vx,gps_vy,gps_vz,"
 					"optic_vx,optic_vy,optic_vz,"
-					"Range,track_vx_meas,track_vy_meas,track_z_meas,"
+					"sonar_z,"
+					"Range,track_vx,track_vy,track_z,track_ax,track_ay,track_r,"
 					"kal_x,kal_y,kal_h1,kal_h2,kal_u1,kal_v1,kal_u2,kal_v2,kal_gamma\n");
 		}
 	}
 
 }
 
-void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,float range, float trackedVx, float trackedVy, float trackedh, float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain){
+void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,float range, float trackedVx, float trackedVy, float trackedAx, float trackedAy,float trackedYawr, float trackedh, float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain){
 	static int counter = 0;
 	struct EnuCoor_f current_speed = *stateGetSpeedEnu_f();
 	struct EnuCoor_f current_pos = *stateGetPositionEnu_f();
@@ -99,7 +125,7 @@ void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,flo
 
 		if(UWBFileLogger!=NULL){
 			//pthread_mutex_lock(&uwb_logger_mutex);
-			fprintf(UWBFileLogger,"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+			fprintf(UWBFileLogger,"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
 					counter,
 					time,
 					dt,
@@ -112,25 +138,32 @@ void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,flo
 					current_accel.x,
 					current_accel.y,
 					current_accel.z,
+					uwb_smooth_ax,
+					uwb_smooth_ay,
 					current_eulers.phi,
 					current_eulers.theta,
 					current_eulers.psi,
 					current_rates.p,
 					current_rates.q,
 					current_rates.r,
-					gps_ned_pos_cm_f.x/100.f,
-					gps_ned_pos_cm_f.y/100.f,
-					gps_ned_pos_cm_f.z/100.f,
-					gps_ned_vel_cm_s_f.x/100.f,
-					gps_ned_vel_cm_s_f.y/100.f,
-					gps_ned_vel_cm_s_f.z/100.f,
-					optic_vel_m_s_f.x,
-					optic_vel_m_s_f.y,
-					optic_vel_m_s_f.z,
+					uwb_smooth_yawr,
+					uwb_gps_ned_pos_cm_f.x/100.f,
+					uwb_gps_ned_pos_cm_f.y/100.f,
+					uwb_gps_ned_pos_cm_f.z/100.f,
+					uwb_gps_ned_vel_cm_s_f.x/100.f,
+					uwb_gps_ned_vel_cm_s_f.y/100.f,
+					uwb_gps_ned_vel_cm_s_f.z/100.f,
+					uwb_optic_vel_m_s_f.x,
+					uwb_optic_vel_m_s_f.y,
+					uwb_optic_vel_m_s_f.z,
+					-uwb_sonarheight,
 					range,
 					trackedVx,
 					trackedVy,
 					trackedh,
+					trackedAx,
+					trackedAy,
+					trackedYawr,
 					xin,
 					yin,
 					h1in,
@@ -149,15 +182,27 @@ void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,flo
 
 }
 
+void uwb_sonar_height_cb(uint8_t __attribute__((unused)) sender_id, float distance){
+	uwb_sonarheight = distance;
+}
+
 extern void uwb_gps_cb(uint8_t sender_id __attribute__((unused)),uint32_t time, struct GpsState *gps_s){
-	gps_ned_vel_cm_s = gps_s->ned_vel;
-	VECT3_ASSIGN(gps_ned_vel_cm_s_f,gps_ned_vel_cm_s.x,gps_ned_vel_cm_s.y,gps_ned_vel_cm_s.z);
-	ned_of_ecef_point_i(&gps_ned_pos_cm, &ltp_def, &gps_s->ecef_pos);
-	VECT3_ASSIGN(gps_ned_pos_cm_f,gps_ned_pos_cm.x,gps_ned_pos_cm.y,gps_ned_pos_cm.z);
+	uwb_gps_ned_vel_cm_s = gps_s->ned_vel;
+	VECT3_ASSIGN(uwb_gps_ned_vel_cm_s_f,uwb_gps_ned_vel_cm_s.x,uwb_gps_ned_vel_cm_s.y,uwb_gps_ned_vel_cm_s.z);
+	ned_of_ecef_point_i(&uwb_gps_ned_pos_cm, &ltp_def, &gps_s->ecef_pos);
+	VECT3_ASSIGN(uwb_gps_ned_pos_cm_f,uwb_gps_ned_pos_cm.x,uwb_gps_ned_pos_cm.y,uwb_gps_ned_pos_cm.z);
 }
 
 void uwb_optic_vel_cb(uint8_t sender_id __attribute__((unused)),uint32_t time,float vx, float vy, float vz, float noise){
-	VECT3_ASSIGN(optic_vel_m_s_f,vx,vy,vz);
+	VECT3_ASSIGN(uwb_optic_vel_m_s_f,vx,vy,vz);
+}
+
+void uwb_logger_event(void){
+	//uwb_smooth_ax = update_butterworth_2_low_pass(&uwb_butter_ax,stateGetAccelNed_f()->x);
+	//uwb_smooth_ax = update_butterworth_2_low_pass(&uwb_butter_ay,stateGetAccelNed_f()->y);
+	uwb_smooth_ax = stateGetAccelNed_f()->x;
+	uwb_smooth_ay = stateGetAccelNed_f()->y;
+	uwb_smooth_yawr = update_butterworth_2_low_pass(&uwb_butter_yawr,stateGetBodyRates_f()->r);
 }
 
 char* uwbstrconcat(const char *s1, const char *s2)

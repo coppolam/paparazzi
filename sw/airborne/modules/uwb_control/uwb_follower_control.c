@@ -13,7 +13,7 @@
 
 #define NDI_MOST_RECENT ndihandle.data_entries-1
 
-#define UWB_NDI_LOGGER true
+#define UWB_NDI_LOGGER false
 static FILE *NDIFileLogger = NULL;
 
 
@@ -28,12 +28,12 @@ float computeNdiFloatIntegral(float* ndiarr, float curtime);
 void bindNorm(void);
 char* strconcat(const char *s1, const char *s2);
 
-ndihandler ndihandle = {.delay = 4,
-		.tau_x=2,
-		.tau_y = 2,
-		.Kp = -1,
+ndihandler ndihandle = {.delay = 5,
+		.tau_x=3,
+		.tau_y = 3,
+		.Kp = -1.5,
 		.Ki = 0,
-		.Kd = -2,
+		.Kd = -3,
 		.data_start = 0,
 		.data_end = 0,
 		.data_entries = 0,
@@ -64,7 +64,7 @@ extern void uwb_ndi_follower_init(void){
 }
 
 
-void addNdiValues(uint8_t sender_id __attribute__((unused)),float time, float dt,float range, float trackedVx, float trackedVy, float trackedh, float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain){
+void addNdiValues(uint8_t sender_id __attribute__((unused)),float time, float dt,float range, float trackedVx, float trackedVy, float trackedh, float trackedAx, float trackedAy, float trackedYawr, float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain){
 
 	struct EnuCoor_f current_speed = *stateGetSpeedEnu_f();
 	struct EnuCoor_f current_pos = *stateGetPositionEnu_f();
@@ -292,7 +292,7 @@ bool ndi_follow_leader(void){
 
 
 
-#define TRAJ_EPS 0.4
+#define TRAJ_EPS 0.5
 #define TRAJ_LENGTH 4
 
 uint8_t traj_targetindex = 0;
@@ -318,7 +318,7 @@ bool flyTrajectory(void){
 }
 
 void getNextTargetWaypoint(void){
-	printf("target waypoint id %d, distance: %f\n", traj_targetindex,get_dist2_to_waypoint(trajectory[traj_targetindex]));
+	//printf("target waypoint id %d, distance: %f\n", traj_targetindex,get_dist2_to_waypoint(trajectory[traj_targetindex]));
 	if(get_dist2_to_waypoint(trajectory[traj_targetindex])<TRAJ_EPS*TRAJ_EPS){
 		traj_targetindex = (traj_targetindex+1)%TRAJ_LENGTH;
 	}

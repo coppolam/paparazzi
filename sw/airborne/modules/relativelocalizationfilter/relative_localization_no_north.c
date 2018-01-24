@@ -36,6 +36,7 @@
 #include "pprzlink/pprz_transport.h"
 #include "subsystems/datalink/datalink.h"
 #include "subsystems/datalink/downlink.h"
+#include "../loggers/uwb_logger.h"
 
 
 #define RL_PRINT_EKF 0
@@ -83,7 +84,7 @@ void initNewEkfFilter(ekf_filter *filter){
 	float Qval[EKF_L] = {pow(2,2),pow(2,2),pow(2,2),pow(2,2),pow(0.05,2),pow(0.05,2)};
 	// measurements: range, h1, h2, u1, v1, u2, v2
 	//float Rval[EKF_M] = {pow(0.1,2),pow(0.1,2),pow(0.1,2),pow(0.2,2),pow(0.2,2),pow(0.2,2),pow(0.2,2)};
-	float Rval[EKF_M] = {pow(0.25,2),pow(0.15,2),pow(0.15,2),pow(0.15,2),pow(0.15,2),pow(0.25,2),pow(0.25,2)};
+	float Rval[EKF_M] = {pow(0.2,2),pow(0.1,2),pow(0.1,2),pow(0.3,2),pow(0.3,2),pow(0.3,2),pow(0.3,2)};
 	fmat_make_zeros(filter->X,EKF_N,1);
 	filter->X[0]=EKF_XZERO;
 	filter->X[1]=EKF_YZERO;
@@ -103,10 +104,10 @@ int cnt;
 
 static abi_event uwb_ev;
 static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)), 
-	uint8_t ac_id, float range, float trackedVx, float trackedVy, float trackedh);
+	uint8_t ac_id, float range, float trackedVx, float trackedVy, float trackedh, float trackedAx, float trackedAy, float trackedYawr);
 
 static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)), 
-	uint8_t ac_id, float range, float trackedVx, float trackedVy, float trackedh) 
+	uint8_t ac_id, float range, float trackedVx, float trackedVy, float trackedh, float trackedAx, float trackedAy, float trackedYawr)
 {
 	static float oldtime = 0.0;
 
@@ -137,11 +138,22 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		float ownVx = stateGetSpeedEnu_f()->y; // Velocity North in NED
 		float ownVy = stateGetSpeedEnu_f()->x; // Velocity East in NED
 		float ownh = stateGetPositionEnu_f()->z;
+		float ownAx = uwb_smooth_ax;
+		float ownAy = uwb_smooth_ay;
+		float ownYawr = uwb_smooth_yawr;
+
 		// Bind to realistic amounts to avoid occasional spikes/NaN/inf errors
 		keepbounded(&ownVx,-3.0,3.0);
 		keepbounded(&ownVy,-3.0,3.0);
 		keepbounded(&trackedVx,-3.0,3.0);
 		keepbounded(&trackedVy,-3.0,3.0);
+		keepbounded(&trackedh,-2,0);
+		keepbounded(&ownAx,-10.0,10.0);
+		keepbounded(&ownAy,-10.0,10.0);
+		keepbounded(&trackedAx,-10.0,10.0);
+		keepbounded(&trackedAy,-10.0,10.0);
+		keepbounded(&ownYawr,-3.0,3.0);
+		keepbounded(&trackedYawr,-3.0,3.0);
 
 		//if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED)
 		if(ownh > 0.5)
@@ -149,7 +161,8 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		// Make the filter only in Guided mode (flight).
 		// This is because it is best for the filter should only start once the drones are in motion, 
 		// otherwise it might diverge while drones are not moving.
-			float input[EKF_L] = {0,0,0,0,0,0};
+			//float input[EKF_L] = {0,0,0,0,0,0};
+			float input[EKF_L] = {ownAx,ownAy,trackedAx,trackedAy,ownYawr,trackedYawr};
 			float measurements[EKF_M] = {range,-ownh,trackedh,ownVx,ownVy,trackedVx,trackedVy};
 
 			updateEkfFilter(&ekf[i],input,measurements,dt);
@@ -215,7 +228,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			//ekf[i].X[7] = 0.0; // Bias
 			*/
 		}
-		AbiSendMsgUWB_NDI(UWB_NDI_SENDER_ID,now_ts[i]/pow(10,6),dt,range,trackedVx,trackedVy,trackedh ,ekf[i].X[0],ekf[i].X[1],ekf[i].X[2],ekf[i].X[3],ekf[i].X[4],ekf[i].X[5],ekf[i].X[6],ekf[i].X[7],ekf[i].X[8]);
+		AbiSendMsgUWB_NDI(UWB_NDI_SENDER_ID,now_ts[i]/pow(10,6),dt,range,trackedVx,trackedVy,trackedh ,trackedAx,trackedAy,trackedYawr,ekf[i].X[0],ekf[i].X[1],ekf[i].X[2],ekf[i].X[3],ekf[i].X[4],ekf[i].X[5],ekf[i].X[6],ekf[i].X[7],ekf[i].X[8]);
 	}
 
 	//pthread_mutex_unlock(&ekf_mutex);

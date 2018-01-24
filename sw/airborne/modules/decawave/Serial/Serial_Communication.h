@@ -19,7 +19,7 @@
 #define END_MARKER 255
 #define SPECIAL_BYTE 253
 #define START_MARKER 254
-#define NODE_STATE_SIZE 4
+#define NODE_STATE_SIZE 7
 
 // Size of a floating point number
 #define FLOAT_SIZE 4
@@ -34,10 +34,13 @@
 #define DIST_NUM_NODES NUM_NODES-1
 
 // Serial message types
-#define VX 0
-#define VY 1
-#define Z 2
-#define RANGE 3
+#define RANGE 0
+#define VX 1
+#define VY 2
+#define Z 3
+#define AX 4
+#define AY 5
+#define YAWR 6
 
 extern void decawave_serial_init(void);
 extern void decawave_serial_periodic(void);
