@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include "subsystems/abi.h"
 #include "../../loggers/uwb_logger.h"
+#include "../../uwb_control/uwb_state_control.h"
 
 PRINT_CONFIG_VAR(SERIAL_UART)
 PRINT_CONFIG_VAR(SERIAL_BAUD)
@@ -57,7 +58,6 @@ struct link_device *xdev = SERIAL_PORT;
 #define SerialSendNow() uart_send_message(SERIAL_PORT->periph,0)
 
 #define LOG_UWB_VARS false
-#define UWB_ONBOARD false
 
 struct nodeState{
 	uint8_t nodeAddress;
@@ -129,6 +129,7 @@ void decawave_serial_init(void)
 	// register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RANGE_POS, send_range_pos);
 	//SerialUartSetBaudrate(SERIAL_BAUD);
 	//uart_periph_set_baudrate(&uart1,B9600);
+
 }
 
 /**
@@ -138,21 +139,21 @@ void decawave_serial_periodic(void)
 {
 
 	float vxsend; float vysend; float zsend; float axsend; float aysend; float yawrsend;
-#if UWB_ONBOARD
+if(uwb_send_onboard){
 	vxsend = uwb_optic_vel_m_s_f.x;
 	vysend = uwb_optic_vel_m_s_f.y;
-	zsend = uwb_sonarheight;
+	zsend = -uwb_sonarheight;
 	axsend = uwb_smooth_ax;
 	aysend = uwb_smooth_ay;
 	yawrsend = uwb_smooth_yawr;
-#else
+}else{
 	vxsend = uwb_gps_ned_vel_cm_s_f.x/100.f;
 	vysend = uwb_gps_ned_vel_cm_s_f.y/100.f;
 	zsend = uwb_gps_ned_pos_cm_f.z/100.f;
 	axsend = uwb_smooth_ax;
 	aysend = uwb_smooth_ay;
 	yawrsend = uwb_smooth_yawr;
-#endif
+}
 
 	//sendFloat(VX,current_speed.x);
 	sendFloat(VX,vxsend);

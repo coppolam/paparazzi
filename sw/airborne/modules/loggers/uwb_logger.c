@@ -113,7 +113,7 @@ void uwb_logger_init(void){
 
 }
 
-void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,float range, float trackedVx, float trackedVy, float trackedAx, float trackedAy,float trackedYawr, float trackedh, float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain){
+void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,float range, float trackedVx, float trackedVy, float trackedh, float trackedAx,float trackedAy,float trackedYawr,  float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain){
 	static int counter = 0;
 	struct EnuCoor_f current_speed = *stateGetSpeedEnu_f();
 	struct EnuCoor_f current_pos = *stateGetPositionEnu_f();

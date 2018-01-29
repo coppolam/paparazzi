@@ -54,7 +54,7 @@
 		</sector>
 	</sectors>
 	<variables>
-		<variable var="selfradius" min="-6" max="6" step="0.1" init="-4"/>
+		<variable var="selfradius" min="-6" max="6" step="0.1" init="-3.2"/>
 		<variable var="selfheading" min="0" max="360" step="10" init="0.0" />
 	</variables>
 	<exceptions>
@@ -99,12 +99,28 @@
 		  <deroute block="Standby"/>
 		</block>
 		<block name="Fly_Trajectory">
+			<call_once fun="switchOnGPSandSendGPS()"/>
+			<call_once fun="initialiseTrajectory()"/>
+			<while cond="TRUE">
+				<call_once fun="flyTrajectory()"/>
+			</while>			
+		</block>
+		<block name="Fly_Trajectory_onboard">
+			<call_once fun="switchOnGPSandSendONBOARD()"/>
 			<call_once fun="initialiseTrajectory()"/>
 			<while cond="TRUE">
 				<call_once fun="flyTrajectory()"/>
 			</while>			
 		</block>
 		<block name="Circle">
+			<call_once fun="switchOnGPSandSendGPS()"/>
+			<call_once fun="nav_set_heading_deg(selfheading)" />
+			<while cond="TRUE">
+				<circle wp="CIRCLEWP" radius="selfradius" />
+			</while>
+		</block>
+		<block name="Circle_onboard">
+			<call_once fun="switchOnGPSandSendONBOARD()"/>
 			<call_once fun="nav_set_heading_deg(selfheading)" />
 			<while cond="TRUE">
 				<circle wp="CIRCLEWP" radius="selfradius" />

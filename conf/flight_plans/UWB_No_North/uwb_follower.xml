@@ -76,12 +76,27 @@
 			</while>
 		</block>
 		<block name="Fly_Trajectory">
+			<call_once fun="switchOnGPSandSendGPS()"/>
 			<call_once fun="initialiseTrajectory()"/>
 			<while cond="TRUE">
 				<call_once fun="flyTrajectory()"/>
 			</while>			
 		</block>
+		<block name="Fly_Trajectory_onboard">
+			<call_once fun="initialiseTrajectory()"/>
+			<call_once fun="switchOffGPSandSendONBOARD()"/>
+			<while cond="TRUE">
+				<call_once fun="flyTrajectory()"/>
+			</while>			
+		</block>
 		<block name="Follow_leader">
+			<call_once fun="switchOnGPSandSendGPS()"/>
+			<while cond="TRUE">
+				<call_once fun="ndi_follow_leader()"/>
+			</while>
+		</block>
+		<block name="Follow_leader_onboard">
+			<call_once fun="switchOffGPSandSendONBOARD()"/>
 			<while cond="TRUE">
 				<call_once fun="ndi_follow_leader()"/>
 			</while>

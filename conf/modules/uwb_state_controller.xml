@@ -1,0 +1,24 @@
+ <!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="uwb_state_controller" dir="uwb_control">
+	<doc>
+		<description>
+			Controls which information goes into the state
+		</description>
+	</doc>
+	<header>
+		<file name="uwb_state_control.h" />
+	</header>
+	<init fun="uwb_state_control_init()" />
+	<makefile target="ap">
+		<file name="uwb_state_control.c" />
+		<configure name="UWB_SEND_ONBOARD" default="0"/>
+		<configure name="UWB_USE_GPS" default="1"/>
+		<configure name="UWB_USE_SONAR" default="0"/>
+		<configure name="UWB_USE_OPTICFLOW" default="0"/>
+		<define name="UWB_SEND_ONBOARD" value="$(UWB_SEND_ONBOARD)"/>
+		<define name="UWB_USE_GPS" value="$(UWB_USE_GPS)"/>
+		<define name="UWB_USE_SONAR" value="$(UWB_USE_SONAR)"/>
+		<define name="UWB_USE_OPTICFLOW" value="$(UWB_USE_OPTICFLOW)"/>
+	</makefile>
+</module>

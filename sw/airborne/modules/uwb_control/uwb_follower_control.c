@@ -9,7 +9,11 @@
 #include "../../firmwares/rotorcraft/autopilot_guided.h"
 #include "navigation.h"
 #include "../relativelocalizationfilter/relative_localization_no_north.h"
+#include "../loggers/uwb_logger.h"
 
+#define NDI_METHOD 1
+// method 0 is first order approximation, no acceleration or yaw rate used
+// method 1 is first order approximation, acceleration and yaw rate used, but yaw rate not taken into account in integral
 
 #define NDI_MOST_RECENT ndihandle.data_entries-1
 
@@ -37,7 +41,7 @@ ndihandler ndihandle = {.delay = 5,
 		.data_start = 0,
 		.data_end = 0,
 		.data_entries = 0,
-		.maxcommand = 2.5};
+		.maxcommand = 1.5};
 
 static abi_event uwb_ndi_ev;
 
@@ -84,6 +88,13 @@ void addNdiValues(uint8_t sender_id __attribute__((unused)),float time, float dt
 	ndihandle.v1arr[ndihandle.data_end] = v1in;
 	ndihandle.u2arr[ndihandle.data_end] = u2in;
 	ndihandle.v2arr[ndihandle.data_end] = v2in;
+	ndihandle.r1arr[ndihandle.data_end] = uwb_smooth_yawr;
+	ndihandle.r2arr[ndihandle.data_end] = trackedYawr;
+	ndihandle.ax1arr[ndihandle.data_end] = uwb_smooth_ax;
+	ndihandle.ay1arr[ndihandle.data_end] = uwb_smooth_ay;
+	ndihandle.ax2arr[ndihandle.data_end] = trackedAx;
+	ndihandle.ay2arr[ndihandle.data_end] = trackedAy;
+	ndihandle.gamarr[ndihandle.data_end] = gammain;
 	ndihandle.tarr[ndihandle.data_end] = t;
 	ndihandle.data_end = (ndihandle.data_end+1)%NDI_PAST_VALS;
 	ndihandle.data_entries++;
@@ -182,6 +193,7 @@ void calcNdiCommands(void){
 		float curtime = get_sys_time_usec()/pow(10,6);
 		cleanNdiValues(curtime);
 		if(ndihandle.data_entries>0){
+#if(NDI_METHOD==0)
 			float oldx = accessCircularFloatArrElement(ndihandle.xarr,0);
 			float oldy = accessCircularFloatArrElement(ndihandle.yarr,0);
 
@@ -222,6 +234,57 @@ void calcNdiCommands(void){
 
 			fmat_mult(2,2,1,ndihandle.commands,Minv,sig);
 			bindNorm();
+#else if(NDI_METHOD == 1)
+	float oldx = accessCircularFloatArrElement(ndihandle.xarr,0);
+	float oldy = accessCircularFloatArrElement(ndihandle.yarr,0);
+
+	//float oldu1 = accessCircularFloatArrElement(ndihandle.u1arr,0);
+	//float oldv1 = accessCircularFloatArrElement(ndihandle.v1arr,0);
+	//struct EnuCoor_f current_speed = *stateGetSpeedEnu_f();
+	//float newu1 = current_speed.y;
+	//float newv1 = current_speed.x;
+	float newu1 = accessCircularFloatArrElement(ndihandle.u1arr,NDI_MOST_RECENT);
+	float newv1 = accessCircularFloatArrElement(ndihandle.v1arr,NDI_MOST_RECENT);
+	float newax1 = accessCircularFloatArrElement(ndihandle.ax1arr,NDI_MOST_RECENT);
+	float neway1 = accessCircularFloatArrElement(ndihandle.ay1arr,NDI_MOST_RECENT);
+	float newr1 = accessCircularFloatArrElement(ndihandle.r1arr,NDI_MOST_RECENT);
+	float oldu2 = accessCircularFloatArrElement(ndihandle.u2arr,0);
+	float oldv2 = accessCircularFloatArrElement(ndihandle.v2arr,0);
+	float oldax2 = accessCircularFloatArrElement(ndihandle.ax2arr,0);
+	float olday2 = accessCircularFloatArrElement(ndihandle.ay2arr,0);
+	float oldr2 = accessCircularFloatArrElement(ndihandle.r2arr,0);
+	oldx = oldx - computeNdiFloatIntegral(ndihandle.u1arr,curtime);
+	oldy = oldy - computeNdiFloatIntegral(ndihandle.v1arr,curtime);
+
+	float Minv[4];
+	fmat_make_zeros(Minv,2,2);
+	fmat_assign(0,0,2,Minv,-ndihandle.tau_x);
+	fmat_assign(1,1,2,Minv,-ndihandle.tau_y);
+
+	float l[2];
+	/*fmat_make_zeros(l,2,1);
+				fmat_assign(0,0,1,l,newu1/ndihandle.tau_x);
+				fmat_assign(1,0,1,l,newv1/ndihandle.tau_y);*/
+	//l[0]=newu1/ndihandle.tau_x;
+	//l[1]=newv1/ndihandle.tau_y;
+	l[0] = (newu1-newr1*newr1*oldx - newr1*ndihandle.tau_x*newv1+oldax2*ndihandle.tau_x + 2 * newr1*ndihandle.tau_x*oldv2)/ndihandle.tau_x;
+	l[1] = (newv1 - newr1*newr1*oldy + newr1*ndihandle.tau_y*newu1 + olday2*ndihandle.tau_y - 2*newr1*ndihandle.tau_y*oldu2)/ndihandle.tau_y;
+
+	float oldxed = oldu2 - newu1;
+	float oldyed = oldv2 - newv1;
+
+	float v[2];
+	v[0] = ndihandle.Kp * oldx + ndihandle.Kd * oldxed;
+	v[1] = ndihandle.Kp * oldy + ndihandle.Kd * oldyed;
+
+	float sig[2];
+	sig[0] = v[0]-l[0];
+	sig[1] = v[1]-l[1];
+
+	fmat_mult(2,2,1,ndihandle.commands,Minv,sig);
+	bindNorm();
+
+#endif
 		}
 		else{
 			pthread_mutex_lock(&uwb_ndi_mutex);
@@ -229,6 +292,7 @@ void calcNdiCommands(void){
 			ndihandle.commands[1] = 0;
 			pthread_mutex_unlock(&uwb_ndi_mutex);
 		}
+
 	}
 	else{
 		pthread_mutex_lock(&uwb_ndi_mutex);
@@ -237,6 +301,14 @@ void calcNdiCommands(void){
 		pthread_mutex_unlock(&uwb_ndi_mutex);
 	}
 }
+
+/*bool ndi_follow_init(void){
+	uwb_use_gps = false;
+	uwb_use_opticflow = true;
+	uwb_use_sonar = true;
+	uwb_send_onboard = true;
+	return false;
+}*/
 
 //TODO: Trapeoidal integration, and not simply discarding values before tcur-delay, but linearly interpolating to tcur-delay
 float computeNdiFloatIntegral(float* ndiarr, float curtime){

@@ -34,10 +34,10 @@
   <makefile target="ap|nps">
     <define name="INS_TYPE_H" value="subsystems/ins/ins_int.h" type="string"/>
     <file name="ins.c" dir="subsystems"/>
-    <file name="ins_int.c" dir="subsystems/ins"/>
+    <file name="ins_int_uwb_control.c" dir="subsystems/ins"/>
     <file name="vf_extended_float.c" dir="subsystems/ins"/>
     <define name="USE_VFF_EXTENDED"/>
-    <file name="hf_float_uwb_control.c" dir="subsystems/ins"/>
+    <file name="hf_float.c" dir="subsystems/ins"/>
     <define name="USE_HFF"/>
   </makefile>
 </module>

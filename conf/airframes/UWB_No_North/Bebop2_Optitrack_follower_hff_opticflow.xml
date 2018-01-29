@@ -24,11 +24,11 @@
     <module name="imu" type="bebop"/>
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
-    <module name="ahrs" type="int_cmpl_quat">
+    <module name="ahrs" type="int_cmpl_quat_uwb_control">
       <configure name="USE_MAGNETOMETER" value="0"/>
       <define name="AHRS_USE_GPS_HEADING" value="1"/>
     </module>
-    <module name="ins" type="hff_no_optic_flow"/>
+    <module name="ins" type="hff_uwb_control"/>
     <!-- module name="ins" type="hff_extended"/-->
   </firmware>
 
@@ -41,11 +41,17 @@
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
     <module name="relative_localization_no_north">
-      <configure name="EKF_XZERO" value="3"/>
+      <configure name="EKF_XZERO" value="-3"/>
       <configure name="EKF_YZERO" value="0"/>
     </module>
     <module name="uwb_follower_control"/>
     <module name="uwb_logger.xml"/>
+    <module name="uwb_state_controller">
+      <define name="UWB_USE_GPS" value="1"/>
+      <define name="UWB_USE_OPTICFLOW" value="0"/>
+      <define name="UWB_USE_SONAR" value="0"/>
+      <define name="UWB_SEND_ONBOARD" value="0"/>
+    </module>
     <module name="video_thread"/>
     <module name="pose_history"/>
     <module name="cv_opticflow">
@@ -55,10 +61,12 @@
       <define name="OPTICFLOW_DEROTATION" value="TRUE"/>
       <define name="OPTICFLOW_MEDIAN_FILTER" value="TRUE"/>
       <define name="OPTICFLOW_KALMAN_FILTER" value="FALSE"/>
-      <define name="OPTICFLOW_FX" value="347.22222222"/> 
-      <define name="OPTICFLOW_FY" value="347.22222222"/> 
-      <define name="OPTICFLOW_FOV_W" value="0.665499265"/> 
-      <define name="OPTICFLOW_FOV_H" value="0.665499265"/> 
+      <define name="OPTICFLOW_FX" value="270"/> 
+      <define name="OPTICFLOW_FY" value="270"/> 
+      <!--define name="OPTICFLOW_FOV_W" value="0.665499265"/> 
+      <define name="OPTICFLOW_FOV_H" value="0.665499265"/--> 
+      <define name="OPTICFLOW_FOV_W" value="1.1"/> 
+      <define name="OPTICFLOW_FOV_H" value="1.1"/> 
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="1.0"/>
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.9"/>
 	</module>
@@ -204,7 +212,7 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="20" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="2" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="1" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
     <define name="PGAIN" value="70"/><!--120-->
