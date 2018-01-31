@@ -13,7 +13,7 @@
   <aircraft
    name="bebop2_22"
    ac_id="22"
-   airframe="airframes/UWB_No_North/Bebop2_Optitrack_follower_hff_opticflow.xml"
+   airframe="airframes/UWB_No_North/Bebop2_Optitrack_follower_hff_control_gps.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
    flight_plan="flight_plans/UWB_No_North/uwb_follower.xml"
@@ -24,7 +24,7 @@
   <aircraft
    name="bebop2_44"
    ac_id="44"
-   airframe="airframes/UWB_No_North/Bebop2_Optitrack_leader_hff_opticflow.xml"
+   airframe="airframes/UWB_No_North/Bebop2_Optitrack_leader_hff_control_gps.xml"
    radio="radios/dummy.xml"
    telemetry="telemetry/default_rotorcraft.xml"
    flight_plan="flight_plans/UWB_No_North/uwb_leader.xml"

@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="1" ground_alt="0" lat0="51.990634" lon0="4.376789"
+<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789"
 	max_dist_from_home="8" name="Test flight plan Steven" security_height="0.4">
 	<header>
 		#include "autopilot.h"
@@ -12,7 +12,7 @@
 		<waypoint height="0" name="HOME" x="0.0" y="0.0" />
 		<waypoint name="CIRCLEWP" x="0.0" y="0.0"/>
 		<waypoint height="2" name="CLIMB" x="1.2" y="-0.6" />
-		<waypoint height="1" name="STDBY" x="-2" y="-2" />
+		<waypoint height="1.5" name="STDBY" x="-2" y="-2" />
 		<waypoint name="TD" x="0.8" y="-1.7" />
 		<!-- waypoint name="t0" lat="51.9906022" lon="4.3767737" />
 		<waypoint name="t1" lat="51.9906234" lon="4.3767863" />

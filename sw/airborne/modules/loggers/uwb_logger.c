@@ -16,6 +16,10 @@
 #include "../../math/pprz_algebra_int.h"
 // Butterworth filter
 #include "filters/low_pass_filter.h"
+#include "../../boards/bebop/actuators.h"
+#if UWB_LOG_NDI
+#include "../uwb_control/uwb_follower_control.h"
+#endif
 
 #ifndef UWB_LOGGER_GPS_ID
 #define UWB_LOGGER_GPS_ID GPS_MULTI_ID
@@ -107,7 +111,12 @@ void uwb_logger_init(void){
 					"optic_vx,optic_vy,optic_vz,"
 					"sonar_z,"
 					"Range,track_vx,track_vy,track_z,track_ax,track_ay,track_r,"
-					"kal_x,kal_y,kal_h1,kal_h2,kal_u1,kal_v1,kal_u2,kal_v2,kal_gamma\n");
+					"kal_x,kal_y,kal_h1,kal_h2,kal_u1,kal_v1,kal_u2,kal_v2,kal_gamma,"
+					"rpm1,rpm2,rpm3,rpm4,rpm_ref1,rpm_ref2,rpm_ref3,rpm_ref4"
+#if UWB_LOG_NDI
+					",vcom1,vcom2,vcom1_cap,vcom2_cap"
+#endif
+					"\n");
 		}
 	}
 
@@ -125,7 +134,11 @@ void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,flo
 
 		if(UWBFileLogger!=NULL){
 			//pthread_mutex_lock(&uwb_logger_mutex);
-			fprintf(UWBFileLogger,"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+			fprintf(UWBFileLogger,"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
+#if UWB_LOG_NDI
+					",%f,%f,%f,%f"
+#endif
+					"\n",
 					counter,
 					time,
 					dt,
@@ -172,7 +185,22 @@ void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,flo
 					v1in,
 					u2in,
 					v2in,
-					gammain);
+					gammain,
+					(float)actuators_bebop.rpm_obs[0],
+					(float)actuators_bebop.rpm_obs[1],
+					(float)actuators_bebop.rpm_obs[2],
+					(float)actuators_bebop.rpm_obs[3],
+					(float)actuators_bebop.rpm_ref[0],
+					(float)actuators_bebop.rpm_ref[1],
+					(float)actuators_bebop.rpm_ref[2],
+					(float)actuators_bebop.rpm_ref[3]
+#if UWB_LOG_NDI
+					,ndihandle.commands[0],
+					ndihandle.commands[1],
+					ndihandle.commandscap[0],
+					ndihandle.commandscap[1]
+#endif
+			);
 			//pthread_mutex_unlock(&uwb_logger_mutex);
 			counter++;
 		}

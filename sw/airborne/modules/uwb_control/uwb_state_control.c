@@ -28,6 +28,7 @@ void uwb_state_control_init(void){
 #else
 	uwb_send_onboard=false;
 #endif
+	PRINT_CONFIG_VAR(UWB_USE_GPS);
 }
 
 

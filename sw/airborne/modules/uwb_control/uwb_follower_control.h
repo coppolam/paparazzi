@@ -7,13 +7,17 @@
 
 
 
-#define NDI_FLIGHT_HEIGHT 1
+#define NDI_FLIGHT_HEIGHT 1.5
 #define NDI_PAST_VALS 200
 
 typedef struct ndihandler{
 	float delay;
 	float tau_x;
 	float tau_y;
+	float wn_x;
+	float wn_y;
+	float eps_y;
+	float eps_x;
 	float Kp;
 	float Ki;
 	float Kd;

@@ -37,6 +37,7 @@
 #include "subsystems/datalink/datalink.h"
 #include "subsystems/datalink/downlink.h"
 #include "../loggers/uwb_logger.h"
+#include "../uwb_control/uwb_state_control.h"
 
 
 #define RL_PRINT_EKF 0
@@ -72,7 +73,6 @@ char* rlconcat(const char *s1, const char *s2);
 
 static pthread_mutex_t ekf_mutex;
 
-#define RLLOG 0
 
 #define UWB_NDI_SENDER_ID 1
 
@@ -135,9 +135,18 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		rangearray[i] = range; // Store RSSI in array (for logging purposes)
 
 		// Get own velocities
-		float ownVx = stateGetSpeedEnu_f()->y; // Velocity North in NED
-		float ownVy = stateGetSpeedEnu_f()->x; // Velocity East in NED
-		float ownh = stateGetPositionEnu_f()->z;
+		//float ownVx = stateGetSpeedEnu_f()->y; // Velocity North in NED
+		//float ownVy = stateGetSpeedEnu_f()->x; // Velocity East in NED
+		float ownVx; float ownVy; float ownh;
+		if(uwb_use_gps){
+			ownVx = uwb_gps_ned_vel_cm_s_f.x/100.f;
+			ownVy = uwb_gps_ned_vel_cm_s_f.y/100.f;
+			ownh = uwb_gps_ned_pos_cm_f.z/100.f;
+		}else{
+			ownVx = uwb_optic_vel_m_s_f.x;
+			ownVy = uwb_optic_vel_m_s_f.y;
+			ownh = -uwb_sonarheight;
+		}
 		float ownAx = uwb_smooth_ax;
 		float ownAy = uwb_smooth_ay;
 		float ownYawr = uwb_smooth_yawr;
@@ -147,7 +156,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		keepbounded(&ownVy,-3.0,3.0);
 		keepbounded(&trackedVx,-3.0,3.0);
 		keepbounded(&trackedVy,-3.0,3.0);
-		keepbounded(&trackedh,-2,0);
+		keepbounded(&trackedh,-4,0);
 		keepbounded(&ownAx,-10.0,10.0);
 		keepbounded(&ownAy,-10.0,10.0);
 		keepbounded(&trackedAx,-10.0,10.0);
@@ -156,62 +165,16 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		keepbounded(&trackedYawr,-3.0,3.0);
 
 		//if (guidance_h.mode == GUIDANCE_H_MODE_GUIDED)
-		if(ownh > 0.5)
+		if(ownh < -0.5)
 		{
 		// Make the filter only in Guided mode (flight).
 		// This is because it is best for the filter should only start once the drones are in motion, 
 		// otherwise it might diverge while drones are not moving.
 			//float input[EKF_L] = {0,0,0,0,0,0};
 			float input[EKF_L] = {ownAx,ownAy,trackedAx,trackedAy,ownYawr,trackedYawr};
-			float measurements[EKF_M] = {range,-ownh,trackedh,ownVx,ownVy,trackedVx,trackedVy};
+			float measurements[EKF_M] = {range,ownh,trackedh,ownVx,ownVy,trackedVx,trackedVy};
 
 			updateEkfFilter(&ekf[i],input,measurements,dt);
-
-			if(RLLOG){
-				current_speed = *stateGetSpeedEnu_f();
-				current_pos = *stateGetPositionEnu_f();
-				current_accel = *stateGetAccelNed_f();
-				current_rates = *stateGetBodyRates_f();
-				current_eulers = *stateGetNedToBodyEulers_f();
-
-				if(rlFileLogger!=NULL){
-					pthread_mutex_lock(&ekf_mutex);
-					fprintf(rlFileLogger,"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
-							counter,
-							(float)(now_ts[i]/pow(10,6)),
-							ekf[i].dt,
-							current_pos.y,
-							current_pos.x,
-							-current_pos.z,
-							current_speed.y,
-							current_speed.x,
-							-current_speed.z,
-							current_accel.x,
-							current_accel.y,
-							current_accel.z,
-							current_eulers.phi,
-							current_eulers.theta,
-							current_eulers.psi,
-							current_rates.p,
-							current_rates.q,
-							current_rates.r,
-							range,
-							trackedVx,
-							trackedVy,
-							trackedh,
-							ekf[i].X[0],
-							ekf[i].X[1],
-							ekf[i].X[2],
-							ekf[i].X[3],
-							ekf[i].X[4],
-							ekf[i].X[5],
-							ekf[i].X[6],
-							ekf[i].X[7],
-							ekf[i].X[8]);
-					counter++;
-					pthread_mutex_unlock(&ekf_mutex);
-				}
-			}
 
 		}
 		else
@@ -283,34 +246,9 @@ void relativelocalizationfilter_init(void)
 
 
 
-	time_t rawtime;
-	struct tm * timeinfo;
 
-
-	time ( &rawtime );
-	timeinfo = localtime ( &rawtime );
-	char time[30];
-	strftime(time,sizeof(time),"%Y-%m-%d-%X",timeinfo);
-
-	//printf ( "Current local time and date: %s", asctime (timeinfo) );
-	char* temp = rlconcat("/data/ftp/internal_000/rlLogFile_",time);
-	char* rlFileName=rlconcat(temp,".txt");
-
-
-	if(RLLOG){
-		rlFileLogger = fopen(rlFileName,"w");
-		if (rlFileLogger!=NULL){
-			fprintf(rlFileLogger,"msg_count,time,dt,own_x,own_y,own_z,own_vx,own_vy,own_vz,own_ax,own_ay,own_az,own_phi,own_theta,own_psi,own_p,own_q,own_r,Range,track_vx_meas,track_vy_meas,track_z_meas,kal_x,kal_y,kal_h1,kal_h2,kal_u1,kal_v1,kal_u2,kal_v2,kal_gamma\n");
-		}
-	}
 	array_make_zeros_int(NUAVS-1, IDarray); // Clear out the known IDs
 	nf = 0; // Number of active filters upon initialization
-/*
-	#ifdef RSSI_LOCALIZATION
-	AbiBindMsgRSSI(ABI_BROADCAST, &rssi_ev, bluetoothmsg_cb); // Subscribe to the ABI RSSI messages
-	#elseif UWB_LOCALIZATION
-	#endif
-	*/
 	AbiBindMsgUWB(ABI_BROADCAST, &uwb_ev, uwbmsg_cb); // Subscribe to the ABI RSSI messages
 
 	#ifdef PPRZ_MSG_ID_RLFILTER

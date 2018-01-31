@@ -7,6 +7,7 @@
       (only for linux)
     </description>
     <define name="FILE_LOGGER_PATH" value="/data/ftp/internal_000" description="path where csv file is saved."/>
+    <define name="UWB_LOG_NDI" value="0" description="log NDI control outputs or nah"/>
   </doc>
   <header>
 	<file name="uwb_logger.h" />

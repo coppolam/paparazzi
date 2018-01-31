@@ -35,6 +35,10 @@ char* strconcat(const char *s1, const char *s2);
 ndihandler ndihandle = {.delay = 5,
 		.tau_x=3,
 		.tau_y = 3,
+		.wn_x = 0.9,
+		.wn_y = 0.9,
+		.eps_x = 0.28,
+		.eps_y = 0.28,
 		.Kp = -1.5,
 		.Ki = 0,
 		.Kd = -3,
@@ -234,7 +238,56 @@ void calcNdiCommands(void){
 
 			fmat_mult(2,2,1,ndihandle.commands,Minv,sig);
 			bindNorm();
-#else if(NDI_METHOD == 1)
+#elif(NDI_METHOD == 1)
+	float oldx = accessCircularFloatArrElement(ndihandle.xarr,0);
+	float oldy = accessCircularFloatArrElement(ndihandle.yarr,0);
+
+	//float oldu1 = accessCircularFloatArrElement(ndihandle.u1arr,0);
+	//float oldv1 = accessCircularFloatArrElement(ndihandle.v1arr,0);
+	//struct EnuCoor_f current_speed = *stateGetSpeedEnu_f();
+	//float newu1 = current_speed.y;
+	//float newv1 = current_speed.x;
+	float newu1 = accessCircularFloatArrElement(ndihandle.u1arr,NDI_MOST_RECENT);
+	float newv1 = accessCircularFloatArrElement(ndihandle.v1arr,NDI_MOST_RECENT);
+	//float newax1 = accessCircularFloatArrElement(ndihandle.ax1arr,NDI_MOST_RECENT);
+	//float neway1 = accessCircularFloatArrElement(ndihandle.ay1arr,NDI_MOST_RECENT);
+	float newr1 = accessCircularFloatArrElement(ndihandle.r1arr,NDI_MOST_RECENT);
+	float oldu2 = accessCircularFloatArrElement(ndihandle.u2arr,0);
+	float oldv2 = accessCircularFloatArrElement(ndihandle.v2arr,0);
+	float oldax2 = accessCircularFloatArrElement(ndihandle.ax2arr,0);
+	float olday2 = accessCircularFloatArrElement(ndihandle.ay2arr,0);
+	//float oldr2 = accessCircularFloatArrElement(ndihandle.r2arr,0);
+	oldx = oldx - computeNdiFloatIntegral(ndihandle.u1arr,curtime);
+	oldy = oldy - computeNdiFloatIntegral(ndihandle.v1arr,curtime);
+
+	float Minv[4];
+	fmat_make_zeros(Minv,2,2);
+	fmat_assign(0,0,2,Minv,-ndihandle.tau_x);
+	fmat_assign(1,1,2,Minv,-ndihandle.tau_y);
+
+	float l[2];
+	/*fmat_make_zeros(l,2,1);
+				fmat_assign(0,0,1,l,newu1/ndihandle.tau_x);
+				fmat_assign(1,0,1,l,newv1/ndihandle.tau_y);*/
+	//l[0]=newu1/ndihandle.tau_x;
+	//l[1]=newv1/ndihandle.tau_y;
+	l[0] = (newu1-newr1*newr1*oldx - newr1*ndihandle.tau_x*newv1+oldax2*ndihandle.tau_x + 2 * newr1*ndihandle.tau_x*oldv2)/ndihandle.tau_x;
+	l[1] = (newv1 - newr1*newr1*oldy + newr1*ndihandle.tau_y*newu1 + olday2*ndihandle.tau_y - 2*newr1*ndihandle.tau_y*oldu2)/ndihandle.tau_y;
+
+	float oldxed = oldu2 - newu1 + newr1*oldy;
+	float oldyed = oldv2 - newv1 - newr1*oldx;
+
+	float v[2];
+	v[0] = ndihandle.Kp * oldx + ndihandle.Kd * oldxed;
+	v[1] = ndihandle.Kp * oldy + ndihandle.Kd * oldyed;
+
+	float sig[2];
+	sig[0] = v[0]-l[0];
+	sig[1] = v[1]-l[1];
+
+	fmat_mult(2,2,1,ndihandle.commands,Minv,sig);
+	bindNorm();
+#elif(NDI_METHOD == 2)
 	float oldx = accessCircularFloatArrElement(ndihandle.xarr,0);
 	float oldy = accessCircularFloatArrElement(ndihandle.yarr,0);
 
@@ -258,8 +311,8 @@ void calcNdiCommands(void){
 
 	float Minv[4];
 	fmat_make_zeros(Minv,2,2);
-	fmat_assign(0,0,2,Minv,-ndihandle.tau_x);
-	fmat_assign(1,1,2,Minv,-ndihandle.tau_y);
+	fmat_assign(0,0,2,Minv,-1/(ndihandle.wn_x*ndihandle.wn_x));
+	fmat_assign(1,1,2,Minv,-1/(ndihandle.wn_y*ndihandle.wn_y));
 
 	float l[2];
 	/*fmat_make_zeros(l,2,1);
@@ -267,11 +320,16 @@ void calcNdiCommands(void){
 				fmat_assign(1,0,1,l,newv1/ndihandle.tau_y);*/
 	//l[0]=newu1/ndihandle.tau_x;
 	//l[1]=newv1/ndihandle.tau_y;
-	l[0] = (newu1-newr1*newr1*oldx - newr1*ndihandle.tau_x*newv1+oldax2*ndihandle.tau_x + 2 * newr1*ndihandle.tau_x*oldv2)/ndihandle.tau_x;
-	l[1] = (newv1 - newr1*newr1*oldy + newr1*ndihandle.tau_y*newu1 + olday2*ndihandle.tau_y - 2*newr1*ndihandle.tau_y*oldu2)/ndihandle.tau_y;
+	float u1d = newax1+newr1*newv1;
+	float v1d = neway1 + newr1*newu1;
+	//l[0] = newr1*newr1*newu1 - newr1*v1d - pow(newr1,3)*oldy + newu1*ndihandle.wn_x*ndihandle.wn_x - 3*newr1*newr1*oldu2 + 2*ndihandle.eps_x*u1d*ndihandle.wn_x + 3*olday2*newr1 - olday2*oldr2;
+	//l[1] = newr1*newr1*newv1 + newr1*u1d + pow(newr1,3)*oldx  + newv1*ndihandle.wn_y*ndihandle.wn_y - 3*newr1*newr1*oldv2 + 2 * ndihandle.eps_y*v1d*ndihandle.wn_y - 3*oldax2*newr1 + oldax2*oldr2;
+	l[0] = newu1*ndihandle.wn_x*ndihandle.wn_x + 2*ndihandle.eps_x*u1d*ndihandle.wn_x;
+	l[1] =newv1*ndihandle.wn_y*ndihandle.wn_y + 2 * ndihandle.eps_y*v1d*ndihandle.wn_y;
 
-	float oldxed = oldu2 - newu1;
-	float oldyed = oldv2 - newv1;
+
+	float oldxed = oldu2 - newu1 + newr1*oldy;
+	float oldyed = oldv2 - newv1 - newr1*oldx;
 
 	float v[2];
 	v[0] = ndihandle.Kp * oldx + ndihandle.Kd * oldxed;
@@ -283,7 +341,6 @@ void calcNdiCommands(void){
 
 	fmat_mult(2,2,1,ndihandle.commands,Minv,sig);
 	bindNorm();
-
 #endif
 		}
 		else{
