@@ -20,6 +20,7 @@
 #if UWB_LOG_NDI
 #include "../uwb_control/uwb_follower_control.h"
 #endif
+#include "../../subsystems/ins/ins_int.h"
 
 #ifndef UWB_LOGGER_GPS_ID
 #define UWB_LOGGER_GPS_ID GPS_MULTI_ID
@@ -61,10 +62,13 @@ struct NedCoor_i uwb_gps_ned_pos_cm_f;
 struct FloatVect3 uwb_optic_vel_m_s_f;
 
 float uwb_sonarheight = 0.0;
+float uwb_baroheight = 0.0;
 
 float uwb_smooth_yawr = 0.0;
 float uwb_smooth_ax = 0.0;
 float uwb_smooth_ay = 0.0;
+
+
 
 
 void uwb_logger_init(void){
@@ -109,7 +113,7 @@ void uwb_logger_init(void){
 					"gps_x,gps_y,gps_z,"
 					"gps_vx,gps_vy,gps_vz,"
 					"optic_vx,optic_vy,optic_vz,"
-					"sonar_z,"
+					"sonar_z,baro_z,"
 					"Range,track_vx,track_vy,track_z,track_ax,track_ay,track_r,"
 					"kal_x,kal_y,kal_h1,kal_h2,kal_u1,kal_v1,kal_u2,kal_v2,kal_gamma,"
 					"rpm1,rpm2,rpm3,rpm4,rpm_ref1,rpm_ref2,rpm_ref3,rpm_ref4"
@@ -134,7 +138,7 @@ void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,flo
 
 		if(UWBFileLogger!=NULL){
 			//pthread_mutex_lock(&uwb_logger_mutex);
-			fprintf(UWBFileLogger,"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
+			fprintf(UWBFileLogger,"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
 #if UWB_LOG_NDI
 					",%f,%f,%f,%f"
 #endif
@@ -170,6 +174,7 @@ void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,flo
 					uwb_optic_vel_m_s_f.y,
 					uwb_optic_vel_m_s_f.z,
 					-uwb_sonarheight,
+					-ins_int.baro_z,
 					range,
 					trackedVx,
 					trackedVy,

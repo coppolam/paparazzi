@@ -79,7 +79,9 @@ static void sonar_cb(uint8_t sender_id, float distance);
 #ifndef INS_SONAR_MAX_RANGE
 #define INS_SONAR_MAX_RANGE 4.0
 #endif
+#ifndef VFF_R_SONAR_0
 #define VFF_R_SONAR_0 0.1
+#endif
 #ifndef VFF_R_SONAR_OF_M
 #define VFF_R_SONAR_OF_M 0.2
 #endif
@@ -358,9 +360,9 @@ static void baro_cb(uint8_t __attribute__((unused)) sender_id, float pressure)
 
 
 #if USE_VFF_EXTENDED
-      vff_update_baro(ins_int.baro_z);
+      //vff_update_baro(ins_int.baro_z);
 #else
-      vff_update(ins_int.baro_z);
+      //vff_update(ins_int.baro_z);
 #endif
     }
     ins_ned_to_state();
@@ -451,8 +453,7 @@ void ins_int_update_gps(struct GpsState *gps_s __attribute__((unused))) {}
 
 
 #if USE_SONAR
-static void sonar_cb(uint8_t __attribute__((unused)) sender_id, float distance)
-{
+static void sonar_cb(uint8_t __attribute__((unused)) sender_id, float distance){
 	if(uwb_use_sonar){
   static float last_offset = 0.;
 
