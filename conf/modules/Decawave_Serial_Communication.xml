@@ -12,6 +12,7 @@
 	<init fun="decawave_serial_init()" />
 	<periodic fun="decawave_serial_periodic()" freq="30"
 		autorun="TRUE" />
+	<periodic fun="checkStatesUpdated()" freq="50" autorun="TRUE"/>
 	<event fun="decawave_serial_event()"/>
 	<makefile target="ap">
 		<file name="Serial_Communication.c" />

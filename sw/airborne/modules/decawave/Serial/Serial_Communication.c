@@ -57,7 +57,7 @@ struct link_device *xdev = SERIAL_PORT;
 #define SerialChAvailable()(xdev->char_available(xdev->periph))
 #define SerialSendNow() uart_send_message(SERIAL_PORT->periph,0)
 
-#define LOG_UWB_VARS false
+#define LOG_UWB_VARS 0
 
 struct nodeState{
 	uint8_t nodeAddress;
@@ -95,6 +95,8 @@ static bool _allReceived = false;
 
 static uint8_t _varByte = 0;
 
+static float oldtime = 0.0;
+
 
 
 
@@ -114,7 +116,7 @@ static void encodeHighBytes(uint8_t* sendData, uint8_t msgSize);
 static void handleNewStateValue(uint8_t nodeIndex, uint8_t msgType, float value);
 static void setNodeStatesFalse(uint8_t index);
 static void setAllNodeStatesFalse(void);
-static void checkStatesUpdated(void);
+//static void checkStatesUpdated(void);
 //static void initNodes();
 
 
@@ -171,7 +173,7 @@ if(uwb_send_onboard){
  */
 void decawave_serial_event(void){
 	getSerialData();
-	checkStatesUpdated();
+	//checkStatesUpdated();
 }
 
 /**
@@ -196,8 +198,9 @@ static void setAllNodeStatesFalse(void){
  * This function checks if all the states of all the distant nodes have at least once been updated.
  * If all the states are updated, then do something with it! AKA CALLBACK TO MARIO
  */
-static void checkStatesUpdated(void){
-	static float oldtime = 0.0;
+void checkStatesUpdated(void){
+	//static float oldtime;
+	//printf("Old time, cur time: %f, %f\n",oldtime,get_sys_time_usec()/pow(10,6));
 	bool checkbool;
 	for (uint8_t i = 0; i < DIST_NUM_NODES; i++){
 		checkbool = true;
@@ -206,11 +209,14 @@ static void checkStatesUpdated(void){
 		}
 		if (checkbool){
 			// Send out data with an ABI message
-			AbiSendMsgUWB(UWB_COMM_ID, AC_ID, _states[i].r, _states[i].vx, _states[i].vy, _states[i].z,_states[i].ax,_states[i].ay,_states[i].yawr);
+			AbiSendMsgUWB(UWB_COMM_ID, i, _states[i].r, _states[i].vx, _states[i].vy, _states[i].z,_states[i].ax,_states[i].ay,_states[i].yawr);
 			setNodeStatesFalse(i);
+
 			if(((get_sys_time_usec()/pow(10,6))-oldtime)>1 && LOG_UWB_VARS){
 				oldtime = get_sys_time_usec()/pow(10,6);
-				printf("States for drone %i: r = %f, vx = %f, vy = %f, z = %f \n",i,_states[i].r,_states[i].vx,_states[i].vy,_states[i].z);
+
+				printf("States for drone %i: r = %f, vx = %f, vy = %f, z = %f, ax = %f, ay = %f, r =%f\n",i,_states[i].r,_states[i].vx,_states[i].vy,_states[i].z
+						,_states[i].ax,_states[i].ay,_states[i].yawr);
 
 			}
 		}

@@ -28,7 +28,7 @@
 #define MAX_NODES 5
 
 // How many nodes actually are in the network
-#define NUM_NODES 2
+#define NUM_NODES 3
 
 // How many distant nodes are in the network (one less than the toal number of nodes)
 #define DIST_NUM_NODES NUM_NODES-1
@@ -48,6 +48,7 @@ extern void decawave_serial_event(void);
 
 extern void getSerialData(void);
 extern void sendFloat(uint8_t msgtype, float outfloat);
+extern void checkStatesUpdated(void);
 
 
 

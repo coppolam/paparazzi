@@ -72,7 +72,11 @@ extern void uwb_ndi_follower_init(void){
 }
 
 
-void addNdiValues(uint8_t sender_id __attribute__((unused)),float time, float dt,float range, float trackedVx, float trackedVy, float trackedh, float trackedAx, float trackedAy, float trackedYawr, float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain){
+void addNdiValues(uint8_t sender_id __attribute__((unused)),uint8_t ac_id,float time, float dt,float range, float trackedVx, float trackedVy, float trackedh, float trackedAx, float trackedAy, float trackedYawr, float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain){
+	//printf("Adding ndi for id, vx: %d,%f\n",ac_id,trackedVx);
+	if(ac_id!=0){
+		return;
+	}
 
 	struct EnuCoor_f current_speed = *stateGetSpeedEnu_f();
 	struct EnuCoor_f current_pos = *stateGetPositionEnu_f();
@@ -471,6 +475,14 @@ void findNearestWaypoint(void){
 bool flyToCentre(void){
 	bool temp = true;
 	temp &= autopilot_guided_goto_ned(0,0,-NDI_FLIGHT_HEIGHT,0);
+	return !temp;
+}
+
+bool flyToWaypoint(uint8_t wp_id){
+	float eastcoord = waypoint_get_x(wp_id);
+	float northcoord = waypoint_get_y(wp_id);
+	bool temp = true;
+	temp &= autopilot_guided_goto_ned(northcoord,eastcoord,-NDI_FLIGHT_HEIGHT,0);
 	return !temp;
 }
 

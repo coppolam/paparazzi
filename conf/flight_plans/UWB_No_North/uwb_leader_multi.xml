@@ -79,45 +79,15 @@
 			<attitude pitch="0" roll="0" throttle="0"
 				vmode="throttle" />
 		</block>
-		<block name="Start Engine">
-			<call_once fun="NavResurrect()" />
-			<attitude pitch="0" roll="0" throttle="0"
-				vmode="throttle" />
-		</block>
-		<block name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
-			<exception cond="stateGetPositionEnu_f()->z > 1.0" deroute="Standby" />
-			<call_once fun="NavSetWaypointHere(WP_CLIMB)" />
-			<call_once fun="NavSetWaypointHere(WP_HOVER)" />
-			<stay wp="CLIMB" climb="1" vmode="climb"/>
-			<!--stay wp="CLIMB" throttle="0.5" vmode="throttle"/-->
-		</block>
 		<block name="HoverHere">
 			<call_once fun="nav_set_heading_deg(selfheading)" />
 			<call_once fun="NavSetWaypointHere(WP_HOVER)" />
 			<stay wp="HOVER" />
 		</block>
-		<block name="Standby" strip_button="Standby" strip_icon="home.png">
-			<call_once fun="nav_set_heading_deg(selfheading)" />
-			<stay wp="STDBY" />
-		</block>
 		<block name="Set_Heading">
 		  <call_once fun="nav_set_heading_deg(selfheading)" />
-		  <call_once fun="NavSetWaypointHere(WP_STDBY)" />
-		  <deroute block="Standby"/>
-		</block>
-		<block name="Fly_Trajectory">
-			<call_once fun="switchOnGPSandSendGPS()"/>
-			<call_once fun="initialiseTrajectory()"/>
-			<while cond="TRUE">
-				<call_once fun="flyTrajectory()"/>
-			</while>			
-		</block>
-		<block name="Fly_Trajectory_onboard">
-			<call_once fun="switchOnGPSandSendONBOARD()"/>
-			<call_once fun="initialiseTrajectory()"/>
-			<while cond="TRUE">
-				<call_once fun="flyTrajectory()"/>
-			</while>			
+		  <call_once fun="NavSetWaypointHere(WP_HOVER)" />
+		  <deroute block="HoverHere"/>
 		</block>
 		<block name="Circle">
 			<call_once fun="switchOnGPSandSendGPS()"/>
@@ -133,15 +103,19 @@
 				<circle wp="CIRCLEWP" radius="selfradius" />
 			</while>
 		</block>
-		<block name="Spiral">
-			<while cond="LessThan(NavBlockTime(),300)">
-				<circle wp="HOME" radius="1+NavBlockTime()*0.015" />
-			</while>
+		<block name="Fly_Trajectory">
+			<call_once fun="switchOnGPSandSendGPS()"/>
+			<call_once fun="initialiseTrajectory()"/>
+			<while cond="TRUE">
+				<call_once fun="flyTrajectory()"/>
+			</while>			
 		</block>
-		<block name="NegSpiral">
-			<while cond="LessThan(NavBlockTime(),300)">
-				<circle wp="HOME" radius="-1-NavBlockTime()*0.015" />
-			</while>
+		<block name="Fly_Trajectory_onboard">
+			<call_once fun="switchOnGPSandSendONBOARD()"/>
+			<call_once fun="initialiseTrajectory()"/>
+			<while cond="TRUE">
+				<call_once fun="flyTrajectory()"/>
+			</while>			
 		</block>
 		<block name="land here" strip_button="land Here" strip_icon="land-right.png">
 			<call_once fun="NavSetWaypointHere(WP_TD)" />

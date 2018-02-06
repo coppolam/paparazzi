@@ -258,6 +258,13 @@ void array_make_ones(int length, float *x)
 	}
 };
 
+void array_make_minusone_int(int length, int *x){
+	int i;
+	for(i = 0 ; i < length; i++) {
+		x[i] = -1;
+	}
+}
+
 void array_mult_scal(int length, float *y, float k, float *x)
 {
 	int i;

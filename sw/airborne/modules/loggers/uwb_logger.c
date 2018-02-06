@@ -41,9 +41,9 @@ Butterworth2LowPass uwb_butter_ay;
 
 char* uwbstrconcat(const char *s1, const char *s2);
 
-
+#define NUM_UWB_LOGGERS 2
 #define UWB_LOGGER true
-static FILE *UWBFileLogger = NULL;
+static FILE *UWBFileLogger[NUM_UWB_LOGGERS];
 
 static abi_event uwb_log_ev;
 static abi_event uwb_gps_ev;
@@ -88,6 +88,7 @@ void uwb_logger_init(void){
 	AbiBindMsgVELOCITY_ESTIMATE(UWB_LOGGER_OPTICFLOW_ID, &uwb_opticflow_ev, uwb_optic_vel_cb);
 	AbiBindMsgAGL(ABI_BROADCAST, &uwb_sonar_ev,uwb_sonar_height_cb);
 	if(UWB_LOGGER){
+		for(int i=0; i<NUM_UWB_LOGGERS;i++){
 		time_t rawtime;
 		struct tm * timeinfo;
 
@@ -97,12 +98,12 @@ void uwb_logger_init(void){
 		char time[30];
 		strftime(time,sizeof(time),"%Y-%m-%d-%X",timeinfo);
 
-		//printf ( "Current local time and date: %s", asctime (timeinfo) );
-		char* temp = uwbstrconcat("/data/ftp/internal_000/UWBLogFile_",time);
-		char* UWBFileName=uwbstrconcat(temp,".txt");
-		UWBFileLogger = fopen(UWBFileName,"w");
-		if (UWBFileLogger!=NULL){
-			fprintf(UWBFileLogger,"msg_count,time,dt,"
+		char buf[100];
+		sprintf(buf,"/data/ftp/internal_000/UWBLogFile_%d_%s",i,time);
+
+		char *UWBFileName = &buf;
+		UWBFileLogger[i] = fopen(UWBFileName,"w");
+			fprintf(UWBFileLogger[i],"msg_count,time,dt,"
 					"state_x,state_y,state_z,"
 					"state_vx,state_vy,state_vz,"
 					"state_ax,state_ay,state_az,"
@@ -121,12 +122,13 @@ void uwb_logger_init(void){
 					",vcom1,vcom2,vcom1_cap,vcom2_cap"
 #endif
 					"\n");
-		}
+
+	}
 	}
 
 }
 
-void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,float range, float trackedVx, float trackedVy, float trackedh, float trackedAx,float trackedAy,float trackedYawr,  float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain){
+void logEvent(uint8_t sender_id __attribute__((unused)),uint8_t ac_id, float time, float dt,float range, float trackedVx, float trackedVy, float trackedh, float trackedAx,float trackedAy,float trackedYawr,  float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain){
 	static int counter = 0;
 	struct EnuCoor_f current_speed = *stateGetSpeedEnu_f();
 	struct EnuCoor_f current_pos = *stateGetPositionEnu_f();
@@ -136,9 +138,8 @@ void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,flo
 	if(UWB_LOGGER){
 
 
-		if(UWBFileLogger!=NULL){
 			//pthread_mutex_lock(&uwb_logger_mutex);
-			fprintf(UWBFileLogger,"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
+			fprintf(UWBFileLogger[ac_id],"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
 #if UWB_LOG_NDI
 					",%f,%f,%f,%f"
 #endif
@@ -208,7 +209,7 @@ void logEvent(uint8_t sender_id __attribute__((unused)),float time, float dt,flo
 			);
 			//pthread_mutex_unlock(&uwb_logger_mutex);
 			counter++;
-		}
+
 
 	}
 

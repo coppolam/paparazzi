@@ -71,30 +71,11 @@
 			<attitude pitch="0" roll="0" throttle="0"
 				vmode="throttle" />
 		</block>
-		<block name="FlyCentre">
-			<while cond="TRUE">
-				<call_once fun="flyToCentre()"/>
-			</while>
-		</block>
 		<block name="FlyHere">
 		  <call_once fun="NavSetWaypointHere(WP_HOVER)" />
 			<while cond="TRUE">
 				<call_once fun="flyToWaypoint(WP_HOVER)"/>
 			</while>
-		</block>
-		<block name="Fly_Trajectory">
-			<call_once fun="switchOnGPSandSendGPS()"/>
-			<call_once fun="initialiseTrajectory()"/>
-			<while cond="TRUE">
-				<call_once fun="flyTrajectory()"/>
-			</while>			
-		</block>
-		<block name="Fly_Trajectory_onboard">
-			<call_once fun="initialiseTrajectory()"/>
-			<call_once fun="switchOffGPSandSendONBOARD()"/>
-			<while cond="TRUE">
-				<call_once fun="flyTrajectory()"/>
-			</while>			
 		</block>
 		<block name="Follow_leader">
 			<call_once fun="switchOnGPSandSendGPS()"/>

@@ -55,7 +55,7 @@
 #endif
 int IDarray[NUAVS-1]; 		// Array of IDs of other MAVs
 uint32_t now_ts[NUAVS-1]; 	// Time of last received message from each MAV
-int nf;						// Number of filters registered
+int nf = 0;						// Number of filters registered
 ekf_filter ekf[NUAVS-1]; 	// EKF structure
 float rangearray[NUAVS-1];	// Recorded RSSI values (so they can all be sent)
 struct EnuCoor_f current_pos;
@@ -117,19 +117,19 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 	int i = -1; // Initialize the index of all tracked drones (-1 for null assumption of no drone found).
 
 	// Check if a new aircraft ID is present, if it's a new ID we start a new EKF for it.
-	if (( !array_find_int(NUAVS-1, IDarray, ac_id, &i))  // If yes, a new drone is found.
+	if (( !array_find_int(nf, IDarray, ac_id, &i))  // If yes, a new drone is found.
 		   && (nf < NUAVS-1))  // If yes, the amount of drones does not exceed the maximum.
 	{
 		pthread_mutex_lock(&ekf_mutex);
-		IDarray[nf] = ac_id; 				// Store ID in an array (logging purposes)
-		ekf_filter_new(&ekf[nf]); 			// Initialize an EKF filter for the newfound drone
+		IDarray[ac_id] = ac_id; 				// Store ID in an array (logging purposes)
+		ekf_filter_new(&ekf[ac_id]); 			// Initialize an EKF filter for the newfound drone
 
-		initNewEkfFilter(&ekf[nf]);
+		initNewEkfFilter(&ekf[ac_id]);
 		nf++; 			 	// Number of filter is present is increased
 		pthread_mutex_unlock(&ekf_mutex);
 	}
 	// Else, if we do recognize the ID, then we can update the measurement message data
-	else if ((i != -1) || (nf == (NUAVS-1)) )
+	else if (i != -1)
 	{
 		float dt = (get_sys_time_usec() - now_ts[i])/pow(10,6); // Update the time between messages
 		rangearray[i] = range; // Store RSSI in array (for logging purposes)
@@ -152,6 +152,7 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 		float ownYawr = uwb_smooth_yawr;
 
 		// Bind to realistic amounts to avoid occasional spikes/NaN/inf errors
+		keepbounded(&range,0.0,7.0);
 		keepbounded(&ownVx,-3.0,3.0);
 		keepbounded(&ownVy,-3.0,3.0);
 		keepbounded(&trackedVx,-3.0,3.0);
@@ -191,25 +192,26 @@ static void uwbmsg_cb(uint8_t sender_id __attribute__((unused)),
 			//ekf[i].X[7] = 0.0; // Bias
 			*/
 		}
-		AbiSendMsgUWB_NDI(UWB_NDI_SENDER_ID,now_ts[i]/pow(10,6),dt,range,trackedVx,trackedVy,trackedh ,trackedAx,trackedAy,trackedYawr,ekf[i].X[0],ekf[i].X[1],ekf[i].X[2],ekf[i].X[3],ekf[i].X[4],ekf[i].X[5],ekf[i].X[6],ekf[i].X[7],ekf[i].X[8]);
-	}
+		AbiSendMsgUWB_NDI(UWB_NDI_SENDER_ID,i,now_ts[i]/pow(10,6),dt,range,trackedVx,trackedVy,trackedh ,trackedAx,trackedAy,trackedYawr,ekf[i].X[0],ekf[i].X[1],ekf[i].X[2],ekf[i].X[3],ekf[i].X[4],ekf[i].X[5],ekf[i].X[6],ekf[i].X[7],ekf[i].X[8]);
+
 
 	//pthread_mutex_unlock(&ekf_mutex);
 
 
-	now_ts[i] = get_sys_time_usec();  // Store latest time
-	if(((get_sys_time_usec()/pow(10,6))-oldtime)>1 && RL_PRINT_EKF){
-		oldtime = get_sys_time_usec()/pow(10,6);
-		printf("Current estimate of EKF is x,y,z1,z2,u1,v1,u2,v2,gam: %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
-				ekf[i].X[0],
-				ekf[i].X[1],
-				ekf[i].X[2],
-				ekf[i].X[3],
-				ekf[i].X[4],
-				ekf[i].X[5],
-				ekf[i].X[6],
-				ekf[i].X[7],
-				ekf[i].X[8]);
+		now_ts[i] = get_sys_time_usec();  // Store latest time
+		if(((get_sys_time_usec()/pow(10,6))-oldtime)>1 && RL_PRINT_EKF){
+			oldtime = get_sys_time_usec()/pow(10,6);
+			printf("Current estimate of EKF is x,y,z1,z2,u1,v1,u2,v2,gam: %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
+					ekf[i].X[0],
+					ekf[i].X[1],
+					ekf[i].X[2],
+					ekf[i].X[3],
+					ekf[i].X[4],
+					ekf[i].X[5],
+					ekf[i].X[6],
+					ekf[i].X[7],
+					ekf[i].X[8]);
+		}
 	}
 };
 //#endif
@@ -247,7 +249,7 @@ void relativelocalizationfilter_init(void)
 
 
 
-	array_make_zeros_int(NUAVS-1, IDarray); // Clear out the known IDs
+	array_make_minusone_int(NUAVS-1, IDarray); // Clear out the known IDs
 	nf = 0; // Number of active filters upon initialization
 	AbiBindMsgUWB(ABI_BROADCAST, &uwb_ev, uwbmsg_cb); // Subscribe to the ABI RSSI messages
 
