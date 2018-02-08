@@ -89,20 +89,20 @@ void uwb_logger_init(void){
 	AbiBindMsgAGL(ABI_BROADCAST, &uwb_sonar_ev,uwb_sonar_height_cb);
 	if(UWB_LOGGER){
 		for(int i=0; i<NUM_UWB_LOGGERS;i++){
-		time_t rawtime;
-		struct tm * timeinfo;
+			time_t rawtime;
+			struct tm * timeinfo;
 
 
-		time ( &rawtime );
-		timeinfo = localtime ( &rawtime );
-		char time[30];
-		strftime(time,sizeof(time),"%Y-%m-%d-%X",timeinfo);
+			time ( &rawtime );
+			timeinfo = localtime ( &rawtime );
+			char time[30];
+			strftime(time,sizeof(time),"%Y-%m-%d-%X",timeinfo);
 
-		char buf[100];
-		sprintf(buf,"/data/ftp/internal_000/UWBLogFile_%d_%s",i,time);
+			char buf[100];
+			sprintf(buf,"/data/ftp/internal_000/UWBLogFile_%d_%s",i,time);
 
-		char *UWBFileName = &buf;
-		UWBFileLogger[i] = fopen(UWBFileName,"w");
+			char *UWBFileName = &buf;
+			UWBFileLogger[i] = fopen(UWBFileName,"w");
 			fprintf(UWBFileLogger[i],"msg_count,time,dt,"
 					"state_x,state_y,state_z,"
 					"state_vx,state_vy,state_vz,"
@@ -123,7 +123,7 @@ void uwb_logger_init(void){
 #endif
 					"\n");
 
-	}
+		}
 	}
 
 }
@@ -138,77 +138,77 @@ void logEvent(uint8_t sender_id __attribute__((unused)),uint8_t ac_id, float tim
 	if(UWB_LOGGER){
 
 
-			//pthread_mutex_lock(&uwb_logger_mutex);
-			fprintf(UWBFileLogger[ac_id],"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
+		//pthread_mutex_lock(&uwb_logger_mutex);
+		fprintf(UWBFileLogger[ac_id],"%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f"
 #if UWB_LOG_NDI
-					",%f,%f,%f,%f"
+				",%f,%f,%f,%f"
 #endif
-					"\n",
-					counter,
-					time,
-					dt,
-					current_pos.y,
-					current_pos.x,
-					-current_pos.z,
-					current_speed.y,
-					current_speed.x,
-					-current_speed.z,
-					current_accel.x,
-					current_accel.y,
-					current_accel.z,
-					uwb_smooth_ax,
-					uwb_smooth_ay,
-					current_eulers.phi,
-					current_eulers.theta,
-					current_eulers.psi,
-					current_rates.p,
-					current_rates.q,
-					current_rates.r,
-					uwb_smooth_yawr,
-					uwb_gps_ned_pos_cm_f.x/100.f,
-					uwb_gps_ned_pos_cm_f.y/100.f,
-					uwb_gps_ned_pos_cm_f.z/100.f,
-					uwb_gps_ned_vel_cm_s_f.x/100.f,
-					uwb_gps_ned_vel_cm_s_f.y/100.f,
-					uwb_gps_ned_vel_cm_s_f.z/100.f,
-					uwb_optic_vel_m_s_f.x,
-					uwb_optic_vel_m_s_f.y,
-					uwb_optic_vel_m_s_f.z,
-					-uwb_sonarheight,
-					-ins_int.baro_z,
-					range,
-					trackedVx,
-					trackedVy,
-					trackedh,
-					trackedAx,
-					trackedAy,
-					trackedYawr,
-					xin,
-					yin,
-					h1in,
-					h2in,
-					u1in,
-					v1in,
-					u2in,
-					v2in,
-					gammain,
-					(float)actuators_bebop.rpm_obs[0],
-					(float)actuators_bebop.rpm_obs[1],
-					(float)actuators_bebop.rpm_obs[2],
-					(float)actuators_bebop.rpm_obs[3],
-					(float)actuators_bebop.rpm_ref[0],
-					(float)actuators_bebop.rpm_ref[1],
-					(float)actuators_bebop.rpm_ref[2],
-					(float)actuators_bebop.rpm_ref[3]
+				"\n",
+				counter,
+				time,
+				dt,
+				current_pos.y,
+				current_pos.x,
+				-current_pos.z,
+				current_speed.y,
+				current_speed.x,
+				-current_speed.z,
+				current_accel.x,
+				current_accel.y,
+				current_accel.z,
+				uwb_smooth_ax,
+				uwb_smooth_ay,
+				current_eulers.phi,
+				current_eulers.theta,
+				current_eulers.psi,
+				current_rates.p,
+				current_rates.q,
+				current_rates.r,
+				uwb_smooth_yawr,
+				uwb_gps_ned_pos_cm_f.x/100.f,
+				uwb_gps_ned_pos_cm_f.y/100.f,
+				uwb_gps_ned_pos_cm_f.z/100.f,
+				uwb_gps_ned_vel_cm_s_f.x/100.f,
+				uwb_gps_ned_vel_cm_s_f.y/100.f,
+				uwb_gps_ned_vel_cm_s_f.z/100.f,
+				uwb_optic_vel_m_s_f.x,
+				uwb_optic_vel_m_s_f.y,
+				uwb_optic_vel_m_s_f.z,
+				-uwb_sonarheight,
+				-ins_int.baro_z,
+				range,
+				trackedVx,
+				trackedVy,
+				trackedh,
+				trackedAx,
+				trackedAy,
+				trackedYawr,
+				xin,
+				yin,
+				h1in,
+				h2in,
+				u1in,
+				v1in,
+				u2in,
+				v2in,
+				gammain,
+				(float)actuators_bebop.rpm_obs[0],
+				(float)actuators_bebop.rpm_obs[1],
+				(float)actuators_bebop.rpm_obs[2],
+				(float)actuators_bebop.rpm_obs[3],
+				(float)actuators_bebop.rpm_ref[0],
+				(float)actuators_bebop.rpm_ref[1],
+				(float)actuators_bebop.rpm_ref[2],
+				(float)actuators_bebop.rpm_ref[3]
 #if UWB_LOG_NDI
-					,ndihandle.commands[0],
-					ndihandle.commands[1],
-					ndihandle.commandscap[0],
-					ndihandle.commandscap[1]
+,ndihandle.commands[0],
+ndihandle.commands[1],
+ndihandle.commandscap[0],
+ndihandle.commandscap[1]
 #endif
-			);
-			//pthread_mutex_unlock(&uwb_logger_mutex);
-			counter++;
+		);
+		//pthread_mutex_unlock(&uwb_logger_mutex);
+		counter++;
 
 
 	}
@@ -241,9 +241,9 @@ void uwb_logger_event(void){
 
 char* uwbstrconcat(const char *s1, const char *s2)
 {
-    char *result = malloc(strlen(s1)+strlen(s2)+1);//+1 for the zero-terminator
-    //in real code you would check for errors in malloc here
-    strcpy(result, s1);
-    strcat(result, s2);
-    return result;
+	char *result = malloc(strlen(s1)+strlen(s2)+1);//+1 for the zero-terminator
+	//in real code you would check for errors in malloc here
+	strcpy(result, s1);
+	strcat(result, s2);
+	return result;
 }

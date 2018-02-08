@@ -17,6 +17,10 @@
 
 #define NDI_MOST_RECENT ndihandle.data_entries-1
 
+#ifndef UWB_NDI_DELAY
+#define UWB_NDI_DELAY 4
+#endif
+
 #define UWB_NDI_LOGGER false
 static FILE *NDIFileLogger = NULL;
 
@@ -32,7 +36,7 @@ float computeNdiFloatIntegral(float* ndiarr, float curtime);
 void bindNorm(void);
 char* strconcat(const char *s1, const char *s2);
 
-ndihandler ndihandle = {.delay = 5,
+ndihandler ndihandle = {.delay = UWB_NDI_DELAY,
 		.tau_x=3,
 		.tau_y = 3,
 		.wn_x = 0.9,

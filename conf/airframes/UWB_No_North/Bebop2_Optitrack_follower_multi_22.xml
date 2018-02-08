@@ -44,7 +44,9 @@
       <configure name="EKF_XZERO" value="-2"/>
       <configure name="EKF_YZERO" value="0"/>
     </module>
-    <module name="uwb_follower_control"/>
+    <module name="uwb_follower_control">
+      <configure name="UWB_NDI_DELAY" value="3"/>
+    </module>
     <module name="uwb_logger.xml">
       <define name="UWB_LOG_NDI" value="1"/>
     </module>

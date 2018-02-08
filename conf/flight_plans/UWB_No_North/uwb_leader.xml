@@ -55,7 +55,7 @@
 		</sector>
 	</sectors>
 	<variables>
-		<variable var="selfradius" min="-6" max="6" step="0.1" init="-3.4"/>
+		<variable var="selfradius" min="-6" max="6" step="0.1" init="-3.2"/>
 		<variable var="selfheading" min="0" max="360" step="10" init="0.0" />
 	</variables>
 	<exceptions>

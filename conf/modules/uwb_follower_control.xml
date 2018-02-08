@@ -12,7 +12,9 @@
 	<init fun="uwb_ndi_follower_init()" />
 	<periodic fun="calcNdiCommands()" freq="20" autorun="TRUE" />
 	<!--periodic fun="printNdiVars()" freq="1" autorun="TRUE"/-->
-	<makefile target="ap">
+	<makefile>
 		<file name="uwb_follower_control.c" />
+		<configure name="UWB_NDI_DELAY" default="4"/>
+		<define name="UWB_NDI_DELAY" value="$(UWB_NDI_DELAY)"/>
 	</makefile>
 </module>

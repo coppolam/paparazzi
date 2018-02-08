@@ -152,6 +152,10 @@
         <arg flag="-udp"/>
       </program>
       <program name="Joystick">
+        <arg flag="-ac bebop2_18"/>
+        <arg flag="hobbyking.xml"/>
+      </program>
+      <program name="Joystick">
         <arg flag="-ac bebop2_22"/>
         <arg flag="hobbyking.xml"/>
       </program>
