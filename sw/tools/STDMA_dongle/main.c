@@ -57,8 +57,6 @@ struct sockaddr_in server_addr, client_addr;
 
 uint8 MAC_ADDR[] = {0x0, 0x00, 0x1e, 0x80, 0x07, 0x00}; //{0x40,0xe0,0x2d,0x80,0x07,0x00};
 
-FILE *fp;
-
 // ADVertizement data
 uint8_t adv_data[31];
 uint8_t adv_data_len;
@@ -99,7 +97,7 @@ const uint8_t POS_ADV_TX_STRENGTH = 9;                // transmit power dBm
 
 uint8_t broadcast_msg[128];                    // temporary buffer for recieved data waiting to be sent to lisa
 int8_t broadcast_len;
-
+FILE *fp;
 // PPRZ MSG positions
 const uint8_t PPRZ_POS_STX = 0;
 const uint8_t PPRZ_POS_LEN = 1;
@@ -243,6 +241,12 @@ void ble_evt_gap_scan_response(const struct ble_msg_gap_scan_response_evt_t *msg
 #ifdef DEBUG
   int i;
   debug_print("recv'd data: ");
+  
+  FILE *fp = fopen("data.rssilog","a");
+  struct timeval start;
+  gettimeofday(&start, NULL);
+  fprintf(fp,"%lu.%lu %d %d \n", start.tv_sec, start.tv_usec, msg->sender.addr[0], 128-rssi_msg[4]);
+  fclose(fp);
   for (i = 0; i < msg->data.len - STDMA_ADV_HEADER_LEN + 8; i++) {
     debug_print("%02x ", data[i]);
   }
@@ -459,7 +463,7 @@ int main(int argc, char *argv[])
   adv_data[9] = 0x03;
   
   // set fake initial aircraft id
-  adv_data[STDMA_ADV_HEADER_LEN + PPRZ_POS_SENDER_ID] = 2;
+  adv_data[STDMA_ADV_HEADER_LEN + PPRZ_POS_SENDER_ID] = 5;
 
   // msg data
   adv_data_len = STDMA_ADV_MAX_DATA_LEN;
