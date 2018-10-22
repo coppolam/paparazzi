@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Gautier Hattenberger <gautier.hattenberger@enac.fr>
+ * Copyright (C) Thomas Fijen
  *
  * This file is part of paparazzi
  *
@@ -18,25 +18,30 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/decawave/dw1000_arduino.h"
- * @author Gautier Hattenberger
- * Driver to get ranging data from Decawave DW1000 modules connected to Arduino
+ * @file "modules/decawave/gps_uwb.h"
+ * @author Thomas Fijen
+ * Use this file so that the UWB can be simulated as a primary GPS structure
  */
 
-#ifndef DW1000_ARDUINO_H
-#define DW1000_ARDUINO_H
+#ifndef GPS_UWB_H
+#define GPS_UWB_H
 
-extern void dw1000_arduino_init(void);
-extern void dw1000_arduino_periodic(void);
-extern void dw1000_arduino_report(void);
-extern void dw1000_arduino_event(void);
+#include "std.h"
+#include "generated/airframe.h"
+#include "subsystems/gps.h"
 
-/** Reset reference heading to current heading
- * AHRS/INS should be aligned before calling this function
- */
-extern void dw1000_reset_heading_ref(void);
 
- extern void getRanges(float ranges[4]);
-
+#ifndef PRIMARY_GPS
+#define PRIMARY_GPS GPS_UWB
 #endif
 
+extern struct GpsState gps_uwb;
+
+extern void gps_uwb_init(void);
+extern void gps_uwb_event(void);
+#define gps_uwb_periodic_check() gps_periodic_check(&gps_uwb)
+ 
+extern void update_uwb(uint32_t now_ts, struct GpsState *gps_dw1000);
+ 
+
+#endif

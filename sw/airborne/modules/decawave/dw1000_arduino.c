@@ -18,9 +18,11 @@
  * <http://www.gnu.org/licenses/>.
  */
 /**
- * @file "modules/decawave/dw1000_arduino.c"
- * @author Gautier Hattenberger
- * Driver to get ranging data from Decawave DW1000 modules connected to Arduino
+ * @file "modules/decawave/uwb_dw1000_delft.c"
+ * @author Thomas Fijen
+ * This is a driver to get ranging data from the Decawave DW1000 connected to Arduino. The format of the data recieved over the serial link is: 
+ * [(byte) START_MARKER, (byte) anchorID, (float) range]. This module is based off of the module 'dw1000_arduino' created by 
+ *  Gautier Hattenberger <gautier.hattenberger@enac.fr>
  */
 
 #include "modules/decawave/dw1000_arduino.h"
@@ -31,7 +33,9 @@
 #include "subsystems/datalink/downlink.h"
 #include "subsystems/abi.h"
 #include "modules/decawave/trilateration.h"
+#include "modules/decawave/quadrilateration.h"
 #include "subsystems/gps.h"
+#include "subsystems/gps/gps_uwb.h"
 #include "state.h"
 #include "generated/flight_plan.h"
 #include "generated/airframe.h"
@@ -69,6 +73,12 @@
 #define DW1000_TIMEOUT 500
 #endif
 
+#if DW1000_NB_ANCHORS == 3
+   #define TRILAT TRUE
+#else
+   #define TRILAT FALSE
+#endif
+
 /** frame sync byte */
 #define DW_STX 0xFE
 
@@ -78,6 +88,8 @@
 #define DW_GET_CK 2
 #define DW_NB_DATA 6
 
+static bool _inProgress = false;
+static uint8_t _varByte = 0;
 /** DW1000 positionning system structure */
 struct DW1000 {
   uint8_t buf[DW_NB_DATA];    ///< incoming data buffer
@@ -94,7 +106,6 @@ struct DW1000 {
 };
 
 static struct DW1000 dw1000;
-
 
 /** Utility function to get float from buffer */
 static inline float float_from_buf(uint8_t* b) {
@@ -188,7 +199,12 @@ static void send_gps_dw1000_small(struct DW1000 *dw)
 
   // publish new GPS data
   uint32_t now_ts = get_sys_time_usec();
+if ABI_GPS
+  // -- Sending the position to the Auto pilot
   AbiSendMsgGPS(GPS_DW1000_ID, now_ts, &(dw->gps_dw1000));
+#else
+  update_uwb(now_ts, &(dw->gps_dw1000));
+#endif
 }
 
 void dw1000_reset_heading_ref(void)
@@ -249,8 +265,9 @@ void dw1000_arduino_init()
   ltp_def_from_lla_i(&dw1000.ltp_def, &llh_nav0);
 
   // init trilateration algorithm
-  trilateration_init(dw1000.anchors);
-
+  if (TRILAT) {
+    trilateration_init(dw1000.anchors); 
+  }
 }
 
 void dw1000_arduino_periodic()
