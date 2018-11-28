@@ -101,7 +101,9 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     discrete_ekf_predict(&ekf_rl[idx]);
     discrete_ekf_update(&ekf_rl[idx], Z);
 #endif
-
+    AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[i], now_ts[i]/pow(10,6), dt, 
+      range, trackedVx, trackedVy, trackedh, trackedAx, trackedAy, trackedYawr,
+      ekf[i].X[0],ekf[i].X[1],ekf[i].X[2],ekf[i].X[3],ekf[i].X[4],ekf[i].X[5],ekf[i].X[6],ekf[i].X[7],ekf[i].X[8]);
   }
 
   latest_update_time[idx] = get_sys_time_usec();
@@ -134,13 +136,4 @@ void relative_localization_filter_init(void)
 
   AbiBindMsgUWB_COMMUNICATION(UWB_COMM_ID, &range_communication_event, range_msg_callback);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RLFILTER, send_relative_localization_data);
-};
-
-void relative_localization_filter_periodic(void)
-{
-  for (int i = 0; i < number_filters; i++) {
-    // send id, x, y, z, vx, vy, vz(=0)
-    AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[i], ekf_rl[i].X[0], ekf_rl[i].X[1], ekf_rl[i].X[6],
-                                    ekf_rl[i].X[4], ekf_rl[i].X[5], 0.f);
-  }
 };
