@@ -95,15 +95,16 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     float Z[EKF_M] = {range, ownh, trackedh, ownVx, ownVy, trackedVx, trackedVy};
     discrete_ekf_no_north_predict(&ekf_rl[idx], U);
     discrete_ekf_no_north_update(&ekf_rl[idx], Z);
+    
+    AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[idx], latest_update_time[idx]/pow(10,6), range,
+      ekf_rl[idx].X[0],ekf_rl[idx].X[1], ekf_rl[idx].X[2]-ekf_rl[idx].X[3],ekf_rl[idx].X[4],ekf_rl[idx].X[5],ekf_rl[idx].X[6],ekf_rl[idx].X[7],ekf_rl[idx].X[8], trackedAx, trackedAy, trackedYawr);
+
 #else
     // Measurement Vector Z = [range owvVx(NED) ownVy(NED) tracked_v_north(NED) tracked_v_east(NED) dh]
     float Z[EKF_M] = {range, ownVx, ownVy, trackedVx, trackedVy, trackedh - ownh};
     discrete_ekf_predict(&ekf_rl[idx]);
     discrete_ekf_update(&ekf_rl[idx], Z);
 #endif
-    AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[i], now_ts[i]/pow(10,6), dt, 
-      range, trackedVx, trackedVy, trackedh, trackedAx, trackedAy, trackedYawr,
-      ekf[i].X[0],ekf[i].X[1],ekf[i].X[2],ekf[i].X[3],ekf[i].X[4],ekf[i].X[5],ekf[i].X[6],ekf[i].X[7],ekf[i].X[8]);
   }
 
   latest_update_time[idx] = get_sys_time_usec();

@@ -1,0 +1,73 @@
+<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+
+<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789"
+  max_dist_from_home="8" name="Follower Flight Plan" security_height="0.4">
+  <header>
+    #include "autopilot.h"
+    #include "subsystems/ahrs.h"
+    #include "subsystems/electrical.h"
+    #include "subsystems/datalink/datalink.h"
+  </header>
+  <waypoints>
+    <waypoint height="0" name="HOME" x="0.0" y="0.0" />
+    <waypoint name="HOVER" x="1.0" y="1.0"/>
+    <waypoint name="TD" x="0.8" y="-1.7" />
+    <waypoint name="t0" x="0.9" y="0.0"/>
+    <waypoint name="t1" x="0.0" y="0.9"/>
+    <waypoint name="t2" x="-0.9" y="0.0"/>
+    <waypoint name="t3" x="0.0" y="-0.9"/>
+    <waypoint lat="51.9906213" lon="4.3768628" name="_CZ1" />
+    <waypoint lat="51.9905874" lon="4.3767766" name="_CZ2" />
+    <waypoint lat="51.9906409" lon="4.3767226" name="_CZ3" />
+    <waypoint lat="51.990667" lon="4.376806" name="_CZ4" />
+    <waypoint lat="51.9906831" lon="4.3768073" name="_DZ1" />
+    <waypoint lat="51.9906472" lon="4.3767093" name="_DZ2" />
+    <waypoint lat="51.9905876" lon="4.3767679" name="_DZ3" />
+    <waypoint lat="51.9906254" lon="4.3768677" name="_DZ4" />
+  </waypoints>
+  <sectors>
+    <sector color="orange" name="DangerZone">
+      <corner name="_DZ1" />
+      <corner name="_DZ2" />
+      <corner name="_DZ3" />
+      <corner name="_DZ4" />
+    </sector>
+  </sectors>
+    <exceptions>
+    <exception cond="datalink_time>=2" deroute="Force Kill Engines"/>
+    <exception cond="radio_control.status == RC_REALLY_LOST" deroute="Force Kill Engines"/>
+  </exceptions>
+  <blocks>
+    <block name="FPInit">
+          <while cond="!GpsFixValid()"/>
+          <while cond="1"/>
+      </block>
+    <block name="Force Start Engines" strip_button="Takeoff" strip_icon="takeoff.png">
+      <call_once fun="guidance_v_set_guided_th(0.2)"/>
+        <call_once fun="autopilot_set_motors_on(TRUE)"/>
+        </block>
+    <block name="Force Kill Engines">
+        <call_once fun="autopilot_set_motors_on(FALSE)"/>
+          <while cond="1"/>
+        </block>
+    <block name="Hover">
+      <call_once fun="NavSetWaypointHere(WP_HOVER)" />
+      <while cond="TRUE">
+        <call_once fun="flyToWaypoint(WP_HOVER)"/>
+      </while>
+    </block>
+    <block name="Follow Leader"> <!-- Engage GUIDED mode for this -->
+      <while cond="TRUE">
+        <call_once fun="ndi_follow_leader()"/>
+      </while>
+    </block>
+    <block name="Land" strip_button="Land Here" strip_icon="land-right.png">
+      <call fun="goLand()"/>
+          <while cond="1"/>
+    </block>
+    <block name="Force Kill Engines">
+        <call_once fun="autopilot_set_motors_on(FALSE)"/>
+      <while cond="1"/>
+    </block>
+    </blocks>
+</flight_plan>

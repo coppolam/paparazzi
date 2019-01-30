@@ -58,7 +58,7 @@ extern void uwb_follower_control_init(void)
   AbiBindMsgRELEATIVE_LOCALIZATION(ABI_BROADCAST, &relative_localization_ev, relative_localization_callback);
 }
 
-void relative_localization_callback(uint8_t sender_id __attribute__((unused)),uint8_t ac_id,float time, float dt, float range, float trackedVx, float trackedVy, float trackedh, float trackedAx, float trackedAy, float trackedYawr, float xin, float yin, float h1in, float h2in, float u1in, float v1in, float u2in, float v2in, float gammain){
+void relative_localization_callback(uint8_t sender_id __attribute__((unused)),uint8_t ac_id, float time, float range, float trackedAx, float trackedAy, float trackedYawr, float xin, float yin, float zin __attribute__((unused)), float u1in, float v1in, float u2in, float v2in, float gammain){
   if (ac_id != 0) {
     return;
   }
