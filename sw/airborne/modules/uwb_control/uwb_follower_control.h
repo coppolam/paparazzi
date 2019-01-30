@@ -45,10 +45,10 @@ extern ndihandler ndihandle;
 extern bool startNdiTracking(void);
 extern bool stopNdiTracking(void);
 extern bool ndi_follow_leader(void);
-extern void addNdiValues(uint8_t ac_id, float time, float dt, float range, float trackedVx, float trackedVy,
-                         float trackedh, float trackedAx, float trackedAy, float trackedYawr, float xin, float yin, float h1in, float h2in,
-                         float u1in, float v1in, float u2in, float v2in, float gammain);
-extern void uwb_ndi_follower_init(void);
-extern void calcNdiCommands(void);
 
-#endif
+extern void relative_localization_callback(uint8_t ac_id, float time, float range, float trackedh, float trackedAx, float trackedAy, float trackedYawr, float xin, float yin, float zin, float u1in, float v1in, float u2in, float v2in, float gammain);
+
+extern void uwb_follower_control_init(void);
+extern void uwb_follower_control_periodic(void);
+
+#endif /*UWB_FOLLOWER_CONTROL*/
