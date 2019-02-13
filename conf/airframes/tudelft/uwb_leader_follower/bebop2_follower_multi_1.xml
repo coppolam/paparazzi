@@ -45,7 +45,8 @@
     <module name="uwb_follower_control">
       <configure name="UWB_NDI_DELAY" value="6"/>
     </module>
-        
+    
+    <module name="bebop_cam"/>
     <module name="video_thread"/>
     <module name="pose_history"/>
     <module name="cv_opticflow">

@@ -34,7 +34,8 @@
   <modules main_freq="512">
     <module name="geo_mag"/>
     <module name="air_data"/>
-    <module name="send_imu_mag_current"/>   
+    <module name="send_imu_mag_current"/>
+    <module name="bebop_cam"/>   
     <module name="video_thread"/>
     <module name="pose_history"/>
     <module name="cv_opticflow">
