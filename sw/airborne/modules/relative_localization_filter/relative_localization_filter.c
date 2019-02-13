@@ -105,7 +105,6 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     othVx = ekf_rl[idx].X[6];
     othVy = ekf_rl[idx].X[7];
     gam = ekf_rl[idx].X[8];
-    
 #else
     // Measurement Vector Z = [range owvVx(NED) ownVy(NED) tracked_v_north(NED) tracked_v_east(NED) dh]
     float Z[EKF_M] = {range, ownVx, ownVy, trackedVx, trackedVy, trackedh - ownh};
@@ -119,9 +118,9 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     othVy = ekf_rl[idx].X[5];
     rel_z = ekf_rl[idx].X[6];
     gam = 0.0; // not observed
-
 #endif
 
+    // Send output
     AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[idx], latest_update_time[idx]/pow(10,6), 
       range, rel, rely, relz, owvVx, ownVy, othVx, othVy, gam, trackedAx, trackedAy, trackedYawr);
 
@@ -130,7 +129,10 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
   latest_update_time[idx] = get_sys_time_usec();
 };
 
-// It is best to send the data of each tracked drone separately to avoid overloading
+/** Function to send data as a paparazzi message 
+ * It is best to send the data of each tracked drone separately to avoid overloading.
+ * It is only for monitoring/logging. For accurate logging it is best to record the data onboard.
+ */
 static void send_relative_localization_data(struct transport_tx *trans, struct link_device *dev)
 {
   pprzmsg_cnt++;
@@ -148,6 +150,9 @@ static void send_relative_localization_data(struct transport_tx *trans, struct l
   }
 };
 
+/** Initialization function
+  * Calls ABI message to read a range measurement and registers telemetry
+  */
 void relative_localization_filter_init(void)
 {
   int32_vect_set_value(id_array, RELATIVE_LOCALIZATION_N_UAVS + 1,
