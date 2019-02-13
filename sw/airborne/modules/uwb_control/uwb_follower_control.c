@@ -14,8 +14,9 @@
 
 #define NDI_MOST_RECENT ndihandle.data_entries-1
 
+// Delay of trajectory with respect to the leader, if not specified in airframe file
 #ifndef UWB_NDI_DELAY
-#define UWB_NDI_DELAY 4 // Delay of trajectory with respect to the leader
+#define UWB_NDI_DELAY 4
 #endif
 
 #define TRAJ_EPS 0.5
@@ -58,7 +59,7 @@ extern void uwb_follower_control_init(void)
   AbiBindMsgRELEATIVE_LOCALIZATION(ABI_BROADCAST, &relative_localization_ev, relative_localization_callback);
 }
 
-void relative_localization_callback(uint8_t sender_id __attribute__((unused)),uint8_t ac_id, float time, float range, float trackedAx, float trackedAy, float trackedYawr, float xin, float yin, float zin __attribute__((unused)), float u1in, float v1in, float u2in, float v2in, float gammain){
+void relative_localization_callback(uint8_t sender_id __attribute__((unused)),uint8_t ac_id, float time, float range, float xin, float yin, float zin __attribute__((unused)), float u1in, float v1in, float u2in, float v2in, float gammain, float trackedAx, float trackedAy, float trackedYawr){
   if (ac_id != 0) {
     return;
   }
@@ -251,7 +252,14 @@ void bindNorm(void)
 bool ndi_follow_leader(void)
 {
   bool temp = true;
+  
+  // Set height
   temp &= guidance_v_set_guided_z(-NDI_FLIGHT_HEIGHT);
-  temp &= guidance_h_set_guided_vel(ndihandle.commands[0], ndihandle.commands[1]);
+  
+  // Set horizontal speed
+  if  (stateGetPositionEnu_f()>1.0) {
+    temp &= guidance_h_set_guided_vel(ndihandle.commands[0], ndihandle.commands[1]);
+  }
+
   return !temp;
 }
