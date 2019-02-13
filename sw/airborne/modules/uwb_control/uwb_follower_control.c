@@ -34,6 +34,7 @@
 #include "firmwares/rotorcraft/autopilot_guided.h"
 #include "navigation.h"
 
+#include "subsystems/datalink/telemetry.h"
 #define NDI_METHOD 1
 // method 0 is first order approximation, no acceleration or yaw rate used
 // method 1 is first order approximation, acceleration and yaw rate used, but yaw rate not taken into account in integral
@@ -111,10 +112,15 @@ static void relative_localization_callback(uint8_t sender_id __attribute__((unus
   pthread_mutex_unlock(&uwb_ndi_mutex);
 }
 
+static void send_ndi_data(struct transport_tx *trans, struct link_device *dev)
+{
+  pprz_msg_send_NDI_CMD(trans, dev, AC_ID, &ndihandle.commands[0], &ndihandle.commands[1]);
+};
+
 extern void uwb_follower_control_init(void)
 {
   init_butterworth_2_low_pass(&uwb_butter_yawr, UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR, 1. / PERIODIC_FREQUENCY, 0.0);
-
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_NDI_CMD, send_ndi_data);
   AbiBindMsgRELATIVE_LOCALIZATION(ABI_BROADCAST, &relative_localization_event, relative_localization_callback);
 }
 
@@ -215,7 +221,6 @@ void uwb_follower_control_periodic(void)
 
     float_mat_vect_mul(ndihandle.commands, _MINV, sig, 2, 2);
     bindNorm(); // Bind output
-
   }
 }
 

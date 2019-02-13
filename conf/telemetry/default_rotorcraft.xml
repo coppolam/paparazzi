@@ -35,6 +35,8 @@
       <message name="LOGGER_STATUS"            period="5.1"/>
       <message name="LIDAR"                    period="1.2"/>
       <message name="INS_EKF2"                 period=".25"/>
+      <message name="RLFILTER"                 period="0.1"/>
+      <message name="NDI_CMD"                  period="0.1"/>
     </mode>
 
     <mode name="ppm">
