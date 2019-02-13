@@ -62,7 +62,7 @@
         </block>
 		<block name="Hover">
 			<while cond="TRUE">
-				<call_once fun="hoverGuided()"/>
+				<call_once fun="hover_guided()"/>
 			</while>
 		</block>
 		<block name="Follow Leader">
