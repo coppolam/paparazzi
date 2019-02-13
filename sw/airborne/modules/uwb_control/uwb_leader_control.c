@@ -4,7 +4,6 @@
 #include <std.h>
 #include "uwb_leader_control.h"
 #include "generated/flight_plan.h"
-#include "uwb_state_control.h"
 
 #define TRAJ_EPS 0.8
 #define TRAJ_LENGTH 8

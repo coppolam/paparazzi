@@ -84,7 +84,7 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     range_array[idx] = range;
     ekf_rl[idx].dt = (get_sys_time_usec() - latest_update_time[idx]) / pow(10, 6); // Update the time between messages
 
-    float relx, rely, relz, othVx, othVy, gam;
+    float rel_x, rel_y, rel_z, othVx, othVy, gam;
     float ownVx = stateGetSpeedNed_f()->x;
     float ownVy = stateGetSpeedNed_f()->y;
     float ownh = stateGetPositionEnu_f()->z;
@@ -97,8 +97,6 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     float Z[EKF_M] = {range, ownh, trackedh, ownVx, ownVy, trackedVx, trackedVy};
     discrete_ekf_no_north_predict(&ekf_rl[idx], U);
     discrete_ekf_no_north_update(&ekf_rl[idx], Z);
-    rel_x = ekf_rl[idx].X[0];
-    rel_y = ekf_rl[idx].X[1];
     rel_z = ekf_rl[idx].X[2]-ekf_rl[idx].X[3];
     ownVx = ekf_rl[idx].X[4];
     ownVy = ekf_rl[idx].X[5];
@@ -110,8 +108,6 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     float Z[EKF_M] = {range, ownVx, ownVy, trackedVx, trackedVy, trackedh - ownh};
     discrete_ekf_predict(&ekf_rl[idx]);
     discrete_ekf_update(&ekf_rl[idx], Z);
-    rel_x = ekf_rl[idx].X[0];
-    rel_y = ekf_rl[idx].X[1];
     ownVx = ekf_rl[idx].X[2];
     ownVy = ekf_rl[idx].X[3];
     othVx = ekf_rl[idx].X[4];
@@ -119,11 +115,12 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     rel_z = ekf_rl[idx].X[6];
     gam = 0.0; // not observed
 #endif
+    rel_x = ekf_rl[idx].X[0];
+    rel_y = ekf_rl[idx].X[1];
 
     // Send output
-    AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[idx], latest_update_time[idx]/pow(10,6), 
-      range, rel, rely, relz, owvVx, ownVy, othVx, othVy, gam, trackedAx, trackedAy, trackedYawr);
-
+    AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[idx], latest_update_time[idx] / pow(10, 6),
+                                    range, rel_x, rel_y, rel_z, ownVx, ownVy, othVx, othVy, gam, trackedAx, trackedAy, trackedYawr);
   }
 
   latest_update_time[idx] = get_sys_time_usec();
@@ -156,7 +153,7 @@ static void send_relative_localization_data(struct transport_tx *trans, struct l
 void relative_localization_filter_init(void)
 {
   int32_vect_set_value(id_array, RELATIVE_LOCALIZATION_N_UAVS + 1,
-                       RELATIVE_LOCALIZATION_N_UAVS); // The id_array is initialized with non-existant IDs (assuming UWB IDs are 0,1,2...)
+                       RELATIVE_LOCALIZATION_N_UAVS); // The id_array is initialized with non-existant IDs (assuming assignedUWB IDs are 0,1,2...)
   number_filters = 0;
   pprzmsg_cnt = 0;
 

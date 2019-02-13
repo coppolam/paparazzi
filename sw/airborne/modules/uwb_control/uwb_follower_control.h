@@ -46,8 +46,6 @@ extern bool startNdiTracking(void);
 extern bool stopNdiTracking(void);
 extern bool ndi_follow_leader(void);
 
-extern void relative_localization_callback(uint8_t ac_id, float time, float range, float trackedh, float trackedAx, float trackedAy, float trackedYawr, float xin, float yin, float zin, float u1in, float v1in, float u2in, float v2in, float gammain);
-
 extern void uwb_follower_control_init(void);
 extern void uwb_follower_control_periodic(void);
 
