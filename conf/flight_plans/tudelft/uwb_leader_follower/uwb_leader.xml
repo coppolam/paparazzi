@@ -1,9 +1,10 @@
-<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+<!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
 
-<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789"
-	max_dist_from_home="8" name="Test flight plan Steven" security_height="0.4">
+<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789"
+	max_dist_from_home="8" name="uwb_leader" security_height="0.4">
 	<header>
 		#include "autopilot.h"
+		#include "subsystems/radio_control.h"
 		#include "subsystems/ahrs.h"
 		#include "subsystems/electrical.h"
 		#include "subsystems/datalink/datalink.h"
@@ -15,14 +16,6 @@
 		<waypoint height="1.5" name="STDBY" x="-2" y="-2" />
 		<waypoint name="HOVER" x="1.0" y="1.0"/>
 		<waypoint name="TD" x="0.8" y="-1.7" />
-		<!-- waypoint name="t0" lat="51.9906022" lon="4.3767737" />
-		<waypoint name="t1" lat="51.9906234" lon="4.3767863" />
-		<waypoint name="t2" lat="51.9906198" lon="4.3768233" />
-		<waypoint name="t3" lat="51.9906412" lon="4.3768331" />
-		<waypoint name="t4" lat="51.9906685" lon="4.3768056" />
-		<waypoint name="t5" lat="51.9906424" lon="4.3767968" />
-		<waypoint name="t6" lat="51.9906506" lon="4.3767540" />
-		<waypoint name="t7" lat="51.9906254" lon="4.3767463" /-->
 		<waypoint name="t0" lat="51.9906059" lon="4.3767772" />
 		<waypoint name="t1" lat="51.9906269" lon="4.3767829" />
 		<waypoint name="t2" lat="51.9906216" lon="4.3768187" />
@@ -41,12 +34,6 @@
 		<waypoint lat="51.9906254" lon="4.3768677" name="_DZ4" />
 	</waypoints>
 	<sectors>
-		<!-- sector color="red" name="CyberZoo">
-			<corner name="_CZ1" />
-			<corner name="_CZ2" />
-			<corner name="_CZ3" />
-			<corner name="_CZ4" />
-		</sector-->
 		<sector color="orange" name="DangerZone">
 			<corner name="_DZ1" />
 			<corner name="_DZ2" />
@@ -59,10 +46,8 @@
 		<variable var="selfheading" min="0" max="360" step="10" init="0.0" />
 	</variables>
 	<exceptions>
-		<!--exception cond="!InsideDangerZone(GetPosX(), GetPosY())" deroute="Standby" /-->
-		<!--exception cond="datalink_time > 2" deroute="land here" /-->
-		<!-- exception cond="electrical.bat_low && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('flare')) && !(nav_block == IndexOfBlock('landed'))"	deroute="land" />
-		<exception cond="electrical.bat_critical && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('flare')) && !(nav_block == IndexOfBlock('landed'))" deroute="land here" /-->
+		<exception cond="datalink_time>=2" deroute="Force Kill Engines"/>
+		<exception cond="radio_control.status == RC_REALLY_LOST" deroute="Force Kill Engines"/>
 	</exceptions>
 	<blocks>
 		<block name="Wait GPS">
@@ -72,7 +57,6 @@
 		<block name="Geo init">
 			<while cond="LessThan(NavBlockTime(), 5)" />
 			<call_once fun="NavSetAltitudeReferenceHere()" />
-			<!-- call_once fun="NavSetGroundReferenceHere()"/-->
 		</block>
 		<block name="Holding point">
 			<call_once fun="NavKillThrottle()" />
@@ -89,7 +73,6 @@
 			<call_once fun="NavSetWaypointHere(WP_CLIMB)" />
 			<call_once fun="NavSetWaypointHere(WP_HOVER)" />
 			<stay wp="CLIMB" climb="1" vmode="climb"/>
-			<!--stay wp="CLIMB" throttle="0.5" vmode="throttle"/-->
 		</block>
 		<block name="HoverHere">
 			<call_once fun="nav_set_heading_deg(selfheading)" />
@@ -106,32 +89,10 @@
 		  <deroute block="Standby"/>
 		</block>
 		<block name="Fly_Trajectory">
-			<call_once fun="switchOnGPSandSendGPS()"/>
 			<call_once fun="initialiseTrajectory()"/>
 			<while cond="TRUE">
 				<call_once fun="flyTrajectory()"/>
 			</while>			
-		</block>
-		<block name="Fly_Trajectory_onboard">
-			<call_once fun="switchOnGPSandSendONBOARD()"/>
-			<call_once fun="initialiseTrajectory()"/>
-			<while cond="TRUE">
-				<call_once fun="flyTrajectory()"/>
-			</while>			
-		</block>
-		<block name="Circle">
-			<call_once fun="switchOnGPSandSendGPS()"/>
-			<call_once fun="nav_set_heading_deg(selfheading)" />
-			<while cond="TRUE">
-				<circle wp="CIRCLEWP" radius="selfradius" />
-			</while>
-		</block>
-		<block name="Circle_onboard">
-			<call_once fun="switchOnGPSandSendONBOARD()"/>
-			<call_once fun="nav_set_heading_deg(selfheading)" />
-			<while cond="TRUE">
-				<circle wp="CIRCLEWP" radius="selfradius" />
-			</while>
 		</block>
 		<block name="Spiral">
 			<while cond="LessThan(NavBlockTime(),300)">
@@ -157,8 +118,11 @@
 		</block>
 		<block name="landed">
 			<call_once fun="NavKillThrottle()" />
-			<attitude pitch="0" roll="0" throttle="0" until="FALSE"
-				vmode="throttle" />
+			<attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle" />
 		</block>
+		<block name="Force Kill Engines">
+			<call_once fun="autopilot_set_motors_on(FALSE)"/>
+    	<while cond="1"/>
+    </block>
 	</blocks>
 </flight_plan>
