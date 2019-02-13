@@ -2,7 +2,6 @@
 #define UWB_FOLLOWER_CONTROL_H
 
 #include <std.h>
-#include "subsystems/abi.h" // ABI messages
 
 #define NDI_FLIGHT_HEIGHT 1.5 // Flight at 1.5m unless otherwise specified.
 #define NDI_PAST_VALS 200 // Store the last 200 values in order to compute the control
@@ -40,10 +39,11 @@ typedef struct ndihandler {
   float maxcommand;
 } ndihandler;
 
-extern ndihandler ndihandle;
 
 extern bool startNdiTracking(void);
 extern bool stopNdiTracking(void);
+
+extern bool hover_guided(void);
 extern bool ndi_follow_leader(void);
 
 extern void uwb_follower_control_init(void);

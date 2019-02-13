@@ -1,15 +1,15 @@
 <!DOCTYPE module SYSTEM "module.dtd">
 
 <module name="uwb_leader_control" dir="uwb_control">
-    <doc>
-        <description>
-			Control module for leader's flight along a predefined trajectory
-        </description>
-    </doc>
-    <header>
-        <file name="uwb_leader_control.h" />
-    </header>
-    <makefile target="ap">
-        <file name="uwb_leader_control.c" />
-    </makefile>
+  <doc>
+    <description>
+      Control module for leader's flight along a predefined trajectory
+    </description>
+  </doc>
+  <header>
+    <file name="uwb_leader_control.h" />
+  </header>
+  <makefile>
+    <file name="uwb_leader_control.c" />
+  </makefile>
 </module>

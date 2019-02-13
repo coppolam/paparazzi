@@ -1,6 +1,6 @@
 <!DOCTYPE airframe SYSTEM "../../airframe.dtd">
 
-<airframe name="bebop2_indi">
+<airframe name="bebop2_follower_multi_1">
 
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2">
@@ -43,9 +43,9 @@
     <module name="relative_localization_filter"/>
 
     <module name="uwb_follower_control">
-      <configure name="UWB_NDI_DELAY" value="6"/>
+      <configure name="UWB_NDI_DELAY" value="3"/>
     </module>
-    
+
     <module name="bebop_cam"/>
     <module name="video_thread"/>
     <module name="pose_history"/>

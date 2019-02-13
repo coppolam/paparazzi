@@ -23,11 +23,12 @@
  * NDI controller to track and follow the trajectory of a leader drone through relative localization data
  */
 
+#include "uwb_follower_control.h"
 #include <time.h>
 #include <math.h>
 #include <pthread.h>
+#include "subsystems/abi.h"
 #include "generated/flight_plan.h"
-#include "uwb_follower_control.h"
 #include "firmwares/rotorcraft/guidance/guidance_h.h"
 #include "firmwares/rotorcraft/guidance/guidance_v.h"
 #include "firmwares/rotorcraft/autopilot_guided.h"
@@ -50,6 +51,7 @@
 bool ndi_following_leader = false;
 bool ndi_run_computation = true;
 uint8_t traj_targetindex = 0;
+ndihandler ndihandle;
 
 static pthread_mutex_t uwb_ndi_mutex;
 
@@ -108,7 +110,7 @@ static void relative_localization_callback(uint8_t sender_id __attribute__((unus
 
 extern void uwb_follower_control_init(void)
 {
-  AbiBindMsgRELEATIVE_LOCALIZATION(ABI_BROADCAST, &relative_localization_event, relative_localization_callback);
+  AbiBindMsgRELATIVE_LOCALIZATION(ABI_BROADCAST, &relative_localization_event, relative_localization_callback);
 }
 
 void cleanNdiValues(float tcur)
@@ -238,6 +240,14 @@ void bindNorm(void)
     ndihandle.commandscap[1] = ndihandle.commands[1];
   }
   pthread_mutex_unlock(&uwb_ndi_mutex);
+}
+
+bool hover_guided(void)
+{
+  bool temp = true;
+  temp &= guidance_v_set_guided_z(-NDI_FLIGHT_HEIGHT);
+  temp &= guidance_h_set_guided_vel(0.0, 0.0);
+  return !temp;
 }
 
 /**
