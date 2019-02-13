@@ -1,7 +1,7 @@
-<!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
+<!DOCTYPE flight_plan SYSTEM "../../flight_plan.dtd">
 
 <flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789"
-	max_dist_from_home="8" name="Flight Plan Leader follower" security_height="0.4">
+	max_dist_from_home="8" name="uwb_follower_multi" security_height="0.4">
 	<header>
 		#include "autopilot.h"
 		#include "subsystems/ahrs.h"
@@ -41,10 +41,6 @@
 		<variable var="selfheading" min="0" max="360" step="10" init="0.0"/>
 	</variables>
 	<exceptions>
-		<!--exception cond="!InsideDangerZone(GetPosX(), GetPosY())" deroute="Standby" /-->
-		<!--exception cond="datalink_time > 2" deroute="land here" /-->
-		<!-- exception cond="electrical.bat_low && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('flare')) && !(nav_block == IndexOfBlock('landed'))"	deroute="land" />
-		<exception cond="electrical.bat_critical && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('flare')) && !(nav_block == IndexOfBlock('landed'))" deroute="land here" /-->
 	</exceptions>
 	<blocks>
 		<block name="Wait GPS">
@@ -54,17 +50,32 @@
 		<block name="Geo init">
 			<while cond="LessThan(NavBlockTime(), 5)" />
 			<call_once fun="NavSetAltitudeReferenceHere()" />
-			<!-- call_once fun="NavSetGroundReferenceHere()"/-->
 		</block>
 		<block name="Holding point">
 			<call_once fun="NavKillThrottle()" />
 			<attitude pitch="0" roll="0" throttle="0"
 				vmode="throttle" />
 		</block>
-		<block name="Follow_leader">
+		<block name="Force Start Engines" strip_button="Takeoff" strip_icon="takeoff.png">
+			<call_once fun="guidance_v_set_guided_th(0.2)"/>
+     		<call_once fun="autopilot_set_motors_on(TRUE)"/>
+        </block>
+		<block name="Hover">
+			<while cond="TRUE">
+				<call_once fun="hoverGuided()"/>
+			</while>
+		</block>
+		<block name="Follow Leader">
 			<while cond="TRUE">
 				<call_once fun="ndi_follow_leader()"/>
 			</while>
 		</block>
+		<block name="Land Guided">
+			<call_once fun="guidance_v_set_guided_th(0.2)"/>
+		</block>
+		<block name="Force Kill Engines">
+			<call_once fun="autopilot_set_motors_on(FALSE)"/>
+    	<while cond="1"/>
+    </block>
 	</blocks>
 </flight_plan>
