@@ -1,0 +1,57 @@
+<conf>
+  <aircraft
+   name="bebop2_18"
+   ac_id="18"
+   airframe="airframes/UWB_No_North/Bebop2_Optitrack_follower_multi_18.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/UWB_No_North/uwb_follower.xml"
+   settings="settings/rotorcraft_basic.xml settings/estimation/ahrs_secondary.xml"
+   settings_modules="modules/cv_opticflow.xml modules/air_data.xml modules/geo_mag.xml modules/ins_hff_uwb_control.xml modules/ahrs_int_cmpl_quat_uwb_control.xml modules/stabilization_indi_simple.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml"
+   gui_color="#000006aaffff"
+  />
+  <aircraft
+   name="bebop2_22"
+   ac_id="22"
+   airframe="airframes/UWB_No_North/Bebop2_Optitrack_follower_multi_22.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/UWB_No_North/uwb_follower_multi.xml"
+   settings="settings/rotorcraft_basic.xml settings/estimation/ahrs_secondary.xml"
+   settings_modules="modules/cv_opticflow.xml modules/air_data.xml modules/geo_mag.xml modules/ins_hff_uwb_control.xml modules/ahrs_int_cmpl_quat_uwb_control.xml modules/stabilization_indi_simple.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml"
+   gui_color="#ffff00000000"
+  />
+  <aircraft
+   name="bebop2_44"
+   ac_id="44"
+   airframe="airframes/UWB_No_North/Bebop2_Optitrack_leader_multi_44.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/UWB_No_North/uwb_follower_multi.xml"
+   settings="settings/rotorcraft_basic.xml settings/estimation/ahrs_secondary.xml"
+   gui_color="#ffffffffffff"
+   settings_modules="modules/cv_opticflow.xml modules/air_data.xml modules/geo_mag.xml modules/ins_hff_uwb_control.xml modules/ahrs_int_cmpl_quat_uwb_control.xml modules/stabilization_indi_simple.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml"
+  />
+  <aircraft
+   name="bebop2_single"
+   ac_id="55"
+   airframe="airframes/UWB_No_North/Bebop2_Optitrack_No_North_Filter.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/imav2017_uwb/imav2017_uwb_forward_flight_44.xml"
+   settings="settings/rotorcraft_basic.xml settings/estimation/ahrs_secondary.xml"
+   settings_modules="modules/air_data.xml modules/geo_mag.xml modules/ins_extended.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_indi_simple.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml"
+   gui_color="#baa3d698b729"
+  />
+  <aircraft
+   name="imav"
+   ac_id="2"
+   airframe="airframes/imav2017_uwb/imav2017_uwb_bebop2_indi_no_optitrack.xml"
+   radio="radios/dummy.xml"
+   telemetry="telemetry/default_rotorcraft.xml"
+   flight_plan="flight_plans/imav2017_uwb/imav2017_uwb_forward_flight_44.xml"
+   settings="settings/rotorcraft_basic.xml settings/estimation/ahrs_secondary.xml"
+   gui_color="#baa3d698b729"
+   settings_modules="modules/cv_opticflow.xml modules/air_data.xml modules/geo_mag.xml modules/ins_hff_extended.xml modules/ahrs_int_cmpl_quat.xml modules/stabilization_indi_simple.xml modules/nav_basic_rotorcraft.xml modules/guidance_rotorcraft.xml modules/gps.xml modules/imu_common.xml"
+  />
+</conf>
