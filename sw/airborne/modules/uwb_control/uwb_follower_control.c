@@ -53,6 +53,9 @@ bool ndi_run_computation = true;
 uint8_t traj_targetindex = 0;
 ndihandler ndihandle;
 
+#define UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR 8
+Butterworth2LowPass uwb_butter_yawr;
+
 static pthread_mutex_t uwb_ndi_mutex;
 
 void cleanNdiValues(float tcur);
@@ -82,7 +85,7 @@ static void relative_localization_callback(uint8_t sender_id __attribute__((unus
   if (ac_id != 0) {
     return;
   }
-  float uwb_butter_yawr;
+  
   // Store data from leader's position estimate
   pthread_mutex_lock(&uwb_ndi_mutex);
   if (ndihandle.data_entries == NDI_PAST_VALS) {
@@ -110,6 +113,8 @@ static void relative_localization_callback(uint8_t sender_id __attribute__((unus
 
 extern void uwb_follower_control_init(void)
 {
+  init_butterworth_2_low_pass(&uwb_butter_yawr, UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR, 1. / PERIODIC_FREQUENCY, 0.0);
+
   AbiBindMsgRELATIVE_LOCALIZATION(ABI_BROADCAST, &relative_localization_event, relative_localization_callback);
 }
 
