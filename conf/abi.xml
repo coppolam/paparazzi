@@ -175,7 +175,7 @@
 
  -->
     <message name="RELATIVE_LOCALIZATION" id="24">
-      <field name="ac_id" type="uint8_t"/>
+      <field name="ac_id" type="int32_t"/>
       <field name="time" type="float" unit="s"/>
       <field name="range" type="float" unit="m"/>
       <field name="x" type="float" unit="m"/>
@@ -185,10 +185,10 @@
       <field name="vy_own" type="float" unit="m/s"/>
       <field name="vx_tracked" type="float" unit="m/s"/>
       <field name="vy_tracked" type="float" unit="m/s"/>
+      <field name="gamma" type="float" unit="rad"/>
       <field name="ax_tracked" type="float" unit="m/s^2"/>
       <field name="ay_tracked" type="float" unit="m/s^2"/>
       <field name="yawr_tracked" type="float" unit="rad/s"/>
-      <field name="gamma" type="float" unit="rad"/>
     </message>
 
     <message name="INCIDENCE" id="25">

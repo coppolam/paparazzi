@@ -75,17 +75,12 @@ ndihandler ndihandle = {.delay = UWB_NDI_DELAY,
                         .maxcommand = 1.5
                        };
 
-static abi_event relative_localization_ev;
-extern void uwb_follower_control_init(void)
-{
-  AbiBindMsgRELEATIVE_LOCALIZATION(ABI_BROADCAST, &relative_localization_ev, relative_localization_callback);
-}
-
-void relative_localization_callback(uint8_t sender_id __attribute__((unused)),uint8_t ac_id, float time, float range, float xin, float yin, float zin __attribute__((unused)), float u1in, float v1in, float u2in, float v2in, float gammain, float trackedAx, float trackedAy, float trackedYawr){
+static abi_event relative_localization_event;
+static void relative_localization_callback(uint8_t sender_id __attribute__((unused)), int32_t ac_id, float time, float range, float xin, float yin, float zin __attribute__((unused)), float u1in, float v1in, float u2in, float v2in, float gammain, float trackedAx, float trackedAy, float trackedYawr){
   if (ac_id != 0) {
     return;
   }
-  
+  float uwb_butter_yawr;
   // Store data from leader's position estimate
   pthread_mutex_lock(&uwb_ndi_mutex);
   if (ndihandle.data_entries == NDI_PAST_VALS) {
@@ -109,6 +104,11 @@ void relative_localization_callback(uint8_t sender_id __attribute__((unused)),ui
   ndihandle.data_end = (ndihandle.data_end + 1) % NDI_PAST_VALS;
   ndihandle.data_entries++;
   pthread_mutex_unlock(&uwb_ndi_mutex);
+}
+
+extern void uwb_follower_control_init(void)
+{
+  AbiBindMsgRELEATIVE_LOCALIZATION(ABI_BROADCAST, &relative_localization_event, relative_localization_callback);
 }
 
 void cleanNdiValues(float tcur)
@@ -206,7 +206,7 @@ void uwb_follower_control_periodic(void)
     sig[0] = v[0] - l[0];
     sig[1] = v[1] - l[1];
 
-    float_mat_vect_mul(ndihandle.commands, _MINV, sig, 2, 2, 1);
+    float_mat_vect_mul(ndihandle.commands, _MINV, sig, 2, 2);
     bindNorm(); // Bind output
 
   }
@@ -252,7 +252,7 @@ bool ndi_follow_leader(void)
   temp &= guidance_v_set_guided_z(-NDI_FLIGHT_HEIGHT);
   
   // Set horizontal speed X and Y
-  if  (stateGetPositionEnu_f() > 1.0) {
+  if  (stateGetPositionEnu_f()->z > 1.0) {
     temp &= guidance_h_set_guided_vel(ndihandle.commands[0], ndihandle.commands[1]);
   }
 

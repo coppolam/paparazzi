@@ -23,7 +23,7 @@
     <module name="imu" type="bebop"/>
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
-    <module name="ahrs" type="int_cmpl_quat_uwb_control">
+    <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="0"/>
       <define name="AHRS_USE_GPS_HEADING" value="1"/>
     </module>
@@ -34,15 +34,7 @@
   <modules main_freq="512">
     <module name="geo_mag"/>
     <module name="air_data"/>
-    <module name="send_imu_mag_current"/>
-
-    <module name="decawave_anchorless_communication">
-      <configure name="SERIAL_UART" value="UART2" />
-      <configure name="SERIAL_BAUD" value="B57600" />
-    </module>
-
-    <module name="uwb_leader_control"/>
-    
+    <module name="send_imu_mag_current"/>   
     <module name="video_thread"/>
     <module name="pose_history"/>
     <module name="cv_opticflow">
@@ -58,8 +50,13 @@
       <define name="OPTICFLOW_FOV_H" value="0.95"/> 
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="1.0"/>
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.9"/>
-	</module>
-    </modules>
+    </module>
+    <module name="decawave_anchorless_communication">
+      <configure name="SERIAL_UART" value="UART2" />
+      <configure name="SERIAL_BAUD" value="B57600" />
+    </module>
+    <module name="uwb_leader_control"/>
+  </modules>
   
   <commands>
     <axis name="PITCH" failsafe_value="0"/>

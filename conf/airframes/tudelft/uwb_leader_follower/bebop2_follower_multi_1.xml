@@ -23,7 +23,7 @@
     <module name="imu" type="bebop"/>
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
-    <module name="ahrs" type="int_cmpl_quat_uwb_control">
+    <module name="ahrs" type="int_cmpl_quat">
       <configure name="USE_MAGNETOMETER" value="0"/>
       <define name="AHRS_USE_GPS_HEADING" value="1"/>
     </module>
@@ -35,16 +35,12 @@
     <module name="geo_mag"/>
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
-    <module name="Decawave_Serial_Communication">
+    <module name="decawave_anchorless_communication">
       <configure name="SERIAL_UART" value="UART2" />
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
-    <module name="relative_localization_filter"/>
 
-    <module name="relative_localization_no_north">
-      <configure name="EKF_XZERO" value="-4"/>
-      <configure name="EKF_YZERO" value="0"/>
-    </module>
+    <module name="relative_localization_filter"/>
 
     <module name="uwb_follower_control">
       <configure name="UWB_NDI_DELAY" value="6"/>
@@ -65,8 +61,8 @@
       <define name="OPTICFLOW_FOV_H" value="1.1"/> 
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="1.0"/>
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.9"/>
-	</module>
-    </modules>
+    </module>
+  </modules>
   
   <commands>
     <axis name="PITCH" failsafe_value="0"/>
