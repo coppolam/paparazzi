@@ -158,56 +158,58 @@ bool stopNdiTracking(void)
   */
 void uwb_follower_control_periodic(void)
 {
-    float curtime = get_sys_time_usec() / pow(10, 6);
-    cleanNdiValues(curtime);
-    if (ndihandle.data_entries > 0) {
-      float oldx = accessCircularFloatArrElement(ndihandle.xarr, 0);
-      float oldy = accessCircularFloatArrElement(ndihandle.yarr, 0);
-      float newu1 = accessCircularFloatArrElement(ndihandle.u1arr, NDI_MOST_RECENT);
-      float newv1 = accessCircularFloatArrElement(ndihandle.v1arr, NDI_MOST_RECENT);
-      float oldu2 = accessCircularFloatArrElement(ndihandle.u2arr, 0);
-      float oldv2 = accessCircularFloatArrElement(ndihandle.v2arr, 0);
-      oldx = oldx - computeNdiFloatIntegral(ndihandle.u1arr, curtime);
-      oldy = oldy - computeNdiFloatIntegral(ndihandle.v1arr, curtime);
+  // Re-initialize commands
+  ndihandle.commands[0] = 0;
+  ndihandle.commands[1] = 0;
 
-      float Minv[2][2];
-      float_mat_zero(Minv, 2, 2); //fmat_make_zeros(Minv, 2, 2);
-      fmat_assign(0, 0, 2, Minv, -ndihandle.tau_x);
-      fmat_assign(1, 1, 2, Minv, -ndihandle.tau_y);      
-      float l[2], oldxed, oldyed;
+  // Get current values
+  float curtime = get_sys_time_usec() / pow(10, 6);
+  cleanNdiValues(curtime);
+  if (ndihandle.data_entries > 0)
+  {
+    float oldx = accessCircularFloatArrElement(ndihandle.xarr, 0);
+    float oldy = accessCircularFloatArrElement(ndihandle.yarr, 0);
+    float newu1 = accessCircularFloatArrElement(ndihandle.u1arr, NDI_MOST_RECENT);
+    float newv1 = accessCircularFloatArrElement(ndihandle.v1arr, NDI_MOST_RECENT);
+    float oldu2 = accessCircularFloatArrElement(ndihandle.u2arr, 0);
+    float oldv2 = accessCircularFloatArrElement(ndihandle.v2arr, 0);
+    oldx = oldx - computeNdiFloatIntegral(ndihandle.u1arr, curtime);
+    oldy = oldy - computeNdiFloatIntegral(ndihandle.v1arr, curtime);
+
+    float Minv[2][2];
+    MAKE_MATRIX_PTR(_MINV, Minv, 2);
+    float_mat_zero(_MINV, 2, 2); //fmat_make_zeros(Minv, 2, 2);
+    Minv[0][0] = -ndihandle.tau_x;
+    Minv[1][1] = -ndihandle.tau_y;
+    float l[2], oldxed, oldyed;
 
 #if(NDI_METHOD==0)
-      l[0] = newu1 / ndihandle.tau_x;
-      l[1] = newv1 / ndihandle.tau_y;
-      oldxed = oldu2 - newu1;
-      oldyed = oldv2 - newv1;
+    l[0] = newu1 / ndihandle.tau_x;
+    l[1] = newv1 / ndihandle.tau_y;
+    oldxed = oldu2 - newu1;
+    oldyed = oldv2 - newv1;
 #elif(NDI_METHOD==1)
-      float newr1 = accessCircularFloatArrElement(ndihandle.r1arr, NDI_MOST_RECENT);
-      float oldax2 = accessCircularFloatArrElement(ndihandle.ax2arr, 0);
-      float olday2 = accessCircularFloatArrElement(ndihandle.ay2arr, 0);
-      l[0] = (newu1 - newr1 * newr1 * oldx - newr1 * ndihandle.tau_x * newv1 + oldax2 * ndihandle.tau_x + 2 * newr1 * ndihandle.tau_x * oldv2) / ndihandle.tau_x;
-      l[1] = (newv1 - newr1 * newr1 * oldy + newr1 * ndihandle.tau_y * newu1 + olday2 * ndihandle.tau_y - 2 * newr1 * ndihandle.tau_y * oldu2) / ndihandle.tau_y;
-      oldxed = oldu2 - newu1 + newr1 * oldy;
-      oldyed = oldv2 - newv1 - newr1 * oldx;
+    float newr1 = accessCircularFloatArrElement(ndihandle.r1arr, NDI_MOST_RECENT);
+    float oldax2 = accessCircularFloatArrElement(ndihandle.ax2arr, 0);
+    float olday2 = accessCircularFloatArrElement(ndihandle.ay2arr, 0);
+    l[0] = (newu1 - newr1 * newr1 * oldx - newr1 * ndihandle.tau_x * newv1 + oldax2 * ndihandle.tau_x + 2 * newr1 * ndihandle.tau_x * oldv2) / ndihandle.tau_x;
+    l[1] = (newv1 - newr1 * newr1 * oldy + newr1 * ndihandle.tau_y * newu1 + olday2 * ndihandle.tau_y - 2 * newr1 * ndihandle.tau_y * oldu2) / ndihandle.tau_y;
+    oldxed = oldu2 - newu1 + newr1 * oldy;
+    oldyed = oldv2 - newv1 - newr1 * oldx;
 #endif
-      
-      float v[2];
-      v[0] = ndihandle.Kp * oldx + ndihandle.Kd * oldxed;
-      v[1] = ndihandle.Kp * oldy + ndihandle.Kd * oldyed;
 
-      float sig[2];
-      sig[0] = v[0] - l[0];
-      sig[1] = v[1] - l[1];
+    float v[2];
+    v[0] = ndihandle.Kp * oldx + ndihandle.Kd * oldxed;
+    v[1] = ndihandle.Kp * oldy + ndihandle.Kd * oldyed;
 
-      fmat_mult(2, 2, 1, ndihandle.commands, Minv, sig);
-      bindNorm();
-#endif
-    } else {
-      pthread_mutex_lock(&uwb_ndi_mutex);
-      ndihandle.commands[0] = 0;
-      ndihandle.commands[1] = 0;
-      pthread_mutex_unlock(&uwb_ndi_mutex);
-    }
+    float sig[2];
+    sig[0] = v[0] - l[0];
+    sig[1] = v[1] - l[1];
+
+    float_mat_vect_mul(ndihandle.commands, _MINV, sig, 2, 2, 1);
+    bindNorm(); // Bind output
+
+  }
 }
 
 // TODO: Trapezoidal integration, and not simply discarding values before tcur-delay, but linearly interpolating to tcur-delay
