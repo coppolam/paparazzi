@@ -1,3 +1,28 @@
+/*
+ * Copyright (C) Steven van der Helm
+ *
+ * This file is part of paparazzi
+ *
+ * paparazzi is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2, or (at your option)
+ * any later version.
+ *
+ * paparazzi is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with paparazzi; see the file COPYING.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+/**
+ * @file "modules/relative_localization_filter/discrete_ekf.c"
+ * @author Steven van der Helm, Mario Coppola
+ * NDI controller to track and follow the trajectory of a leader drone through relative localization data
+ */
+
 #include <time.h>
 #include <math.h>
 #include <pthread.h>
@@ -27,14 +52,11 @@ bool ndi_run_computation = true;
 uint8_t traj_targetindex = 0;
 
 static pthread_mutex_t uwb_ndi_mutex;
-static uint8_t trajectory[TRAJ_LENGTH] = {WP_t3, WP_t2, WP_t1, WP_t0};
 
 void cleanNdiValues(float tcur);
 float accessCircularFloatArrElement(float *arr, int index);
 float computeNdiFloatIntegral(float *ndiarr, float curtime);
 void bindNorm(void);
-void findNearestWaypoint(void);
-void getNextTargetWaypoint(void);
 
 // Tuned gains, as used in experiments from paper described in pre-amble comments
 ndihandler ndihandle = {.delay = UWB_NDI_DELAY,
@@ -113,29 +135,34 @@ float accessCircularFloatArrElement(float *arr, int index)
   return value;
 }
 
+/**
+  * Turns on NDI tracking. This can be called from the flight plan.
+  */
 bool startNdiTracking(void)
 {
   ndi_following_leader = true;
   return false;
 }
 
+/**
+  * Turns off NDI tracking. This can be called from the flight plan.
+  */
 bool stopNdiTracking(void)
 {
   ndi_following_leader = false;
   return false;
 }
 
-// TODO: Check behavior when array is empty!
+/**
+  * Update the NDI controller periodically
+  */
 void uwb_follower_control_periodic(void)
 {
-  if (ndi_run_computation) {
     float curtime = get_sys_time_usec() / pow(10, 6);
     cleanNdiValues(curtime);
     if (ndihandle.data_entries > 0) {
-#if(NDI_METHOD==0)
       float oldx = accessCircularFloatArrElement(ndihandle.xarr, 0);
       float oldy = accessCircularFloatArrElement(ndihandle.yarr, 0);
-
       float newu1 = accessCircularFloatArrElement(ndihandle.u1arr, NDI_MOST_RECENT);
       float newv1 = accessCircularFloatArrElement(ndihandle.v1arr, NDI_MOST_RECENT);
       float oldu2 = accessCircularFloatArrElement(ndihandle.u2arr, 0);
@@ -143,56 +170,27 @@ void uwb_follower_control_periodic(void)
       oldx = oldx - computeNdiFloatIntegral(ndihandle.u1arr, curtime);
       oldy = oldy - computeNdiFloatIntegral(ndihandle.v1arr, curtime);
 
-      float Minv[4];
-      fmat_make_zeros(Minv, 2, 2);
+      float Minv[2][2];
+      float_mat_zero(Minv, 2, 2); //fmat_make_zeros(Minv, 2, 2);
       fmat_assign(0, 0, 2, Minv, -ndihandle.tau_x);
-      fmat_assign(1, 1, 2, Minv, -ndihandle.tau_y);
-      
-      float l[2];
+      fmat_assign(1, 1, 2, Minv, -ndihandle.tau_y);      
+      float l[2], oldxed, oldyed;
+
+#if(NDI_METHOD==0)
       l[0] = newu1 / ndihandle.tau_x;
       l[1] = newv1 / ndihandle.tau_y;
-
-      float oldxed = oldu2 - newu1;
-      float oldyed = oldv2 - newv1;
-
-      float v[2];
-      v[0] = ndihandle.Kp * oldx + ndihandle.Kd * oldxed;
-      v[1] = ndihandle.Kp * oldy + ndihandle.Kd * oldyed;
-
-      float sig[2];
-      sig[0] = v[0] - l[0];
-      sig[1] = v[1] - l[1];
-
-      fmat_mult(2, 2, 1, ndihandle.commands, Minv, sig);
-      bindNorm();
-
-#elif(NDI_METHOD == 1)
-      float oldx = accessCircularFloatArrElement(ndihandle.xarr, 0);
-      float oldy = accessCircularFloatArrElement(ndihandle.yarr, 0);
-      float newu1 = accessCircularFloatArrElement(ndihandle.u1arr, NDI_MOST_RECENT);
-      float newv1 = accessCircularFloatArrElement(ndihandle.v1arr, NDI_MOST_RECENT);
+      oldxed = oldu2 - newu1;
+      oldyed = oldv2 - newv1;
+#elif(NDI_METHOD==1)
       float newr1 = accessCircularFloatArrElement(ndihandle.r1arr, NDI_MOST_RECENT);
-      float oldu2 = accessCircularFloatArrElement(ndihandle.u2arr, 0);
-      float oldv2 = accessCircularFloatArrElement(ndihandle.v2arr, 0);
       float oldax2 = accessCircularFloatArrElement(ndihandle.ax2arr, 0);
       float olday2 = accessCircularFloatArrElement(ndihandle.ay2arr, 0);
-      oldx = oldx - computeNdiFloatIntegral(ndihandle.u1arr, curtime);
-      oldy = oldy - computeNdiFloatIntegral(ndihandle.v1arr, curtime);
-
-      float Minv[4];
-      fmat_make_zeros(Minv, 2, 2);
-      fmat_assign(0, 0, 2, Minv, -ndihandle.tau_x);
-      fmat_assign(1, 1, 2, Minv, -ndihandle.tau_y);
-
-      float l[2];
-      l[0] = (newu1 - newr1 * newr1 * oldx - newr1 * ndihandle.tau_x * newv1 + oldax2 * ndihandle.tau_x + 2 * newr1 *
-              ndihandle.tau_x * oldv2) / ndihandle.tau_x;
-      l[1] = (newv1 - newr1 * newr1 * oldy + newr1 * ndihandle.tau_y * newu1 + olday2 * ndihandle.tau_y - 2 * newr1 *
-              ndihandle.tau_y * oldu2) / ndihandle.tau_y;
-
-      float oldxed = oldu2 - newu1 + newr1 * oldy;
-      float oldyed = oldv2 - newv1 - newr1 * oldx;
-
+      l[0] = (newu1 - newr1 * newr1 * oldx - newr1 * ndihandle.tau_x * newv1 + oldax2 * ndihandle.tau_x + 2 * newr1 * ndihandle.tau_x * oldv2) / ndihandle.tau_x;
+      l[1] = (newv1 - newr1 * newr1 * oldy + newr1 * ndihandle.tau_y * newu1 + olday2 * ndihandle.tau_y - 2 * newr1 * ndihandle.tau_y * oldu2) / ndihandle.tau_y;
+      oldxed = oldu2 - newu1 + newr1 * oldy;
+      oldyed = oldv2 - newv1 - newr1 * oldx;
+#endif
+      
       float v[2];
       v[0] = ndihandle.Kp * oldx + ndihandle.Kd * oldxed;
       v[1] = ndihandle.Kp * oldy + ndihandle.Kd * oldyed;
@@ -210,13 +208,6 @@ void uwb_follower_control_periodic(void)
       ndihandle.commands[1] = 0;
       pthread_mutex_unlock(&uwb_ndi_mutex);
     }
-
-  } else {
-    pthread_mutex_lock(&uwb_ndi_mutex);
-    ndihandle.commands[0] = 0;
-    ndihandle.commands[1] = 0;
-    pthread_mutex_unlock(&uwb_ndi_mutex);
-  }
 }
 
 // TODO: Trapezoidal integration, and not simply discarding values before tcur-delay, but linearly interpolating to tcur-delay
@@ -230,7 +221,6 @@ float computeNdiFloatIntegral(float *ndiarr, float curtime)
   }
   dt = curtime - accessCircularFloatArrElement(ndihandle.tarr, NDI_MOST_RECENT);
   integral += dt * accessCircularFloatArrElement(ndiarr, NDI_MOST_RECENT);
-
   return integral;
 }
 
@@ -246,20 +236,23 @@ void bindNorm(void)
     ndihandle.commandscap[1] = ndihandle.commands[1];
   }
   pthread_mutex_unlock(&uwb_ndi_mutex);
-
 }
 
+/**
+  * Set velocity in X Y Z for guided mode based on the NDI outputs.
+  * This can be called from the flight plan when desired.
+  */
 bool ndi_follow_leader(void)
 {
   bool temp = true;
   
-  // Set height
+  // Set height (Z speed)
   temp &= guidance_v_set_guided_z(-NDI_FLIGHT_HEIGHT);
   
-  // Set horizontal speed
-  if  (stateGetPositionEnu_f()>1.0) {
+  // Set horizontal speed X and Y
+  if  (stateGetPositionEnu_f() > 1.0) {
     temp &= guidance_h_set_guided_vel(ndihandle.commands[0], ndihandle.commands[1]);
   }
 
-  return !temp;
+  return !temp; // Exit false (for call in flight plan)
 }
