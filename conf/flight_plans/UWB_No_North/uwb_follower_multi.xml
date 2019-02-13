@@ -71,10 +71,14 @@
 			<attitude pitch="0" roll="0" throttle="0"
 				vmode="throttle" />
 		</block>
-		<block name="FlyHere">
-		  <call_once fun="NavSetWaypointHere(WP_HOVER)" />
+		<block name="Force Start Engines" strip_button="Takeoff" strip_icon="takeoff.png">
+			<call_once fun="guidance_v_set_guided_th(0.2)"/>
+     		<call_once fun="autopilot_set_motors_on(TRUE)"/>
+        </block>
+		<block name="Hover">
+			<call_once fun="switchOnGPSandSendGPS()"/>
 			<while cond="TRUE">
-				<call_once fun="flyToWaypoint(WP_HOVER)"/>
+				<call_once fun="hoverGuided()"/>
 			</while>
 		</block>
 		<block name="Follow_leader">
@@ -89,5 +93,9 @@
 				<call_once fun="ndi_follow_leader()"/>
 			</while>
 		</block>
+		<block name="Force Kill Engines">
+      <call_once fun="autopilot_set_motors_on(FALSE)"/>
+    	<while cond="1"/>
+    </block>
 	</blocks>
 </flight_plan>

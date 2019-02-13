@@ -1,9 +1,10 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="1.5" ground_alt="0" lat0="51.990634" lon0="4.376789"
+<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789"
 	max_dist_from_home="8" name="Test flight plan Steven" security_height="0.4">
 	<header>
 		#include "autopilot.h"
+		#include "subsystems/radio_control.h"
 		#include "subsystems/ahrs.h"
 		#include "subsystems/electrical.h"
 		#include "subsystems/datalink/datalink.h"
@@ -59,6 +60,8 @@
 		<variable var="selfheading" min="0" max="360" step="10" init="0.0" />
 	</variables>
 	<exceptions>
+			<exception cond="datalink_time>=2" deroute="Force Kill Engines"/>
+		  <exception cond="radio_control.status == RC_REALLY_LOST" deroute="Force Kill Engines"/>
 		<!--exception cond="!InsideDangerZone(GetPosX(), GetPosY())" deroute="Standby" /-->
 		<!--exception cond="datalink_time > 2" deroute="land here" /-->
 		<!-- exception cond="electrical.bat_low && !(nav_block == IndexOfBlock('land')) && !(nav_block == IndexOfBlock('flare')) && !(nav_block == IndexOfBlock('landed'))"	deroute="land" />
@@ -160,5 +163,9 @@
 			<attitude pitch="0" roll="0" throttle="0" until="FALSE"
 				vmode="throttle" />
 		</block>
+		<block name="Force Kill Engines">
+      <call_once fun="autopilot_set_motors_on(FALSE)"/>
+    	<while cond="1"/>
+    </block>
 	</blocks>
 </flight_plan>

@@ -416,18 +416,20 @@ void printNdiVars(void){
 	printf("NDI commands: %f, %f\n",ndihandle.commands[0],ndihandle.commands[1]);
 }
 
+
+bool hoverGuided(void){
+	bool temp = true;
+	temp &= guidance_v_set_guided_z(-NDI_FLIGHT_HEIGHT);
+	temp &= guidance_h_set_guided_vel(0.0,0.0);
+	return !temp;
+}
+
 bool ndi_follow_leader(void){
 	bool temp = true;
 	temp &= guidance_v_set_guided_z(-NDI_FLIGHT_HEIGHT);
 	temp &= guidance_h_set_guided_vel(ndihandle.commands[0],ndihandle.commands[1]);
 	return !temp;
 }
-
-
-
-
-
-
 
 #define TRAJ_EPS 0.5
 #define TRAJ_LENGTH 4

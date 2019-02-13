@@ -118,7 +118,8 @@
         <arg flag="44"/>
       </program>
     </session>
-    <session name="Bebop2_double_optitrack">
+    <session name="Bebop2_double">
+      <program name="Messages"/>
       <program name="Server"/>
       <program name="GCS">
         <arg flag="-speech"/>
@@ -143,7 +144,8 @@
         <arg flag="44"/>
       </program>
     </session>
-    <session name="Bebop2_triple_optitrack">
+    <session name="Bebop2_triple">
+      <program name="Messages"/>
       <program name="Server"/>
       <program name="GCS">
         <arg flag="-speech"/>

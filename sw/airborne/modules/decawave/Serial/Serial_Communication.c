@@ -57,7 +57,7 @@ struct link_device *xdev = SERIAL_PORT;
 #define SerialChAvailable()(xdev->char_available(xdev->periph))
 #define SerialSendNow() uart_send_message(SERIAL_PORT->periph,0)
 
-#define LOG_UWB_VARS 0
+#define LOG_UWB_VARS 1
 
 struct nodeState{
 	uint8_t nodeAddress;
@@ -212,7 +212,7 @@ void checkStatesUpdated(void){
 			AbiSendMsgUWB(UWB_COMM_ID, i, _states[i].r, _states[i].vx, _states[i].vy, _states[i].z,_states[i].ax,_states[i].ay,_states[i].yawr);
 			setNodeStatesFalse(i);
 
-			if(((get_sys_time_usec()/pow(10,6))-oldtime)>1 && LOG_UWB_VARS){
+			if(((get_sys_time_usec()/pow(10,6))-oldtime)>0.1 && LOG_UWB_VARS){
 				oldtime = get_sys_time_usec()/pow(10,6);
 
 				printf("States for drone %i: r = %f, vx = %f, vy = %f, z = %f, ax = %f, ay = %f, r =%f\n",i,_states[i].r,_states[i].vx,_states[i].vy,_states[i].z
