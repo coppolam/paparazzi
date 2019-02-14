@@ -81,7 +81,7 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
 #endif
     number_filters++;
   } else if (idx != -1) {
-    range_array[idx] = range;
+    range_array[idx] = range-0.7; // TUNING OF UWB OFFSET
     ekf_rl[idx].dt = (get_sys_time_usec() - latest_update_time[idx]) / pow(10, 6); // Update the time between messages
 
     float rel_x, rel_y, rel_z, othVx, othVy, gam;
@@ -94,7 +94,7 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     
 #if RELATIVE_LOCALIZATION_NO_NORTH
     float U[EKF_L] = {ownAx, ownAy, trackedAx, trackedAy, ownYawr, trackedYawr};
-    float Z[EKF_M] = {range, ownh, trackedh, ownVx, ownVy, trackedVx, trackedVy};
+    float Z[EKF_M] = {range_array[idx], ownh, trackedh, ownVx, ownVy, trackedVx, trackedVy};
     discrete_ekf_no_north_predict(&ekf_rl[idx], U);
     discrete_ekf_no_north_update(&ekf_rl[idx], Z);
     rel_z = ekf_rl[idx].X[2]-ekf_rl[idx].X[3];
@@ -105,7 +105,7 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     gam = ekf_rl[idx].X[8];
 #else
     // Measurement Vector Z = [range owvVx(NED) ownVy(NED) tracked_v_north(NED) tracked_v_east(NED) dh]
-    float Z[EKF_M] = {range, ownVx, ownVy, trackedVx, trackedVy, trackedh - ownh};
+    float Z[EKF_M] = {range_array[idx], ownVx, ownVy, trackedVx, trackedVy, trackedh - ownh};
     discrete_ekf_predict(&ekf_rl[idx]);
     discrete_ekf_update(&ekf_rl[idx], Z);
     ownVx = ekf_rl[idx].X[2];
