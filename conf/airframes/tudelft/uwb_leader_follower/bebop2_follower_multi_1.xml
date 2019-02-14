@@ -24,10 +24,10 @@
     <module name="gps" type="datalink"/>
     <module name="stabilization" type="indi_simple"/>
     <module name="ahrs" type="int_cmpl_quat">
-      <configure name="USE_MAGNETOMETER" value="0"/>
-      <define name="AHRS_USE_GPS_HEADING" value="1"/>
+      <configure name="USE_MAGNETOMETER" value="FALSE"/>
+      <define name="AHRS_USE_GPS_HEADING" value="FALSE"/>
+      <configure name="AHRS_USE_GPS" value="FALSE"/>
     </module>
-    <!-- <module name="ins" type="hff_uwb_control"/> -->
     <module name="ins" type="hff_extended"/>
   </firmware>
 
@@ -116,8 +116,8 @@
     <define name="SONAR_MAX_RANGE" value="3"/>
     <define name="SONAR_MIN_RANGE" value="0.2"/>
     <define name="SONAR_UPDATE_ON_AGL" value="TRUE"/>
-    <define name="USE_GPS_ALT" value="1"/>
-    <define name="USE_GPS_ALT_SPEED" value="1"/>     
+    <define name="USE_GPS_ALT" value="0"/>
+    <define name="USE_GPS_ALT_SPEED" value="0"/>     
   </section>
   
   <section name="RC_SETPOINT" prefix="STABILIZATION_ATTITUDE_">
@@ -196,9 +196,9 @@
     <define name="REF_MAX_SPEED" value="1.5" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-    <define name="PGAIN" value="70"/><!--120-->
-    <define name="DGAIN" value="80"/><!--100-->
-    <define name="IGAIN" value="30"/>
+    <define name="PGAIN" value="120"/><!--120-->
+    <define name="DGAIN" value="370"/><!--100-->
+    <define name="IGAIN" value="0"/>
   </section>
   
   <section name="custom">

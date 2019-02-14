@@ -252,10 +252,10 @@ void bindNorm(void)
   pthread_mutex_unlock(&uwb_ndi_mutex);
 }
 
-bool hover_guided(void)
+bool hover_guided(float h)
 {
   bool temp = true;
-  temp &= guidance_v_set_guided_z(-NDI_FLIGHT_HEIGHT);
+  temp &= guidance_v_set_guided_z(-h);
   temp &= guidance_h_set_guided_vel(0.0, 0.0);
   return !temp;
 }
