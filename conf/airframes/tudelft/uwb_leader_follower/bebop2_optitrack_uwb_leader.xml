@@ -56,7 +56,6 @@
       <configure name="SERIAL_UART" value="UART2" />
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
-    <module name="uwb_leader_control"/>
   </modules>
   
   <commands>
