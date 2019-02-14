@@ -62,7 +62,7 @@
         </block>
 		<block name="Hover">
 			<while cond="TRUE">
-				<call_once fun="hover_guided()"/>
+				<call_once fun="hover_guided(1.0)"/>
 			</while>
 		</block>
 		<block name="Follow Leader">
@@ -71,7 +71,9 @@
 			</while>
 		</block>
 		<block name="Land Guided">
-			<call_once fun="guidance_v_set_guided_th(0.2)"/>
+			<while cond="TRUE">
+				<call_once fun="hover_guided(0.2)"/>
+			</while>
 		</block>
 		<block name="Force Kill Engines">
 			<call_once fun="autopilot_set_motors_on(FALSE)"/>

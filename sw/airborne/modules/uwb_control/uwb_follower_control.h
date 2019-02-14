@@ -43,7 +43,7 @@ typedef struct ndihandler {
 extern bool startNdiTracking(void);
 extern bool stopNdiTracking(void);
 
-extern bool hover_guided(void);
+extern bool hover_guided(float h);
 extern bool ndi_follow_leader(void);
 
 extern void uwb_follower_control_init(void);
