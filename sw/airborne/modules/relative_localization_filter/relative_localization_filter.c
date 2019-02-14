@@ -138,12 +138,24 @@ static void send_relative_localization_data(struct transport_tx *trans, struct l
   }
 
   if (number_filters > 0) {
+    float rel_z, ownVx, ownVy, othVx, othVy;
+#if RELATIVE_LOCALIZATION_NO_NORTH
+    rel_z = ekf_rl[pprzmsg_cnt].X[2] - ekf_rl[pprzmsg_cnt].X[3];
+    ownVx = ekf_rl[pprzmsg_cnt].X[4];
+    ownVy = ekf_rl[pprzmsg_cnt].X[5];
+    othVx = ekf_rl[pprzmsg_cnt].X[6];
+    othVy = ekf_rl[pprzmsg_cnt].X[7];
+#else
+    ownVx = ekf_rl[pprzmsg_cntx].X[2];
+    ownVy = ekf_rl[pprzmsg_cnt].X[3];
+    othVx = ekf_rl[pprzmsg_cnt].X[4];
+    othVy = ekf_rl[pprzmsg_cnt].X[5];
+    rel_z = ekf_rl[pprzmsg_cnt].X[6];
+#endif
     pprz_msg_send_RLFILTER(trans, dev, AC_ID,
                            &id_array[pprzmsg_cnt], &range_array[pprzmsg_cnt],
                            &ekf_rl[pprzmsg_cnt].X[0], &ekf_rl[pprzmsg_cnt].X[1], // x y (tracked wrt own)
-                           &ekf_rl[pprzmsg_cnt].X[2], &ekf_rl[pprzmsg_cnt].X[3], // vx vy (own)
-                           &ekf_rl[pprzmsg_cnt].X[4], &ekf_rl[pprzmsg_cnt].X[5], // vx vy (tracked)
-                           &ekf_rl[pprzmsg_cnt].X[6]); // height separation
+                           &ownVx, &ownVy, &othVx, &othVy, &rel_z);
   }
 };
 
