@@ -146,7 +146,7 @@ static void send_relative_localization_data(struct transport_tx *trans, struct l
     othVx = ekf_rl[pprzmsg_cnt].X[6];
     othVy = ekf_rl[pprzmsg_cnt].X[7];
 #else
-    ownVx = ekf_rl[pprzmsg_cntx].X[2];
+    ownVx = ekf_rl[pprzmsg_cnt].X[2];
     ownVy = ekf_rl[pprzmsg_cnt].X[3];
     othVx = ekf_rl[pprzmsg_cnt].X[4];
     othVy = ekf_rl[pprzmsg_cnt].X[5];
