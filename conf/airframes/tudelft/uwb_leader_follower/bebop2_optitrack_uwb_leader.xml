@@ -5,7 +5,7 @@
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2">
   	  <configure name="HOST" value="192.168.42.$(AC_ID)" />
-  	  <configure name="MODEM_HOST" value="192.168.42.40" />
+  	  <configure name="MODEM_HOST" value="192.168.42.42" />
  	  </target>
 
     <target name="nps" board="pc">
@@ -35,10 +35,10 @@
     <module name="geo_mag"/>
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
-    <module name="bebop_cam"/>   
-    <module name="video_thread"/>
-    <module name="pose_history"/>
-    <module name="cv_opticflow">
+    <!--module name="bebop_cam"/-->   
+    <!--module name="video_thread"/-->
+    <!--module name="pose_history"/-->
+    <!--module name="cv_opticflow">
       <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
       <define name="MAX_HORIZON" value="10"/>
       <define name="OPTICFLOW_METHOD" value="0"/>
@@ -51,7 +51,7 @@
       <define name="OPTICFLOW_FOV_H" value="0.95"/> 
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="1.0"/>
       <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.9"/>
-    </module>
+    </module-->
     <module name="decawave_anchorless_communication">
       <configure name="SERIAL_UART" value="UART2" />
       <configure name="SERIAL_BAUD" value="B57600" />
@@ -200,7 +200,7 @@
     <define name="HOVER_KP" value="350"/>
     <define name="HOVER_KD" value="85"/>
     <define name="HOVER_KI" value="20"/>
-    <define name="NOMINAL_HOVER_THROTTLE" value="0.655"/>
+    <define name="NOMINAL_HOVER_THROTTLE" value="0.53"/>
     <define name="ADAPT_THROTTLE_ENABLED" value="TRUE"/>
   </section>
 
@@ -210,10 +210,10 @@
     <define name="REF_MAX_SPEED" value="0.5" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-    <define name="PGAIN" value="70"/><!--120-->
-    <define name="DGAIN" value="120"/><!--100-->
+    <define name="PGAIN" value="120"/><!--120-->
+    <define name="DGAIN" value="100"/><!--100-->
     <define name="IGAIN" value="30"/>
-    <define name="REF_ZETA" value="1.0"> <!-- 1.0 or more for no overshooting -->
+    <define name="REF_ZETA" value="1.0"/> <!-- 1.0 or more for no overshooting -->
   </section>
 
   <section name="MISC">
@@ -227,7 +227,7 @@
   </section>
 
   <section name="NAVIGATION" prefix="NAV_">
-    <define name="CLIMB_VSPEED" value="4.5"/>
+    <define name="CLIMB_VSPEED" value="0.5"/>
     <define name="DESCEND_VSPEED" value="-1.0"/>
   </section>
 
@@ -239,7 +239,7 @@
 
   <section name="AUTOPILOT">
     <define name="MODE_STARTUP" value="AP_MODE_NAV"/>
-    <define name="MODE_MANUAL" value="AP_MODE_HOVER_Z_HOLD"/>
+    <define name="MODE_MANUAL" value="AP_MODE_ATTITUDE_DIRECT"/>
     <define name="MODE_AUTO1" value="AP_MODE_ATTITUDE_Z_HOLD"/>
     <define name="MODE_AUTO2" value="AP_MODE_NAV"/>
     <!-- define name="NO_RC_THRUST_LIMIT" value="TRUE"/-->
