@@ -85,6 +85,15 @@
 		<block name="Standby" strip_button="Standby" strip_icon="home.png">
 			<stay wp="STDBY" />
 		</block>
+		<block name="Fly Trajectory">
+		  <while cond="TRUE">
+        <go wp="t0"/>
+        <go wp="t1"/>
+        <go wp="t2"/>
+        <go wp="t3"/>
+        <go wp="t7"/>
+		  </while>
+		</block>
 <!--		<block name="Fly_Trajectory">
 			<call_once fun="switchOnGPSandSendGPS()"/>
 			<call_once fun="initialiseTrajectory()"/>
@@ -113,7 +122,7 @@
 				<circle wp="CIRCLEWP" radius="selfradius" />
 			</while>
 		</block> -->
-		<block name="Spiral">
+		<!--block name="Spiral">
 			<while cond="LessThan(NavBlockTime(),300)">
 				<circle wp="HOME" radius="1+NavBlockTime()*0.015" />
 			</while>
@@ -122,7 +131,7 @@
 			<while cond="LessThan(NavBlockTime(),300)">
 				<circle wp="HOME" radius="-1-NavBlockTime()*0.015" />
 			</while>
-		</block>
+		</block-->
 		<block name="land here" strip_button="land Here" strip_icon="land-right.png">
 			<call_once fun="NavSetWaypointHere(WP_TD)" />
 		</block>
