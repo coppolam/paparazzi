@@ -94,5 +94,9 @@
       <call_once fun="NavKillThrottle()"/>
       <attitude pitch="0" roll="0" throttle="0" until="FALSE" vmode="throttle"/>
     </block>
+    <block name="Force Kill Engines">
+      <call_once fun="autopilot_set_motors_on(FALSE)"/>
+    	<while cond="1"/>
+    </block>
   </blocks>
 </flight_plan>
