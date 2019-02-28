@@ -1,12 +1,18 @@
 <!DOCTYPE airframe SYSTEM "../../airframe.dtd">
 
-<airframe name="bebop2_optitrack_uwb_leader">
+<airframe name="bebop2_optitrack">
+  <description>
+    Airframe file to fly a Bebop2 drone, in stable smooth flight, through waypoints using an optitrack system, such as the Cyberzoo of TUDelft. The values are tuned so that the flight speed is limited and the drone does not over-shoot the waypoints as it would in outdoor settings.
+    This is like the standard bebop2_optitrack with the addition of the following:
+	1. Telemetry via a router (for swarming)
+	2. decawave_anchorless_communication module for intra-swarm communication/ranging
+  </description>
 
   <firmware name="rotorcraft">
     <target name="ap" board="bebop2">
-  	  <configure name="HOST" value="192.168.42.$(AC_ID)" />
-  	  <configure name="MODEM_HOST" value="192.168.42.42" />
- 	  </target>
+      <configure name="HOST" value="192.168.42.$(AC_ID)" />
+      <configure name="MODEM_HOST" value="192.168.42.42" /> <!-- Your computer's IP address -->
+    </target>
 
     <target name="nps" board="pc">
       <module name="fdm" type="jsbsim"/>
@@ -15,7 +21,7 @@
     
     <define name="USE_SONAR" value="FALSE"/>
 
-	  <!-- Subsystem section -->
+    <!-- Subsystem section -->
     <module name="telemetry" type="transparent_udp"/>
     <module name="radio_control" type="datalink"/>
     <module name="motor_mixing"/>
@@ -27,36 +33,15 @@
       <configure name="USE_MAGNETOMETER" value="FALSE"/>
       <define name="AHRS_USE_GPS_HEADING" value="TRUE"/>
     </module>
-    <!-- <module name="ins" type="hff_uwb_control"/> -->
     <module name="ins" type="extended"/>
-  </firmware>
-
-  <modules main_freq="512">
     <module name="geo_mag"/>
     <module name="air_data"/>
     <module name="send_imu_mag_current"/>
-    <!--module name="bebop_cam"/-->   
-    <!--module name="video_thread"/-->
-    <!--module name="pose_history"/-->
-    <!--module name="cv_opticflow">
-      <define name="OPTICFLOW_CAMERA" value="bottom_camera"/>
-      <define name="MAX_HORIZON" value="10"/>
-      <define name="OPTICFLOW_METHOD" value="0"/>
-      <define name="OPTICFLOW_DEROTATION" value="TRUE"/>
-      <define name="OPTICFLOW_MEDIAN_FILTER" value="TRUE"/>
-      <define name="OPTICFLOW_KALMAN_FILTER" value="FALSE"/>
-      <define name="OPTICFLOW_FX" value="280"/> 
-      <define name="OPTICFLOW_FY" value="280"/> 
-      <define name="OPTICFLOW_FOV_W" value="0.95"/> 
-      <define name="OPTICFLOW_FOV_H" value="0.95"/> 
-      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_X" value="1.0"/>
-      <define name="OPTICFLOW_DEROTATION_CORRECTION_FACTOR_Y" value="0.9"/>
-    </module-->
     <module name="decawave_anchorless_communication">
       <configure name="SERIAL_UART" value="UART2" />
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
-  </modules>
+  </firmware>
   
   <commands>
     <axis name="PITCH" failsafe_value="0"/>
@@ -102,11 +87,6 @@
     <define name="MAG_X_SENS" value="7.28514789391" integer="16"/>
     <define name="MAG_Y_SENS" value="7.33022132691" integer="16"/>
     <define name="MAG_Z_SENS" value="7.57102035692" integer="16"/>
-
-    <!-- Magneto current calibration -->
-    <!--define name= "MAG_X_CURRENT_COEF" value="0.00129333644507"/>
-    <define name= "MAG_Y_CURRENT_COEF" value="-0.00180224741034"/>
-    <define name= "MAG_Z_CURRENT_COEF" value="0.00514030157101"/-->
   </section>
   
   <!-- local magnetic field -->
@@ -210,8 +190,8 @@
     <define name="REF_MAX_SPEED" value="0.5" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-    <define name="PGAIN" value="120"/><!--120-->
-    <define name="DGAIN" value="100"/><!--100-->
+    <define name="PGAIN" value="120"/>
+    <define name="DGAIN" value="100"/>
     <define name="IGAIN" value="30"/>
     <define name="REF_ZETA" value="1.0"/> <!-- 1.0 or more for no overshooting -->
   </section>

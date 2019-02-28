@@ -154,15 +154,15 @@
         <arg flag="-udp"/>
       </program>
       <program name="Joystick">
-        <arg flag="-ac bebop2_18"/>
+        <arg flag="-ac bebop2_18_f2"/>
         <arg flag="hobbyking.xml"/>
       </program>
       <program name="Joystick">
-        <arg flag="-ac bebop2_22"/>
+        <arg flag="-ac bebop2_22_f1"/>
         <arg flag="hobbyking.xml"/>
       </program>
       <program name="Joystick">
-        <arg flag="-ac bebop2_44"/>
+        <arg flag="-ac bebop2_44_leader"/>
         <arg flag="hobbyking.xml"/>
       </program>
       <program name="NatNet">
