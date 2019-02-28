@@ -50,10 +50,9 @@
       <call_once fun="NavKillThrottle()" />
       <attitude pitch="0" roll="0" throttle="0" vmode="throttle" />
     </block>
-    <block name="Start Engine">
-      <call_once fun="NavResurrect()" />
-      <call_once fun="NavSetWaypointHere(WP_STDBY)"/>
-      <attitude pitch="0" roll="0" throttle="0" vmode="throttle" />
+    <block name="Force Start Engines" strip_button="Takeoff" strip_icon="takeoff.png">
+      <call_once fun="guidance_v_set_guided_th(0.2)"/>
+      <call_once fun="autopilot_set_motors_on(TRUE)"/>
     </block>
     <block name="Hover_Guided">
       <while cond="TRUE">
