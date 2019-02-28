@@ -1,6 +1,6 @@
 <!DOCTYPE airframe SYSTEM "../../airframe.dtd">
 
-<airframe name="bebop2_optitrack">
+<airframe name="bebop2_optitrack_uwb_leader">
   <description>
     Airframe file to fly a Bebop2 drone, in stable smooth flight, through waypoints using an optitrack system, such as the Cyberzoo of TUDelft. The values are tuned so that the flight speed is limited and the drone does not over-shoot the waypoints as it would in outdoor settings.
     This is like the standard bebop2_optitrack with the addition of the following:
