@@ -81,7 +81,7 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
 #endif
     number_filters++;
   } else if (idx != -1) {
-    range_array[idx] = range-1.0; // TUNING OF UWB OFFSET
+    range_array[idx] = range-1.0; // Tuning of UWB offset
     ekf_rl[idx].dt = (get_sys_time_usec() - latest_update_time[idx]) / pow(10, 6); // Update the time between messages
 
     float rel_x, rel_y, rel_z, othVx, othVy, gam;
