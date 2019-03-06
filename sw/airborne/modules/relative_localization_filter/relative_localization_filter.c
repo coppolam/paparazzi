@@ -93,20 +93,20 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     float ownYawr = stateGetBodyRates_f()->r;
 
     // Bind values to avoid unrealistic spikes
-    float_keep_bounded(&range,0.0,7.0);
-    float_keep_bounded(&ownVx,-3.0,3.0);
-    float_keep_bounded(&ownVy,-3.0,3.0);
-    float_keep_bounded(&trackedVx,-3.0,3.0);
-    float_keep_bounded(&trackedVy,-3.0,3.0);
-    float_keep_bounded(&trackedh,-4,0);
-    float_keep_bounded(&ownAx,-10.0,10.0);
-    float_keep_bounded(&ownAy,-10.0,10.0);
-    float_keep_bounded(&trackedAx,-10.0,10.0);
-    float_keep_bounded(&trackedAy,-10.0,10.0);
-    float_keep_bounded(&ownYawr,-3.0,3.0);
-    float_keep_bounded(&trackedYawr,-3.0,3.0);
+    // float_keep_bounded(&range,0.0,7.0);
+    // float_keep_bounded(&ownVx,-3.0,3.0);
+    // float_keep_bounded(&ownVy,-3.0,3.0);
+    // float_keep_bounded(&trackedVx,-3.0,3.0);
+    // float_keep_bounded(&trackedVy,-3.0,3.0);
+    // float_keep_bounded(&trackedh,-4,0);
+    // float_keep_bounded(&ownAx,-10.0,10.0);
+    // float_keep_bounded(&ownAy,-10.0,10.0);
+    // float_keep_bounded(&trackedAx,-10.0,10.0);
+    // float_keep_bounded(&trackedAy,-10.0,10.0);
+    // float_keep_bounded(&ownYawr,-3.0,3.0);
+    // float_keep_bounded(&trackedYawr,-3.0,3.0);
 
-    if (ownh > 0.5) { // UWB does not do well when both drones are on the ground
+    // if (ownh > 0.5) { // UWB does not do well when both drones are on the ground
 #if RELATIVE_LOCALIZATION_NO_NORTH
       float U[EKF_L] = {ownAx, ownAy, trackedAx, trackedAy, ownYawr, trackedYawr};
       float Z[EKF_M] = {range_array[idx], ownh, trackedh, ownVx, ownVy, trackedVx, trackedVy};
@@ -128,16 +128,18 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
       othVx = ekf_rl[idx].X[4];
       othVy = ekf_rl[idx].X[5];
       rel_z = ekf_rl[idx].X[6];
-      gam = 0.0; // not observed
+      gam = 0.0; // Both in earth frame
 #endif
       rel_x = ekf_rl[idx].X[0];
       rel_y = ekf_rl[idx].X[1];
 
       // Send output
       AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[idx], latest_update_time[idx] / pow(10, 6),
-                                      range, rel_x, rel_y, rel_z, ownVx, ownVy, othVx, othVy, gam, trackedAx, trackedAy, trackedYawr);
+                                      range, rel_x, rel_y, rel_z, 
+                                      ownVx, ownVy, othVx, othVy, 
+                                      gam, trackedAx, trackedAy, trackedYawr);
     }
-  }
+  // }
 
   latest_update_time[idx] = get_sys_time_usec();
 };

@@ -40,9 +40,6 @@ typedef struct ndihandler {
 } ndihandler;
 
 
-extern bool startNdiTracking(void);
-extern bool stopNdiTracking(void);
-
 extern bool hover_guided(float h);
 extern bool ndi_follow_leader(float h);
 

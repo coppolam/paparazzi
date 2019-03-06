@@ -62,7 +62,6 @@ static pthread_mutex_t uwb_ndi_mutex;
 void cleanNdiValues(float tcur);
 float accessCircularFloatArrElement(float *arr, int index);
 float computeNdiFloatIntegral(float *ndiarr, float curtime);
-void bindNorm(void);
 
 // Tuned gains, as used in experiments from paper described in pre-amble comments
 ndihandler ndihandle = {.delay = UWB_NDI_DELAY,
@@ -82,7 +81,10 @@ ndihandler ndihandle = {.delay = UWB_NDI_DELAY,
                        };
 
 static abi_event relative_localization_event;
-static void relative_localization_callback(uint8_t sender_id __attribute__((unused)), int32_t ac_id, float time, float range, float xin, float yin, float zin __attribute__((unused)), float u1in, float v1in, float u2in, float v2in, float gammain, float trackedAx, float trackedAy, float trackedYawr){
+static void relative_localization_callback(uint8_t sender_id __attribute__((unused)), int32_t ac_id, float time, 
+  float range, float xin, float yin, float zin __attribute__((unused)), 
+  float u1in, float v1in, float u2in, float v2in, 
+  float gammain, float trackedAx, float trackedAy, float trackedYawr){
   if (ac_id != 0) {
     return;
   }
@@ -149,24 +151,6 @@ float accessCircularFloatArrElement(float *arr, int index)
 }
 
 /**
-  * Turns on NDI tracking. This can be called from the flight plan.
-  */
-bool startNdiTracking(void)
-{
-  ndi_following_leader = true;
-  return false;
-}
-
-/**
-  * Turns off NDI tracking. This can be called from the flight plan.
-  */
-bool stopNdiTracking(void)
-{
-  ndi_following_leader = false;
-  return false;
-}
-
-/**
   * Update the NDI controller periodically
   */
 void uwb_follower_control_periodic(void)
@@ -220,7 +204,6 @@ void uwb_follower_control_periodic(void)
     sig[1] = v[1] - l[1];
 
     float_mat_vect_mul(ndihandle.commands, _MINV, sig, 2, 2);
-    bindNorm(); // Bind output
   }
 }
 
@@ -236,20 +219,6 @@ float computeNdiFloatIntegral(float *ndiarr, float curtime)
   dt = curtime - accessCircularFloatArrElement(ndihandle.tarr, NDI_MOST_RECENT);
   integral += dt * accessCircularFloatArrElement(ndiarr, NDI_MOST_RECENT);
   return integral;
-}
-
-void bindNorm(void)
-{
-  pthread_mutex_lock(&uwb_ndi_mutex);
-  float normcom = sqrt(ndihandle.commands[1] * ndihandle.commands[1] + ndihandle.commands[0] * ndihandle.commands[0]);
-  if (normcom > ndihandle.maxcommand) {
-    ndihandle.commandscap[0] = ndihandle.commands[0] * ndihandle.maxcommand / normcom;
-    ndihandle.commandscap[1] = ndihandle.commands[1] * ndihandle.maxcommand / normcom;
-  } else {
-    ndihandle.commandscap[0] = ndihandle.commands[0];
-    ndihandle.commandscap[1] = ndihandle.commands[1];
-  }
-  pthread_mutex_unlock(&uwb_ndi_mutex);
 }
 
 bool hover_guided(float h)
