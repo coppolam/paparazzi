@@ -146,6 +146,7 @@
     </session>
     <session name="Bebop2_triple">
       <program name="Messages"/>
+      <program name="Real-time Plotter"/>
       <program name="Server"/>
       <program name="GCS">
         <arg flag="-speech"/>

@@ -264,15 +264,15 @@ bool hover_guided(float h)
   * Set velocity in X Y Z for guided mode based on the NDI outputs.
   * This can be called from the flight plan when desired.
   */
-bool ndi_follow_leader(void)
+bool ndi_follow_leader(float h)
 {
   bool temp = true;
   
   // Set height (Z speed)
-  temp &= guidance_v_set_guided_z(-NDI_FLIGHT_HEIGHT);
+  temp &= guidance_v_set_guided_z(-h);
   
   // Set horizontal speed X and Y
-  if  (stateGetPositionEnu_f()->z > 1.0) {
+  if  (stateGetPositionEnu_f()->z > 0.8) {
     temp &= guidance_h_set_guided_vel(ndihandle.commands[0], ndihandle.commands[1]);
   }
 

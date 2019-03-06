@@ -42,6 +42,8 @@
       <configure name="SERIAL_BAUD" value="B57600" />
     </module>
     <module name="relative_localization_filter"/>
+      <configure name="RELATIVE_LOCALIZATION_EKF_X0" value="-2"/>
+      <configure name="RELATIVE_LOCALIZATION_EKF_Y0" value="0"/>
     <module name="uwb_follower_control">
       <configure name="UWB_NDI_DELAY" value="3"/>
     </module>

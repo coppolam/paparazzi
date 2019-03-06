@@ -61,7 +61,7 @@
     </block>
     <block name="Follow Leader_Guided">
       <while cond="TRUE">
-        <call_once fun="ndi_follow_leader()"/>
+        <call_once fun="ndi_follow_leader(1.0)"/>
       </while>
     </block>
     <block name="Land_Guided">
