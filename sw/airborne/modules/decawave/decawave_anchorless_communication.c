@@ -283,8 +283,8 @@ void decawave_anchorless_communication_init(void)
 void decawave_anchorless_communication_periodic(void)
 {
   // TODO: Right now floats are sent individually, but it would be nice to send all at once (requires integrating with UWB/Arduino side as well).
-  sendFloat(UWB_SERIAL_COMM_VX, stateGetSpeedEnu_f()->y);
-  sendFloat(UWB_SERIAL_COMM_VY, stateGetSpeedEnu_f()->x);
+  sendFloat(UWB_SERIAL_COMM_VX, stateGetSpeedNed_f()->x);
+  sendFloat(UWB_SERIAL_COMM_VY, stateGetSpeedNed_f()->y);
   sendFloat(UWB_SERIAL_COMM_Z, stateGetPositionEnu_f()->z);
   sendFloat(UWB_SERIAL_COMM_AX, stateGetAccelNed_f()->x);
   sendFloat(UWB_SERIAL_COMM_AY, stateGetAccelNed_f()->y);

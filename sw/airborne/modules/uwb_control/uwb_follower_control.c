@@ -46,12 +46,6 @@
 #define UWB_NDI_DELAY 4
 #endif
 
-#define TRAJ_EPS 0.5
-#define TRAJ_LENGTH 4
-
-bool ndi_following_leader = false;
-bool ndi_run_computation = true;
-uint8_t traj_targetindex = 0;
 ndihandler ndihandle;
 
 #define UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR 8
@@ -77,14 +71,14 @@ ndihandler ndihandle = {.delay = UWB_NDI_DELAY,
                         .data_start = 0,
                         .data_end = 0,
                         .data_entries = 0,
-                        .maxcommand = 1.5
                        };
 
 static abi_event relative_localization_event;
-static void relative_localization_callback(uint8_t sender_id __attribute__((unused)), int32_t ac_id, float time, 
-  float range, float xin, float yin, float zin __attribute__((unused)), 
+static void relative_localization_callback(uint8_t sender_id __attribute__((unused)), 
+  int32_t ac_id, float time, float range __attribute__((unused)), 
+  float xin, float yin, float zin __attribute__((unused)), 
   float u1in, float v1in, float u2in, float v2in, 
-  float gammain, float trackedAx, float trackedAy, float trackedYawr){
+  float gammain __attribute__((unused)), float trackedAx, float trackedAy, float trackedYawr){
   if (ac_id != 0) {
     return;
   }
@@ -101,13 +95,9 @@ static void relative_localization_callback(uint8_t sender_id __attribute__((unus
   ndihandle.v1arr[ndihandle.data_end] = v1in;
   ndihandle.u2arr[ndihandle.data_end] = u2in;
   ndihandle.v2arr[ndihandle.data_end] = v2in;
-  ndihandle.r1arr[ndihandle.data_end] = update_butterworth_2_low_pass(&uwb_butter_yawr,stateGetBodyRates_f()->r);
-  ndihandle.r2arr[ndihandle.data_end] = trackedYawr;
-  ndihandle.ax1arr[ndihandle.data_end] = stateGetAccelNed_f()->x;
-  ndihandle.ay1arr[ndihandle.data_end] = stateGetAccelNed_f()->y;
+  ndihandle.r1arr[ndihandle.data_end] = stateGetBodyRates_f()->r;
   ndihandle.ax2arr[ndihandle.data_end] = trackedAx;
   ndihandle.ay2arr[ndihandle.data_end] = trackedAy;
-  ndihandle.gamarr[ndihandle.data_end] = gammain;
   ndihandle.tarr[ndihandle.data_end] = time;
   ndihandle.data_end = (ndihandle.data_end + 1) % NDI_PAST_VALS;
   ndihandle.data_entries++;
@@ -126,6 +116,31 @@ extern void uwb_follower_control_init(void)
   AbiBindMsgRELATIVE_LOCALIZATION(ABI_BROADCAST, &relative_localization_event, relative_localization_callback);
 }
 
+float accessCircularFloatArrElement(float *arr, int index)
+{
+  float value;
+  pthread_mutex_lock(&uwb_ndi_mutex);
+  int realindex = (ndihandle.data_start + index) % NDI_PAST_VALS;
+  value = arr[realindex];
+  pthread_mutex_unlock(&uwb_ndi_mutex);
+  return value;
+}
+
+// TODO: Trapezoidal integration, and not simply discarding values before tcur-delay, but linearly interpolating to tcur-delay
+float computeNdiFloatIntegral(float *ndiarr, float curtime)
+{
+  float integral = 0;
+  float dt;
+  for (int i = 0; i < ndihandle.data_entries - 1; i++) {
+    dt = accessCircularFloatArrElement(ndihandle.tarr, i + 1) - accessCircularFloatArrElement(ndihandle.tarr, i);
+    integral += dt * accessCircularFloatArrElement(ndiarr, i);
+  }
+  dt = curtime - accessCircularFloatArrElement(ndihandle.tarr, NDI_MOST_RECENT);
+  integral += dt * accessCircularFloatArrElement(ndiarr, NDI_MOST_RECENT);
+  return integral;
+}
+
+
 void cleanNdiValues(float tcur)
 {
   pthread_mutex_lock(&uwb_ndi_mutex);
@@ -140,16 +155,6 @@ void cleanNdiValues(float tcur)
   return;
 }
 
-float accessCircularFloatArrElement(float *arr, int index)
-{
-  float value;
-  pthread_mutex_lock(&uwb_ndi_mutex);
-  int realindex = (ndihandle.data_start + index) % NDI_PAST_VALS;
-  value = arr[realindex];
-  pthread_mutex_unlock(&uwb_ndi_mutex);
-  return value;
-}
-
 /**
   * Update the NDI controller periodically
   */
@@ -162,8 +167,7 @@ void uwb_follower_control_periodic(void)
   // Get current values
   float curtime = get_sys_time_usec() / pow(10, 6);
   cleanNdiValues(curtime);
-  if (ndihandle.data_entries > 0)
-  {
+  if (ndihandle.data_entries > 0) {
     float oldx = accessCircularFloatArrElement(ndihandle.xarr, 0);
     float oldy = accessCircularFloatArrElement(ndihandle.yarr, 0);
     float newu1 = accessCircularFloatArrElement(ndihandle.u1arr, NDI_MOST_RECENT);
@@ -207,25 +211,11 @@ void uwb_follower_control_periodic(void)
   }
 }
 
-// TODO: Trapezoidal integration, and not simply discarding values before tcur-delay, but linearly interpolating to tcur-delay
-float computeNdiFloatIntegral(float *ndiarr, float curtime)
-{
-  float integral = 0;
-  float dt;
-  for (int i = 0; i < ndihandle.data_entries - 1; i++) {
-    dt = accessCircularFloatArrElement(ndihandle.tarr, i + 1) - accessCircularFloatArrElement(ndihandle.tarr, i);
-    integral += dt * accessCircularFloatArrElement(ndiarr, i);
-  }
-  dt = curtime - accessCircularFloatArrElement(ndihandle.tarr, NDI_MOST_RECENT);
-  integral += dt * accessCircularFloatArrElement(ndiarr, NDI_MOST_RECENT);
-  return integral;
-}
-
 bool hover_guided(float h)
 {
   bool temp = true;
-  temp &= guidance_v_set_guided_z(-h);
   temp &= guidance_h_set_guided_vel(0.0, 0.0);
+  temp &= guidance_v_set_guided_z(-h);
   return !temp;
 }
 

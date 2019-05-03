@@ -3,7 +3,6 @@
 
 #include <std.h>
 
-#define NDI_FLIGHT_HEIGHT 1.5 // Flight at 1.5m unless otherwise specified.
 #define NDI_PAST_VALS 200 // Store the last 200 values in order to compute the control
 
 typedef struct ndihandler {
@@ -30,15 +29,11 @@ typedef struct ndihandler {
   float ax2arr[NDI_PAST_VALS];
   float ay2arr[NDI_PAST_VALS];
   float tarr[NDI_PAST_VALS];
-  float gamarr[NDI_PAST_VALS];
   int data_start;
   int data_end;
   int data_entries;
   float commands[2];
-  float commandscap[2];
-  float maxcommand;
 } ndihandler;
-
 
 extern bool hover_guided(float h);
 extern bool ndi_follow_leader(float h);
