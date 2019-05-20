@@ -46,10 +46,10 @@ struct discrete_ekf_no_north {
   float R[EKF_M][EKF_M]; // measurement covariance noise
   float H[EKF_M][EKF_N]; // jacobian of the measure wrt X
   float G[EKF_N][EKF_L]; // Noise input
+  float Fx[EKF_N][EKF_N]; // Jacobian of state
   float Ht[EKF_N][EKF_M]; // transpose of H
   float Phi[EKF_N][EKF_N]; // Jacobian
   float Gamma[EKF_N][EKF_L]; // Noise input
-  float Fx[EKF_N][EKF_N]; // Jacobian of state
 
   float tmp1[EKF_N][EKF_N];
   float tmp2[EKF_N][EKF_N];
