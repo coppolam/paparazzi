@@ -78,7 +78,7 @@ static void relative_localization_callback(uint8_t sender_id __attribute__((unus
   int32_t ac_id, float time, float range __attribute__((unused)), 
   float xin, float yin, float zin __attribute__((unused)), 
   float u1in, float v1in, float u2in, float v2in, 
-  float gammain __attribute__((unused)), float trackedAx, float trackedAy, float trackedYawr){
+  float gammain __attribute__((unused)), float trackedAx, float trackedAy, float trackedYawr __attribute__((unused))){
   if (ac_id != 0) {
     return;
   }
@@ -114,6 +114,21 @@ extern void uwb_follower_control_init(void)
   init_butterworth_2_low_pass(&uwb_butter_yawr, UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR, 1. / PERIODIC_FREQUENCY, 0.0);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_NDI_CMD, send_ndi_data);
   AbiBindMsgRELATIVE_LOCALIZATION(ABI_BROADCAST, &relative_localization_event, relative_localization_callback);
+}
+
+void bindNorm(float max_command)
+{
+  float normcom = sqrt(ndihandle.commands[1] * ndihandle.commands[1] + ndihandle.commands[0] * ndihandle.commands[0]);
+  if (normcom > max_command)
+  {
+    ndihandle.commands_lim[0] = ndihandle.commands[0] * max_command / normcom;
+    ndihandle.commands_lim[1] = ndihandle.commands[1] * max_command / normcom;
+  }
+  else
+  {
+    ndihandle.commands_lim[0] = ndihandle.commands[0];
+    ndihandle.commands_lim[1] = ndihandle.commands[1];
+  }
 }
 
 float accessCircularFloatArrElement(float *arr, int index)
@@ -184,12 +199,12 @@ void uwb_follower_control_periodic(void)
     Minv[1][1] = -ndihandle.tau_y;
     float l[2], oldxed, oldyed;
 
-#if(NDI_METHOD==0)
+#if (NDI_METHOD == 0)
     l[0] = newu1 / ndihandle.tau_x;
     l[1] = newv1 / ndihandle.tau_y;
     oldxed = oldu2 - newu1;
     oldyed = oldv2 - newv1;
-#elif(NDI_METHOD==1)
+#elif (NDI_METHOD == 1)
     float newr1 = accessCircularFloatArrElement(ndihandle.r1arr, NDI_MOST_RECENT);
     float oldax2 = accessCircularFloatArrElement(ndihandle.ax2arr, 0);
     float olday2 = accessCircularFloatArrElement(ndihandle.ay2arr, 0);
@@ -232,7 +247,8 @@ bool ndi_follow_leader(float h)
   
   // Set horizontal speed X and Y
   if  (stateGetPositionEnu_f()->z > 0.8) {
-    temp &= guidance_h_set_guided_vel(ndihandle.commands[0], ndihandle.commands[1]);
+    bindNorm(0.5);
+    temp &= guidance_h_set_guided_vel(ndihandle.commands_lim[0], ndihandle.commands_lim[1]);
   }
 
   return !temp; // Exit false (for call in flight plan)

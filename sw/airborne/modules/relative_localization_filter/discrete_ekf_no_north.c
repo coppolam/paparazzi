@@ -73,7 +73,6 @@ void float_mat_combine(float **a, float **b, float **o, int m, int n_a, int n_b)
  */
 void c2d(int m, int nA, int nB, float **Fx, float **G, float dt, float **phi, float **gamma)
 {
-
   int totalsize = m + nB;
   float combmat[totalsize][totalsize];
   float expm[totalsize][totalsize];
@@ -97,7 +96,6 @@ void c2d(int m, int nA, int nB, float **Fx, float **G, float dt, float **phi, fl
  * Continuous time state transition equation
  * state is: {x_rel,y_rel,h1,h2,u1,v1,u2,v2,gamma}
  */
-
 void discrete_ekf_no_north_fsym(float *statein, float *input, float *output)
 {
   output[0] =  input[r1m] * statein[y12] - statein[u1] + statein[u2] * cosf(statein[gam]) - statein[v2] * sinf(

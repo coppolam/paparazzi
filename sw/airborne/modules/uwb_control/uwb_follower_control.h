@@ -33,6 +33,7 @@ typedef struct ndihandler {
   int data_end;
   int data_entries;
   float commands[2];
+  float commands_lim[2];
 } ndihandler;
 
 extern bool hover_guided(float h);
