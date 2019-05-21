@@ -53,6 +53,7 @@ Butterworth2LowPass uwb_butter_yawr;
 
 static pthread_mutex_t uwb_ndi_mutex;
 
+void bindNorm(float max_command);
 void cleanNdiValues(float tcur);
 float accessCircularFloatArrElement(float *arr, int index);
 float computeNdiFloatIntegral(float *ndiarr, float curtime);
@@ -74,15 +75,16 @@ ndihandler ndihandle = {.delay = UWB_NDI_DELAY,
                        };
 
 static abi_event relative_localization_event;
-static void relative_localization_callback(uint8_t sender_id __attribute__((unused)), 
-  int32_t ac_id, float time, float range __attribute__((unused)), 
-  float xin, float yin, float zin __attribute__((unused)), 
-  float u1in, float v1in, float u2in, float v2in, 
-  float gammain __attribute__((unused)), float trackedAx, float trackedAy, float trackedYawr __attribute__((unused))){
+static void relative_localization_callback(uint8_t sender_id __attribute__((unused)),
+    int32_t ac_id, float time, float range __attribute__((unused)),
+    float xin, float yin, float zin __attribute__((unused)),
+    float u1in, float v1in, float u2in, float v2in,
+    float gammain __attribute__((unused)), float trackedAx, float trackedAy, float trackedYawr __attribute__((unused)))
+{
   if (ac_id != 0) {
     return;
   }
-  
+
   // Store data from leader's position estimate
   pthread_mutex_lock(&uwb_ndi_mutex);
   if (ndihandle.data_entries == NDI_PAST_VALS) {
@@ -119,13 +121,10 @@ extern void uwb_follower_control_init(void)
 void bindNorm(float max_command)
 {
   float normcom = sqrt(ndihandle.commands[1] * ndihandle.commands[1] + ndihandle.commands[0] * ndihandle.commands[0]);
-  if (normcom > max_command)
-  {
+  if (normcom > max_command) {
     ndihandle.commands_lim[0] = ndihandle.commands[0] * max_command / normcom;
     ndihandle.commands_lim[1] = ndihandle.commands[1] * max_command / normcom;
-  }
-  else
-  {
+  } else {
     ndihandle.commands_lim[0] = ndihandle.commands[0];
     ndihandle.commands_lim[1] = ndihandle.commands[1];
   }
@@ -208,8 +207,10 @@ void uwb_follower_control_periodic(void)
     float newr1 = accessCircularFloatArrElement(ndihandle.r1arr, NDI_MOST_RECENT);
     float oldax2 = accessCircularFloatArrElement(ndihandle.ax2arr, 0);
     float olday2 = accessCircularFloatArrElement(ndihandle.ay2arr, 0);
-    l[0] = (newu1 - newr1 * newr1 * oldx - newr1 * ndihandle.tau_x * newv1 + oldax2 * ndihandle.tau_x + 2 * newr1 * ndihandle.tau_x * oldv2) / ndihandle.tau_x;
-    l[1] = (newv1 - newr1 * newr1 * oldy + newr1 * ndihandle.tau_y * newu1 + olday2 * ndihandle.tau_y - 2 * newr1 * ndihandle.tau_y * oldu2) / ndihandle.tau_y;
+    l[0] = (newu1 - newr1 * newr1 * oldx - newr1 * ndihandle.tau_x * newv1 + oldax2 * ndihandle.tau_x + 2 * newr1 *
+            ndihandle.tau_x * oldv2) / ndihandle.tau_x;
+    l[1] = (newv1 - newr1 * newr1 * oldy + newr1 * ndihandle.tau_y * newu1 + olday2 * ndihandle.tau_y - 2 * newr1 *
+            ndihandle.tau_y * oldu2) / ndihandle.tau_y;
     oldxed = oldu2 - newu1 + newr1 * oldy;
     oldyed = oldv2 - newv1 - newr1 * oldx;
 #endif
@@ -241,12 +242,12 @@ bool hover_guided(float h)
 bool ndi_follow_leader(float h)
 {
   bool temp = true;
-  
+
   // Set height (Z speed)
   temp &= guidance_v_set_guided_z(-h);
-  
+
   // Set horizontal speed X and Y
-  if  (stateGetPositionEnu_f()->z > 0.8) {
+  if (stateGetPositionEnu_f()->z > 0.8) {
     bindNorm(0.5);
     temp &= guidance_h_set_guided_vel(ndihandle.commands_lim[0], ndihandle.commands_lim[1]);
   }

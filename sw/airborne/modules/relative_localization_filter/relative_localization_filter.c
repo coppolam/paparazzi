@@ -81,10 +81,9 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
 #endif
     number_filters++;
   } else if (idx != -1) {
-    range_array[idx] = range-1.0; // Tuning of UWB offset
+    range_array[idx] = range - 1.0; // Tuning of UWB offset
     ekf_rl[idx].dt = (get_sys_time_usec() - latest_update_time[idx]) / pow(10, 6); // Update the time between messages
 
-    float rel_x, rel_y, rel_z, othVx, othVy, gam;
     float ownVx = stateGetSpeedNed_f()->x;
     float ownVy = stateGetSpeedNed_f()->y;
     float ownh = stateGetPositionEnu_f()->z;
@@ -92,27 +91,28 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     float ownAy = stateGetAccelNed_f()->y;
     float ownYawr = stateGetBodyRates_f()->r;
 
-    // Bind values to avoid unrealistic spikes
-    float_keep_bounded(&range,0.0,7.0);
-    float_keep_bounded(&ownVx,-3.0,3.0);
-    float_keep_bounded(&ownVy,-3.0,3.0);
-    float_keep_bounded(&trackedVx,-3.0,3.0);
-    float_keep_bounded(&trackedVy,-3.0,3.0);
-    float_keep_bounded(&trackedh,-4,0);
-    float_keep_bounded(&ownAx,-10.0,10.0);
-    float_keep_bounded(&ownAy,-10.0,10.0);
-    float_keep_bounded(&trackedAx,-10.0,10.0);
-    float_keep_bounded(&trackedAy,-10.0,10.0);
-    float_keep_bounded(&ownYawr,-3.0,3.0);
-    float_keep_bounded(&trackedYawr,-3.0,3.0);
-
     if (ownh > 0.5) { // UWB does not do well when both drones are on the ground
+      float rel_x, rel_y, rel_z, othVx, othVy, gam;
+      // Bind values to avoid unrealistic spikes
+      float_keep_bounded(&range, 0.0, 7.0);
+      float_keep_bounded(&ownVx, -3.0, 3.0);
+      float_keep_bounded(&ownVy, -3.0, 3.0);
+      float_keep_bounded(&trackedVx, -3.0, 3.0);
+      float_keep_bounded(&trackedVy, -3.0, 3.0);
+      float_keep_bounded(&trackedh, -4, 0);
+      float_keep_bounded(&ownAx, -10.0, 10.0);
+      float_keep_bounded(&ownAy, -10.0, 10.0);
+      float_keep_bounded(&trackedAx, -10.0, 10.0);
+      float_keep_bounded(&trackedAy, -10.0, 10.0);
+      float_keep_bounded(&ownYawr, -3.0, 3.0);
+      float_keep_bounded(&trackedYawr, -3.0, 3.0);
+
 #if RELATIVE_LOCALIZATION_NO_NORTH
       float U[EKF_L] = {ownAx, ownAy, trackedAx, trackedAy, ownYawr, trackedYawr};
       float Z[EKF_M] = {range_array[idx], ownh, trackedh, ownVx, ownVy, trackedVx, trackedVy};
       discrete_ekf_no_north_predict(&ekf_rl[idx], U);
       discrete_ekf_no_north_update(&ekf_rl[idx], Z);
-      rel_z = ekf_rl[idx].X[3]-ekf_rl[idx].X[2];
+      rel_z = ekf_rl[idx].X[3] - ekf_rl[idx].X[2];
       ownVx = ekf_rl[idx].X[4];
       ownVy = ekf_rl[idx].X[5];
       othVx = ekf_rl[idx].X[6];
@@ -132,19 +132,20 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
 #endif
       rel_x = ekf_rl[idx].X[0];
       rel_y = ekf_rl[idx].X[1];
+
+      // Send output
+      AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[idx], latest_update_time[idx] / pow(10, 6),
+                                      range, rel_x, rel_y, rel_z,
+                                      ownVx, ownVy, othVx, othVy,
+                                      gam, trackedAx, trackedAy, trackedYawr);
+
     }
-    
-    // Send output
-    AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[idx], latest_update_time[idx] / pow(10, 6),
-                                    range, rel_x, rel_y, rel_z, 
-                                    ownVx, ownVy, othVx, othVy, 
-                                    gam, trackedAx, trackedAy, trackedYawr);
   }
 
   latest_update_time[idx] = get_sys_time_usec();
 };
 
-/** Function to send data as a paparazzi message 
+/** Function to send data as a paparazzi message
  * It is best to send the data of each tracked drone separately to avoid overloading.
  * It is only for monitoring/logging. For accurate logging it is best to record the data onboard.
  */
@@ -191,5 +192,6 @@ void relative_localization_filter_init(void)
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RLFILTER, send_relative_localization_data);
 };
 
-void relative_localization_filter_periodic(void) {
+void relative_localization_filter_periodic(void)
+{
 };

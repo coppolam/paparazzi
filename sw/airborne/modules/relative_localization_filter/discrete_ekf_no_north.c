@@ -206,7 +206,7 @@ void discrete_ekf_no_north_new(struct discrete_ekf_no_north *filter)
   float_vect_zero(filter->X, EKF_N); // Initial state
   filter->X[0] = RELATIVE_LOCALIZATION_EKF_X0; // Initial X estimate
   filter->X[1] = RELATIVE_LOCALIZATION_EKF_Y0; // Initial Y estimate
-  filter->X[2] = -1.0; 
+  filter->X[2] = -1.0;
   filter->X[3] = -1.0;
   filter->dt = 0.1;  // Initial Est. time difference
 }
