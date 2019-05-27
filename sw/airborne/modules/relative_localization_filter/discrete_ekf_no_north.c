@@ -34,6 +34,7 @@
 enum ekf_statein {x12, y12, z1, z2, u1, v1, u2, v2, gam};
 enum ekf_input {u1dm, v1dm, u2dm, v2dm, r1m, r2m};
 
+
 void extractPhiGamma(float **inmat, float **phi, float **gamma, int m, int n_a, int n_b)
 {
   int totalsize = m + n_b;
@@ -73,6 +74,7 @@ void float_mat_combine(float **a, float **b, float **o, int m, int n_a, int n_b)
  */
 void c2d(int m, int nA, int nB, float **Fx, float **G, float dt, float **phi, float **gamma)
 {
+
   int totalsize = m + nB;
   float combmat[totalsize][totalsize];
   float expm[totalsize][totalsize];
@@ -85,7 +87,7 @@ void c2d(int m, int nA, int nB, float **Fx, float **G, float dt, float **phi, fl
   MAKE_MATRIX_PTR(_expm, expm, totalsize);
 
   float_mat_scale(_Fx, dt, m, nA);
-  float_mat_scale(_G,  dt, m, nB);
+  float_mat_scale(_G, dt, m, nB);
 
   float_mat_combine(_Fx, _G, _combmat, m, nA, nB);
   float_mat_exp(_combmat, _expm, totalsize);
@@ -96,14 +98,15 @@ void c2d(int m, int nA, int nB, float **Fx, float **G, float dt, float **phi, fl
  * Continuous time state transition equation
  * state is: {x_rel,y_rel,h1,h2,u1,v1,u2,v2,gamma}
  */
+
 void discrete_ekf_no_north_fsym(float *statein, float *input, float *output)
 {
   output[0] =  input[r1m] * statein[y12] - statein[u1] + statein[u2] * cosf(statein[gam]) - statein[v2] * sinf(
                  statein[gam]);
   output[1] = -input[r1m] * statein[x12] - statein[v1] + statein[u2] * sinf(statein[gam]) + statein[v2] * cosf(
                 statein[gam]);
-  output[2] = 0;
-  output[3] = 0;
+  output[2] = 0.0;
+  output[3] = 0.0;
   output[4] = input[u1dm] + input[r1m] * statein[v1];
   output[5] = input[v1dm] - input[r1m] * statein[u1];
   output[6] = input[u2dm] + input[r2m] * statein[v2];
@@ -130,12 +133,12 @@ void discrete_ekf_no_north_Fx(float *statein, float *input, float **output)
   MAKE_MATRIX_PTR(_output, output, EKF_N);
   float_mat_zero(_output, EKF_N, EKF_N);
   output[0][1] = input[r1m];
-  output[0][4] = -1;
+  output[0][4] = -1.0;
   output[0][6] = cosf(statein[gam]);
   output[0][7] = -sinf(statein[gam]);
   output[0][8] = -statein[v2] * cosf(statein[gam]) - statein[u2] * sinf(statein[gam]);
   output[1][0] = -input[r1m];
-  output[1][5] = -1;
+  output[1][5] = -1.0;
   output[1][6] = sinf(statein[gam]);
   output[1][7] = cosf(statein[gam]);
   output[1][8] = statein[u2] * cosf(statein[gam]) - statein[v2] * sinf(statein[gam]);
@@ -193,7 +196,7 @@ void discrete_ekf_no_north_new(struct discrete_ekf_no_north *filter)
   MAKE_MATRIX_PTR(_Q, filter->Q, EKF_L);
   MAKE_MATRIX_PTR(_R, filter->R, EKF_M);
 
-  float_mat_diagonal_scal(_P, 16, EKF_N); // P Matrix
+  float_mat_diagonal_scal(_P, 1.0, EKF_N); // P Matrix
   float_mat_diagonal_scal(_Q, powf(2, 2), EKF_L); // Q Matrix [inputs: a1x, a1y, a2x, a2y, r1, r2]
   filter->Q[4][4] = powf(0.2, 2);
   filter->Q[5][5] = powf(0.2, 2);
@@ -206,9 +209,8 @@ void discrete_ekf_no_north_new(struct discrete_ekf_no_north *filter)
   float_vect_zero(filter->X, EKF_N); // Initial state
   filter->X[0] = RELATIVE_LOCALIZATION_EKF_X0; // Initial X estimate
   filter->X[1] = RELATIVE_LOCALIZATION_EKF_Y0; // Initial Y estimate
-  filter->X[2] = -1.0;
-  filter->X[3] = -1.0;
   filter->dt = 0.1;  // Initial Est. time difference
+
 }
 
 /*

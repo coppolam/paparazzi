@@ -91,55 +91,67 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     float ownAy = stateGetAccelNed_f()->y;
     float ownYawr = stateGetBodyRates_f()->r;
 
-    if (ownh > 0.5) { // UWB does not do well when both drones are on the ground
-      float rel_x, rel_y, rel_z, othVx, othVy, gam;
-      // Bind values to avoid unrealistic spikes
-      float_keep_bounded(&range, 0.0, 7.0);
-      float_keep_bounded(&ownVx, -3.0, 3.0);
-      float_keep_bounded(&ownVy, -3.0, 3.0);
-      float_keep_bounded(&trackedVx, -3.0, 3.0);
-      float_keep_bounded(&trackedVy, -3.0, 3.0);
-      float_keep_bounded(&trackedh, -4, 0);
-      float_keep_bounded(&ownAx, -10.0, 10.0);
-      float_keep_bounded(&ownAy, -10.0, 10.0);
-      float_keep_bounded(&trackedAx, -10.0, 10.0);
-      float_keep_bounded(&trackedAy, -10.0, 10.0);
-      float_keep_bounded(&ownYawr, -3.0, 3.0);
-      float_keep_bounded(&trackedYawr, -3.0, 3.0);
+    float rel_x, rel_y, rel_z, othVx, othVy, gam;
+
+    // Bind values to avoid unrealistic spikes
+    float_keep_bounded(&range, 0.0, 7.0);
+    float_keep_bounded(&ownVx, -1.0, 1.0);
+    float_keep_bounded(&ownVy, -1.0, 1.0);
+    float_keep_bounded(&trackedVx, -1.0, 1.0);
+    float_keep_bounded(&trackedVy, -1.0, 1.0);
+    float_keep_bounded(&trackedh, 0.0, 4.0);
+    float_keep_bounded(&ownAx, -10.0, 10.0);
+    float_keep_bounded(&ownAy, -10.0, 10.0);
+    float_keep_bounded(&trackedAx, -10.0, 10.0);
+    float_keep_bounded(&trackedAy, -10.0, 10.0);
+    float_keep_bounded(&ownYawr, -3.0, 3.0);
+    float_keep_bounded(&trackedYawr, -3.0, 3.0);
 
 #if RELATIVE_LOCALIZATION_NO_NORTH
-      float U[EKF_L] = {ownAx, ownAy, trackedAx, trackedAy, ownYawr, trackedYawr};
-      float Z[EKF_M] = {range_array[idx], ownh, trackedh, ownVx, ownVy, trackedVx, trackedVy};
-      discrete_ekf_no_north_predict(&ekf_rl[idx], U);
-      discrete_ekf_no_north_update(&ekf_rl[idx], Z);
-      rel_z = ekf_rl[idx].X[3] - ekf_rl[idx].X[2];
-      ownVx = ekf_rl[idx].X[4];
-      ownVy = ekf_rl[idx].X[5];
-      othVx = ekf_rl[idx].X[6];
-      othVy = ekf_rl[idx].X[7];
-      gam = ekf_rl[idx].X[8];
+    // float U[EKF_L] = {ownAx, ownAy, trackedAx, trackedAy, ownYawr, trackedYawr};
+    // float Z[EKF_M] = {range_array[idx], ownh, trackedh, ownVx, ownVy, trackedVx, trackedVy};
+
+    float U[EKF_L] = {0.0, 0.0, trackedAx, trackedAy, 0.0, trackedYawr};
+    float Z[EKF_M] = {range_array[idx], 0.0, trackedh, 0.0, 0.0, trackedVx, trackedVy};
+
+    printf("R: States for drone %f: r = %f, vx = %f, vy = %f, z = %f \n\n", ekf_rl[idx].dt, range_array[idx], trackedVx,
+           trackedVy, trackedh); //DEBUG
+    // if (trackedh > 0.5) { // UWB does not do well when both drones are on the ground
+    discrete_ekf_no_north_predict(&ekf_rl[idx], U);
+    discrete_ekf_no_north_update(&ekf_rl[idx], Z);
+    //}
+    FLOAT_ANGLE_NORMALIZE(ekf_rl[idx].X[8]);
+    rel_z = ekf_rl[idx].X[3] - ekf_rl[idx].X[2];
+    ownVx = ekf_rl[idx].X[4];
+    ownVy = ekf_rl[idx].X[5];
+    othVx = ekf_rl[idx].X[6];
+    othVy = ekf_rl[idx].X[7];
+    gam = ekf_rl[idx].X[8];
 #else
-      // Measurement Vector Z = [range owvVx(NED) ownVy(NED) tracked_v_north(NED) tracked_v_east(NED) dh]
-      float Z[EKF_M] = {range_array[idx], ownVx, ownVy, trackedVx, trackedVy, trackedh - ownh};
-      discrete_ekf_predict(&ekf_rl[idx]);
-      discrete_ekf_update(&ekf_rl[idx], Z);
-      ownVx = ekf_rl[idx].X[2];
-      ownVy = ekf_rl[idx].X[3];
-      othVx = ekf_rl[idx].X[4];
-      othVy = ekf_rl[idx].X[5];
-      rel_z = ekf_rl[idx].X[6];
-      gam = 0.0; // Both in earth frame
+    // Measurement Vector Z = [range owvVx(NED) ownVy(NED) tracked_v_north(NED) tracked_v_east(NED) dh]
+    float Z[EKF_M] = {range_array[idx], ownVx, ownVy, trackedVx, trackedVy, trackedh - ownh};
+    printf("R: States for drone %i: r = %f, vx = %f, vy = %f, z = %f \n\n", 0, range_array[idx], trackedVx, trackedVy,
+           trackedh); //DEBUG
+    // if (ownh > 0.5) { // UWB does not do well when both drones are on the ground
+    discrete_ekf_predict(&ekf_rl[idx]);
+    discrete_ekf_update(&ekf_rl[idx], Z);
+    // }
+    ownVx = ekf_rl[idx].X[2];
+    ownVy = ekf_rl[idx].X[3];
+    othVx = ekf_rl[idx].X[4];
+    othVy = ekf_rl[idx].X[5];
+    rel_z = ekf_rl[idx].X[6];
+    gam = 0.0; // Both in Earth frame
 #endif
-      rel_x = ekf_rl[idx].X[0];
-      rel_y = ekf_rl[idx].X[1];
+    rel_x = ekf_rl[idx].X[0];
+    rel_y = ekf_rl[idx].X[1];
 
-      // Send output
-      AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[idx], latest_update_time[idx] / pow(10, 6),
-                                      range, rel_x, rel_y, rel_z,
-                                      ownVx, ownVy, othVx, othVy,
-                                      gam, trackedAx, trackedAy, trackedYawr);
+    // Send output ABI message
+    AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[idx], latest_update_time[idx] / pow(10, 6),
+                                    range, rel_x, rel_y, rel_z,
+                                    ownVx, ownVy, othVx, othVy,
+                                    gam, trackedAx, trackedAy, trackedYawr);
 
-    }
   }
 
   latest_update_time[idx] = get_sys_time_usec();

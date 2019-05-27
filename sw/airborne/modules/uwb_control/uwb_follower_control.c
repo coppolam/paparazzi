@@ -43,7 +43,7 @@
 
 // Delay of trajectory with respect to the leader, if not specified in airframe file
 #ifndef UWB_NDI_DELAY
-#define UWB_NDI_DELAY 4
+#define UWB_NDI_DELAY 3
 #endif
 
 ndihandler ndihandle;
@@ -108,7 +108,7 @@ static void relative_localization_callback(uint8_t sender_id __attribute__((unus
 
 static void send_ndi_data(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_NDI_CMD(trans, dev, AC_ID, &ndihandle.commands[0], &ndihandle.commands[1]);
+  pprz_msg_send_NDI_CMD(trans, dev, AC_ID, &ndihandle.commands_lim[0], &ndihandle.commands_lim[1]);
 };
 
 extern void uwb_follower_control_init(void)
@@ -224,6 +224,7 @@ void uwb_follower_control_periodic(void)
     sig[1] = v[1] - l[1];
 
     float_mat_vect_mul(ndihandle.commands, _MINV, sig, 2, 2);
+    bindNorm(0.3);
   }
 }
 
@@ -247,9 +248,10 @@ bool ndi_follow_leader(float h)
   temp &= guidance_v_set_guided_z(-h);
 
   // Set horizontal speed X and Y
-  if (stateGetPositionEnu_f()->z > 0.8) {
-    bindNorm(0.5);
+  if (stateGetPositionEnu_f()->z > 0.8 * h) {
     temp &= guidance_h_set_guided_vel(ndihandle.commands_lim[0], ndihandle.commands_lim[1]);
+  } else {
+    temp &= guidance_h_set_guided_vel(0.0, 0.0);
   }
 
   return !temp; // Exit false (for call in flight plan)
