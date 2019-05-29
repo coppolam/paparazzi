@@ -62,6 +62,8 @@ uint32_t latest_update_time[RELATIVE_LOCALIZATION_N_UAVS];
 uint8_t number_filters; // the number of filters running in parallel
 float range_array[RELATIVE_LOCALIZATION_N_UAVS]; // an array to store the ranges at which the other MAVs are
 uint8_t pprzmsg_cnt; // a counter to send paparazzi messages, which are sent in rotation
+float tAx;
+float tAy;
 
 static abi_event range_communication_event;
 static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_t ac_id,
@@ -97,8 +99,8 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     float_keep_bounded(&range, 0.0, 7.0);
     float_keep_bounded(&ownVx, -1.0, 1.0);
     float_keep_bounded(&ownVy, -1.0, 1.0);
-    float_keep_bounded(&trackedVx, -1.0, 1.0);
-    float_keep_bounded(&trackedVy, -1.0, 1.0);
+    float_keep_bounded(&trackedVx, -1.0, 1.0); // SENT CORRECTLY CHECKED
+    float_keep_bounded(&trackedVy, -1.0, 1.0); // SENT CORRECTLY CHECKED
     float_keep_bounded(&trackedh, 0.0, 4.0);
     float_keep_bounded(&ownAx, -10.0, 10.0);
     float_keep_bounded(&ownAy, -10.0, 10.0);
@@ -108,18 +110,14 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     float_keep_bounded(&trackedYawr, -3.0, 3.0);
 
 #if RELATIVE_LOCALIZATION_NO_NORTH
-    // float U[EKF_L] = {ownAx, ownAy, trackedAx, trackedAy, ownYawr, trackedYawr};
-    // float Z[EKF_M] = {range_array[idx], ownh, trackedh, ownVx, ownVy, trackedVx, trackedVy};
+    float U[EKF_L] = {ownAx, ownAy, 0.0, 0.0, ownYawr, 0.0};
+    float Z[EKF_M] = {range_array[idx], -ownh, -trackedh, ownVx, ownVy, trackedVx, trackedVy};
 
-    float U[EKF_L] = {0.0, 0.0, trackedAx, trackedAy, 0.0, trackedYawr};
-    float Z[EKF_M] = {range_array[idx], 0.0, trackedh, 0.0, 0.0, trackedVx, trackedVy};
-
-    printf("R: States for drone %f: r = %f, vx = %f, vy = %f, z = %f \n\n", ekf_rl[idx].dt, range_array[idx], trackedVx,
-           trackedVy, trackedh); //DEBUG
-    // if (trackedh > 0.5) { // UWB does not do well when both drones are on the ground
-    discrete_ekf_no_north_predict(&ekf_rl[idx], U);
-    discrete_ekf_no_north_update(&ekf_rl[idx], Z);
-    //}
+    printf("R: States for drone %f: ax = %f, ax = %f, tax = %f, tay = %f \n\n", ekf_rl[idx].dt, ownAx, ownAy, trackedAx, trackedAy); //DEBUG
+    // if (ownh > 0.3) {
+      discrete_ekf_no_north_predict(&ekf_rl[idx], U);
+      discrete_ekf_no_north_update(&ekf_rl[idx], Z);
+    // }
     FLOAT_ANGLE_NORMALIZE(ekf_rl[idx].X[8]);
     rel_z = ekf_rl[idx].X[3] - ekf_rl[idx].X[2];
     ownVx = ekf_rl[idx].X[4];
@@ -127,14 +125,15 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     othVx = ekf_rl[idx].X[6];
     othVy = ekf_rl[idx].X[7];
     gam = ekf_rl[idx].X[8];
+    tAx = trackedAx;
+    tAy = trackedAy;
 #else
     // Measurement Vector Z = [range owvVx(NED) ownVy(NED) tracked_v_north(NED) tracked_v_east(NED) dh]
     float Z[EKF_M] = {range_array[idx], ownVx, ownVy, trackedVx, trackedVy, trackedh - ownh};
-    printf("R: States for drone %i: r = %f, vx = %f, vy = %f, z = %f \n\n", 0, range_array[idx], trackedVx, trackedVy,
-           trackedh); //DEBUG
-    // if (ownh > 0.5) { // UWB does not do well when both drones are on the ground
-    discrete_ekf_predict(&ekf_rl[idx]);
-    discrete_ekf_update(&ekf_rl[idx], Z);
+    // printf("R: States for drone %i: r = %f, vx = %f, vy = %f, z = %f \n\n", 0, range_array[idx], trackedVx, trackedVy, trackedh); //DEBUG
+    // if (ownh > 0.3) { // UWB does not do well when both drones are on the ground
+      discrete_ekf_predict(&ekf_rl[idx]);
+      discrete_ekf_update(&ekf_rl[idx], Z);
     // }
     ownVx = ekf_rl[idx].X[2];
     ownVy = ekf_rl[idx].X[3];
@@ -186,7 +185,7 @@ static void send_relative_localization_data(struct transport_tx *trans, struct l
     pprz_msg_send_RLFILTER(trans, dev, AC_ID,
                            &id_array[pprzmsg_cnt], &range_array[pprzmsg_cnt],
                            &ekf_rl[pprzmsg_cnt].X[0], &ekf_rl[pprzmsg_cnt].X[1], // x y (tracked wrt own)
-                           &ownVx, &ownVy, &othVx, &othVy, &rel_z);
+                           &tAx, &tAy, &othVx, &othVy, &rel_z);
   }
 };
 
@@ -199,6 +198,8 @@ void relative_localization_filter_init(void)
                        RELATIVE_LOCALIZATION_N_UAVS); // The id_array is initialized with non-existant IDs (assuming assignedUWB IDs are 0,1,2...)
   number_filters = 0;
   pprzmsg_cnt = 0;
+  tAx = 0;
+  tAy = 0;
 
   AbiBindMsgUWB_COMMUNICATION(UWB_COMM_ID, &range_communication_event, range_msg_callback);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RLFILTER, send_relative_localization_data);

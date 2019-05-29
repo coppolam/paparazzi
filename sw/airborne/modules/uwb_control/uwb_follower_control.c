@@ -120,6 +120,7 @@ extern void uwb_follower_control_init(void)
 
 void bindNorm(float max_command)
 {
+  pthread_mutex_lock(&uwb_ndi_mutex);
   float normcom = sqrt(ndihandle.commands[1] * ndihandle.commands[1] + ndihandle.commands[0] * ndihandle.commands[0]);
   if (normcom > max_command) {
     ndihandle.commands_lim[0] = ndihandle.commands[0] * max_command / normcom;
@@ -128,6 +129,7 @@ void bindNorm(float max_command)
     ndihandle.commands_lim[0] = ndihandle.commands[0];
     ndihandle.commands_lim[1] = ndihandle.commands[1];
   }
+  pthread_mutex_unlock(&uwb_ndi_mutex);
 }
 
 float accessCircularFloatArrElement(float *arr, int index)
@@ -224,7 +226,7 @@ void uwb_follower_control_periodic(void)
     sig[1] = v[1] - l[1];
 
     float_mat_vect_mul(ndihandle.commands, _MINV, sig, 2, 2);
-    bindNorm(0.3);
+    bindNorm(1.5);
   }
 }
 
@@ -248,11 +250,11 @@ bool ndi_follow_leader(float h)
   temp &= guidance_v_set_guided_z(-h);
 
   // Set horizontal speed X and Y
-  if (stateGetPositionEnu_f()->z > 0.8 * h) {
+  // if (stateGetPositionEnu_f()->z > 0.3 * h) {
     temp &= guidance_h_set_guided_vel(ndihandle.commands_lim[0], ndihandle.commands_lim[1]);
-  } else {
-    temp &= guidance_h_set_guided_vel(0.0, 0.0);
-  }
+  // } else {
+  //   temp &= guidance_h_set_guided_vel(0.0, 0.0);
+  // }
 
   return !temp; // Exit false (for call in flight plan)
 }
