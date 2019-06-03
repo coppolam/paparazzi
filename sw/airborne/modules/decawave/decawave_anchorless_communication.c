@@ -45,6 +45,10 @@
 #include "subsystems/abi.h"
 #include <stdio.h>
 
+Butterworth2LowPass decawave_smooth_yawr_butter;
+float decawave_smooth_yawr;
+#define UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR 8
+
 #define UWB_SERIAL_PORT (&((SERIAL_UART).device))
 struct link_device *external_device = UWB_SERIAL_PORT;
 
@@ -272,6 +276,9 @@ static void getSerialData(uint8_t *bytes_received)
  */
 void decawave_anchorless_communication_init(void)
 {
+  init_butterworth_2_low_pass(&decawave_smooth_yawr_butter, UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR, 1./PERIODIC_FREQUENCY, 0.0);
+  decawave_smooth_yawr = 0.0;
+
   // Set all nodes to false
   for (uint8_t i = 0; i < UWB_SERIAL_COMM_DIST_NUM_NODES; i++) {
     setNodeStatesFalse(i);
@@ -283,13 +290,14 @@ void decawave_anchorless_communication_init(void)
  */
 void decawave_anchorless_communication_periodic(void)
 {
+  decawave_smooth_yawr = update_butterworth_2_low_pass(&decawave_smooth_yawr_butter, stateGetBodyRates_f()->r);
   // TODO: Right now floats are sent individually, but it would be nice to send all at once (requires integrating with UWB/Arduino side as well).
   sendFloat(UWB_SERIAL_COMM_VX, stateGetSpeedNed_f()->x);
   sendFloat(UWB_SERIAL_COMM_VY, stateGetSpeedNed_f()->y);
   sendFloat(UWB_SERIAL_COMM_Z, stateGetPositionEnu_f()->z);
   sendFloat(UWB_SERIAL_COMM_AX, stateGetAccelNed_f()->x);
   sendFloat(UWB_SERIAL_COMM_AY, stateGetAccelNed_f()->y);
-  sendFloat(UWB_SERIAL_COMM_YAWR, stateGetBodyRates_f()->r);
+  sendFloat(UWB_SERIAL_COMM_YAWR, decawave_smooth_yawr);
   printf("Sent states: vx = %f, vy = %f, z = %f , ax= %f , ay = %f , yawr = %f \n", stateGetSpeedNed_f()->x,stateGetSpeedNed_f()->y,stateGetPositionEnu_f()->z,stateGetAccelNed_f()->x,stateGetAccelNed_f()->y,stateGetBodyRates_f()->r); //DEBUG
 }
 
