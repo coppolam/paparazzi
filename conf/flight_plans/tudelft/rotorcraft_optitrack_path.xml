@@ -1,6 +1,6 @@
 <!DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">
 
-<flight_plan alt="1.0" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="8" name="Test flight plan" security_height="0.4">
+<flight_plan alt="1.2" ground_alt="0" lat0="51.990634" lon0="4.376789" max_dist_from_home="8" name="Test flight plan" security_height="0.4">
   <header>
     #include "autopilot.h"
     #include "subsystems/radio_control.h"
@@ -16,13 +16,13 @@
     <waypoint name="HOVER" x="1.0" y="1.0"/>
     <waypoint name="TD" x="0.8" y="-1.7"/>
     <waypoint lat="51.990607" lon="4.376774" name="t0"/>
-    <waypoint lat="51.990630" lon="4.376794" name="t1"/>
+    <waypoint lat="51.990624" lon="4.376801" name="t1"/>
     <waypoint lat="51.990628" lon="4.376837" name="t2"/>
-    <waypoint lat="51.990641" lon="4.376810" name="t3"/>
+    <waypoint lat="51.990644" lon="4.376810" name="t3"/>
     <waypoint lat="51.990664" lon="4.376800" name="t4"/>
-    <waypoint lat="51.990644" lon="4.376781" name="t5"/>
+    <waypoint lat="51.990648" lon="4.376777" name="t5"/>
     <waypoint lat="51.990642" lon="4.376738" name="t6"/>
-    <waypoint lat="51.990627" lon="4.376764" name="t7"/>
+    <waypoint lat="51.990625" lon="4.376762" name="t7"/>
     <waypoint lat="51.9906213" lon="4.3768628" name="_CZ1"/>
     <waypoint lat="51.9905874" lon="4.3767766" name="_CZ2"/>
     <waypoint lat="51.9906409" lon="4.3767226" name="_CZ3"/>
@@ -67,14 +67,14 @@
     </block>
     <block name="Fly Trajectory">
       <while cond="TRUE">
+        <!--go wp="t7"/-->
         <go wp="t0"/>
-        <go wp="t1"/>
+        <!--go wp="t1"/-->
         <go wp="t2"/>
-        <go wp="t3"/>
+        <!--go wp="t3"/-->
         <go wp="t4"/>
-        <go wp="t5"/>
+        <!--go wp="t5"/-->
         <go wp="t6"/>
-        <go wp="t7"/>
       </while>
     </block>
     <block name="land here" strip_button="land Here" strip_icon="land-right.png">

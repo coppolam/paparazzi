@@ -45,7 +45,7 @@
       <configure name="RELATIVE_LOCALIZATION_EKF_X0" value="-2"/>
       <configure name="RELATIVE_LOCALIZATION_EKF_Y0" value="0"/>
     <module name="uwb_follower_control">
-      <configure name="UWB_NDI_DELAY" value="3"/>
+      <configure name="UWB_NDI_DELAY" value="4"/>
     </module>
   </firmware>
   
@@ -156,7 +156,7 @@
     <define name="G2_R" value="0.20"/>
 
     <!-- For the bebop2 we need to filter the roll rate due to the dampers -->
-    <define name="FILTER_ROLL_RATE" value="FALSE"/>
+    <define name="FILTER_ROLL_RATE" value="TRUE"/>
     <define name="FILTER_PITCH_RATE" value="FALSE"/>
     <define name="FILTER_YAW_RATE" value="FALSE"/>
 
@@ -193,13 +193,13 @@
   <section name="GUIDANCE_H" prefix="GUIDANCE_H_">
     <!-- Good weather -->
     <define name="MAX_BANK" value="20" unit="deg"/>
-    <define name="REF_MAX_SPEED" value="0.5" unit="m/s"/>
+    <define name="REF_MAX_SPEED" value="1.0" unit="m/s"/>
     <!-- Bad weather -->
     <!-- define name="MAX_BANK" value="32" unit="deg"/ -->
-    <define name="PGAIN" value="120"/>
-    <define name="DGAIN" value="370"/><!--370-->
+    <define name="PGAIN" value="70"/>
+    <define name="DGAIN" value="80"/><!--370-->
     <define name="IGAIN" value="30"/>
-    <define name="REF_ZETA" value="1.0"/> <!-- 1.0 or more for no overshooting -->
+    <!--define name="REF_ZETA" value="1.0"/--> <!-- 1.0 or more for no overshooting -->
   </section>
 
   <section name="MISC">

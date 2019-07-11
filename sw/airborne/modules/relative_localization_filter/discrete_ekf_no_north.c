@@ -196,7 +196,7 @@ void discrete_ekf_no_north_new(struct discrete_ekf_no_north *filter)
   MAKE_MATRIX_PTR(_Q, filter->Q, EKF_L);
   MAKE_MATRIX_PTR(_R, filter->R, EKF_M);
 
-  float_mat_diagonal_scal(_P, 1.0, EKF_N); // P Matrix
+  float_mat_diagonal_scal(_P, 16.0, EKF_N); // P Matrix
   float_mat_diagonal_scal(_Q, powf(2, 2), EKF_L); // Q Matrix [inputs: a1x, a1y, a2x, a2y, r1, r2]
   filter->Q[4][4] = powf(0.2, 2);
   filter->Q[5][5] = powf(0.2, 2);

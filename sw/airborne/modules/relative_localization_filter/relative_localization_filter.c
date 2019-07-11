@@ -41,10 +41,6 @@
 #define RELATIVE_LOCALIZATION_N_UAVS 4 // Maximum expected number of other UAVs
 #endif
 
-// #define UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR 8
-// #define UWB_LOWPASS_CUTOFF_FREQUENCY_AX 8
-// #define UWB_LOWPASS_CUTOFF_FREQUENCY_AY 8
-
 /*
  * RELATIVE_LOCALIZATION_NO_NORTH = 1 : The filter runs without a heading reference.
  * RELATIVE_LOCALIZATION_NO_NORTH = 0 : The filter runs while using a shared reference heading.
@@ -66,22 +62,6 @@ uint32_t latest_update_time[RELATIVE_LOCALIZATION_N_UAVS];
 uint8_t number_filters; // the number of filters running in parallel
 float range_array[RELATIVE_LOCALIZATION_N_UAVS]; // an array to store the ranges at which the other MAVs are
 uint8_t pprzmsg_cnt; // a counter to send paparazzi messages, which are sent in rotation
-float tAx;
-float tAy;
-
-// Butterworth2LowPass uwb_butter_yawr;
-// Butterworth2LowPass uwb_butter_ax;
-// Butterworth2LowPass uwb_butter_ay;
-// Butterworth2LowPass uwb_butter_yawr_tracked;
-// Butterworth2LowPass uwb_butter_ax_tracked;
-// Butterworth2LowPass uwb_butter_ay_tracked;
-
-// float uwb_smooth_ax = 0.0;
-// float uwb_smooth_ay = 0.0;
-// float uwb_smooth_yawr = 0.0;
-// float uwb_smooth_ax_tracked = 0.0;
-// float uwb_smooth_ay_tracked = 0.0;
-// float uwb_smooth_yawr_tracked = 0.0;
 
 static abi_event range_communication_event;
 static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_t ac_id,
@@ -145,15 +125,13 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
       discrete_ekf_no_north_predict(&ekf_rl[idx], U);
       discrete_ekf_no_north_update(&ekf_rl[idx], Z);
     }
-    FLOAT_ANGLE_NORMALIZE(ekf_rl[idx].X[8]);
     rel_z = ekf_rl[idx].X[3] - ekf_rl[idx].X[2];
     ownVx = ekf_rl[idx].X[4];
     ownVy = ekf_rl[idx].X[5];
     othVx = ekf_rl[idx].X[6];
     othVy = ekf_rl[idx].X[7];
-    gam = ekf_rl[idx].X[8];
-    tAx = trackedAx;
-    tAy = trackedAy;
+    gam = ekf_rl[idx].X[8]; // = 0.0;
+    // gam = 0.0;
 #else
     // Measurement Vector Z = [range owvVx(NED) ownVy(NED) tracked_v_north(NED) tracked_v_east(NED) dh]
     float Z[EKF_M] = {range_array[idx], ownVx, ownVy, trackedVx, trackedVy, trackedh - ownh};
@@ -172,11 +150,13 @@ static void range_msg_callback(uint8_t sender_id __attribute__((unused)), uint8_
     rel_x = ekf_rl[idx].X[0];
     rel_y = ekf_rl[idx].X[1];
 
+    if (ownh > 0.5) {
     // Send output ABI message
     AbiSendMsgRELATIVE_LOCALIZATION(RELATIVE_LOCALIZATION_ID, id_array[idx], latest_update_time[idx] / pow(10, 6),
                                     range, rel_x, rel_y, rel_z,
                                     ownVx, ownVy, othVx, othVy,
                                     gam, trackedAx, trackedAy, trackedYawr);
+    }
 
   }
 
@@ -197,11 +177,11 @@ static void send_relative_localization_data(struct transport_tx *trans, struct l
   if (number_filters > 0) {
     float rel_z, ownVx, ownVy, othVx, othVy;
 #if RELATIVE_LOCALIZATION_NO_NORTH
-    rel_z = ekf_rl[pprzmsg_cnt].X[2] - ekf_rl[pprzmsg_cnt].X[3];
     ownVx = ekf_rl[pprzmsg_cnt].X[4];
     ownVy = ekf_rl[pprzmsg_cnt].X[5];
     othVx = ekf_rl[pprzmsg_cnt].X[6];
     othVy = ekf_rl[pprzmsg_cnt].X[7];
+    rel_z = ekf_rl[pprzmsg_cnt].X[8];
 #else
     ownVx = ekf_rl[pprzmsg_cnt].X[2];
     ownVy = ekf_rl[pprzmsg_cnt].X[3];
@@ -212,7 +192,7 @@ static void send_relative_localization_data(struct transport_tx *trans, struct l
     pprz_msg_send_RLFILTER(trans, dev, AC_ID,
                            &id_array[pprzmsg_cnt], &range_array[pprzmsg_cnt],
                            &ekf_rl[pprzmsg_cnt].X[0], &ekf_rl[pprzmsg_cnt].X[1], // x y (tracked wrt own)
-                           &tAx, &tAy, &othVx, &othVy, &rel_z);
+                           &ownVx, &ownVy, &othVx, &othVy, &rel_z);
   }
 };
 
@@ -225,15 +205,6 @@ void relative_localization_filter_init(void)
                        RELATIVE_LOCALIZATION_N_UAVS); // The id_array is initialized with non-existant IDs (assuming assignedUWB IDs are 0,1,2...)
   number_filters = 0;
   pprzmsg_cnt = 0;
-  tAx = 0;
-  tAy = 0;
-
-  // init_butterworth_2_low_pass(&uwb_butter_yawr, UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR, 1./PERIODIC_FREQUENCY, 0.0);
-  // init_butterworth_2_low_pass(&uwb_butter_ax, UWB_LOWPASS_CUTOFF_FREQUENCY_AX, 1./PERIODIC_FREQUENCY, 0.0);
-  // init_butterworth_2_low_pass(&uwb_butter_ay, UWB_LOWPASS_CUTOFF_FREQUENCY_AY, 1./PERIODIC_FREQUENCY, 0.0);
-  // init_butterworth_2_low_pass(&uwb_butter_yawr_tracked, UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR, 1./PERIODIC_FREQUENCY, 0.0);
-  // init_butterworth_2_low_pass(&uwb_butter_ax_tracked, UWB_LOWPASS_CUTOFF_FREQUENCY_AX, 1./PERIODIC_FREQUENCY, 0.0);
-  // init_butterworth_2_low_pass(&uwb_butter_ay_tracked, UWB_LOWPASS_CUTOFF_FREQUENCY_AY, 1./PERIODIC_FREQUENCY, 0.0);
 
   AbiBindMsgUWB_COMMUNICATION(UWB_COMM_ID, &range_communication_event, range_msg_callback);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_RLFILTER, send_relative_localization_data);

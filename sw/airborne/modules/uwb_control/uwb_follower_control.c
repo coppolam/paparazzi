@@ -35,7 +35,7 @@
 #include "navigation.h"
 
 #include "subsystems/datalink/telemetry.h"
-#define NDI_METHOD 1
+#define NDI_METHOD 0
 // method 0 is first order approximation, no acceleration or yaw rate used
 // method 1 is first order approximation, acceleration and yaw rate used, but yaw rate not taken into account in integral
 
@@ -43,13 +43,10 @@
 
 // Delay of trajectory with respect to the leader, if not specified in airframe file
 #ifndef UWB_NDI_DELAY
-#define UWB_NDI_DELAY 3
+#define UWB_NDI_DELAY 4
 #endif
 
 ndihandler ndihandle;
-
-#define UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR 8
-Butterworth2LowPass uwb_butter_yawr;
 
 static pthread_mutex_t uwb_ndi_mutex;
 
@@ -68,7 +65,7 @@ ndihandler ndihandle = {.delay = UWB_NDI_DELAY,
                         .eps_y = 0.28,
                         .Kp = -1.5,
                         .Ki = 0,
-                        .Kd = -3,
+                        .Kd = -3.0,
                         .data_start = 0,
                         .data_end = 0,
                         .data_entries = 0,
@@ -97,7 +94,7 @@ static void relative_localization_callback(uint8_t sender_id __attribute__((unus
   ndihandle.v1arr[ndihandle.data_end] = v1in;
   ndihandle.u2arr[ndihandle.data_end] = u2in;
   ndihandle.v2arr[ndihandle.data_end] = v2in;
-  ndihandle.r1arr[ndihandle.data_end] = stateGetBodyRates_f()->r;
+  ndihandle.r1arr[ndihandle.data_end] = decawave_smooth_yawr;
   ndihandle.ax2arr[ndihandle.data_end] = trackedAx;
   ndihandle.ay2arr[ndihandle.data_end] = trackedAy;
   ndihandle.tarr[ndihandle.data_end] = time;
@@ -108,12 +105,11 @@ static void relative_localization_callback(uint8_t sender_id __attribute__((unus
 
 static void send_ndi_data(struct transport_tx *trans, struct link_device *dev)
 {
-  pprz_msg_send_NDI_CMD(trans, dev, AC_ID, &ndihandle.commands_lim[0], &ndihandle.commands_lim[1]);
+  pprz_msg_send_NDI_CMD(trans, dev, AC_ID, &ndihandle.commands[0], &ndihandle.commands[1]);
 };
 
 extern void uwb_follower_control_init(void)
 {
-  init_butterworth_2_low_pass(&uwb_butter_yawr, UWB_LOWPASS_CUTOFF_FREQUENCY_YAWR, 1. / PERIODIC_FREQUENCY, 0.0);
   register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_NDI_CMD, send_ndi_data);
   AbiBindMsgRELATIVE_LOCALIZATION(ABI_BROADCAST, &relative_localization_event, relative_localization_callback);
 }
@@ -176,9 +172,6 @@ void cleanNdiValues(float tcur)
   */
 void uwb_follower_control_periodic(void)
 {
-  // Re-initialize commands
-  ndihandle.commands[0] = 0;
-  ndihandle.commands[1] = 0;
 
   // Get current values
   float curtime = get_sys_time_usec() / pow(10, 6);
@@ -228,6 +221,13 @@ void uwb_follower_control_periodic(void)
     float_mat_vect_mul(ndihandle.commands, _MINV, sig, 2, 2);
     bindNorm(1.5);
   }
+  else {
+    pthread_mutex_lock(&uwb_ndi_mutex);
+    // Re-initialize commands
+    ndihandle.commands[0] = 0;
+    ndihandle.commands[1] = 0;
+    pthread_mutex_unlock(&uwb_ndi_mutex);
+  }
 }
 
 bool hover_guided(float h)
@@ -251,7 +251,7 @@ bool ndi_follow_leader(float h)
 
   // Set horizontal speed X and Y
   // if (stateGetPositionEnu_f()->z > 0.3 * h) {
-    temp &= guidance_h_set_guided_vel(ndihandle.commands_lim[0], ndihandle.commands_lim[1]);
+    temp &= guidance_h_set_guided_vel(ndihandle.commands[0], ndihandle.commands[1]);
   // } else {
   //   temp &= guidance_h_set_guided_vel(0.0, 0.0);
   // }

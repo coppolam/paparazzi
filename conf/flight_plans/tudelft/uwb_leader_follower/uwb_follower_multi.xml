@@ -56,12 +56,12 @@
     </block>
     <block name="Hover_Guided">
       <while cond="TRUE">
-        <call_once fun="hover_guided(1.5)"/>
+        <call_once fun="hover_guided(0.8)"/>
       </while>
     </block>
     <block name="Follow Leader_Guided">
       <while cond="TRUE">
-        <call_once fun="ndi_follow_leader(1.5)"/>
+        <call_once fun="ndi_follow_leader(0.8)"/>
       </while>
     </block>
     <block name="Land_Guided">
